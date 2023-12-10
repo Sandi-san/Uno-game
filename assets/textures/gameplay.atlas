@@ -1,0 +1,533 @@
+
+gameplay.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+blue1
+  rotate: false
+  xy: 2, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+blue2
+  rotate: false
+  xy: 415, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+
+gameplay2.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+blue3
+  rotate: false
+  xy: 2, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+blue4
+  rotate: false
+  xy: 415, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+
+gameplay3.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+blue5
+  rotate: false
+  xy: 2, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+blue6
+  rotate: false
+  xy: 415, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+
+gameplay4.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+blue7
+  rotate: false
+  xy: 2, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+blue8
+  rotate: false
+  xy: 415, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+
+gameplay5.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+blue9
+  rotate: false
+  xy: 2, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+blueReverse
+  rotate: false
+  xy: 415, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+
+gameplay6.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+green1
+  rotate: false
+  xy: 2, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+green2
+  rotate: false
+  xy: 415, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+
+gameplay7.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+green3
+  rotate: false
+  xy: 2, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+green4
+  rotate: false
+  xy: 415, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+
+gameplay8.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+green5
+  rotate: false
+  xy: 2, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+green6
+  rotate: false
+  xy: 415, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+
+gameplay9.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+green7
+  rotate: false
+  xy: 2, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+green8
+  rotate: false
+  xy: 415, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+
+gameplay10.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+green9
+  rotate: false
+  xy: 2, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+greenReverse
+  rotate: false
+  xy: 415, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+
+gameplay11.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+plus2blue
+  rotate: false
+  xy: 415, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+plus4
+  rotate: false
+  xy: 2, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+
+gameplay12.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+plus2blueRed
+  rotate: false
+  xy: 2, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+plus2green
+  rotate: false
+  xy: 415, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+
+gameplay13.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+plus2greenYellow
+  rotate: false
+  xy: 2, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+plus2red
+  rotate: false
+  xy: 415, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+
+gameplay14.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+plus2yellow
+  rotate: false
+  xy: 2, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+redReverse
+  rotate: false
+  xy: 415, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+
+gameplay15.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+stopBlue
+  rotate: false
+  xy: 2, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+stopGreen
+  rotate: false
+  xy: 415, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+
+gameplay16.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+stopRed
+  rotate: false
+  xy: 2, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+stopYellow
+  rotate: false
+  xy: 415, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+
+gameplay17.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+yellow1
+  rotate: false
+  xy: 2, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+yellow2
+  rotate: false
+  xy: 415, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+
+gameplay18.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+yellow3
+  rotate: false
+  xy: 2, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+yellow4
+  rotate: false
+  xy: 415, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+
+gameplay19.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+yellow5
+  rotate: false
+  xy: 2, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+yellow6
+  rotate: false
+  xy: 415, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+
+gameplay20.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+yellow7
+  rotate: false
+  xy: 2, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+yellow8
+  rotate: false
+  xy: 415, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+
+gameplay21.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+yellow9
+  rotate: false
+  xy: 2, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+yellowReverse
+  rotate: false
+  xy: 415, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+
+gameplay22.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+rainbow
+  rotate: false
+  xy: 2, 2
+  size: 411, 585
+  orig: 411, 585
+  offset: 0, 0
+  index: -1
+red1
+  rotate: false
+  xy: 415, 2
+  size: 411, 585
+  orig: 411, 585
+  offset: 0, 0
+  index: -1
+
+gameplay23.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+red2
+  rotate: false
+  xy: 2, 2
+  size: 411, 585
+  orig: 411, 585
+  offset: 0, 0
+  index: -1
+red3
+  rotate: false
+  xy: 415, 2
+  size: 411, 585
+  orig: 411, 585
+  offset: 0, 0
+  index: -1
+
+gameplay24.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+red4
+  rotate: false
+  xy: 2, 2
+  size: 411, 585
+  orig: 411, 585
+  offset: 0, 0
+  index: -1
+red5
+  rotate: false
+  xy: 415, 2
+  size: 411, 585
+  orig: 411, 585
+  offset: 0, 0
+  index: -1
+
+gameplay25.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+red6
+  rotate: false
+  xy: 2, 2
+  size: 411, 585
+  orig: 411, 585
+  offset: 0, 0
+  index: -1
+red7
+  rotate: false
+  xy: 415, 2
+  size: 411, 585
+  orig: 411, 585
+  offset: 0, 0
+  index: -1
+
+gameplay26.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+red8
+  rotate: false
+  xy: 2, 2
+  size: 411, 585
+  orig: 411, 585
+  offset: 0, 0
+  index: -1
+red9
+  rotate: false
+  xy: 415, 2
+  size: 411, 585
+  orig: 411, 585
+  offset: 0, 0
+  index: -1
+
+gameplay27.png
+size: 512, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+backside
+  rotate: false
+  xy: 2, 2
+  size: 410, 585
+  orig: 410, 585
+  offset: 0, 0
+  index: -1
