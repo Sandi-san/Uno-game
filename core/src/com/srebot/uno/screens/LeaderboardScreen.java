@@ -3,7 +3,9 @@ package com.srebot.uno.screens;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.graphics.g2d.NinePatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -19,6 +21,8 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
@@ -122,8 +126,8 @@ public class LeaderboardScreen extends ScreenAdapter {
         titleTable.center();
 
         //BACKGROUND
-        //TextureRegion backgroundRegion = gameplayAtlas.findRegion(RegionNames.BACKGROUND);
-        //table.setBackground(new TextureRegionDrawable(backgroundRegion));
+        TextureRegion backgroundRegion = gameplayAtlas.findRegion(RegionNames.background2);
+        table.setBackground(new TextureRegionDrawable(backgroundRegion));
 
         /*
         introButton.addListener(new ClickListener() {
@@ -160,6 +164,14 @@ public class LeaderboardScreen extends ScreenAdapter {
 
         final ScrollPane scrollPane = new ScrollPane(listTable,skin);
         scrollPane.setFadeScrollBars(false);
+
+        /*
+        TextureRegion paneBackground = gameplayAtlas.findRegion(RegionNames.background1);
+        scrollTable.setBackground(new TextureRegionDrawable(paneBackground));
+        */
+        NinePatch patch = new NinePatch(gameplayAtlas.findRegion(RegionNames.backgroundPane1));
+        NinePatchDrawable paneBackground = new NinePatchDrawable(patch);
+        scrollTable.setBackground(paneBackground);
 
         Container container = new Container(scrollPane);
         container.fillX();

@@ -19,7 +19,7 @@ import com.srebot.uno.config.GameConfig;
 public class IntroScreen extends ScreenAdapter {
 
     //DOLZINA INTRO V SEKUNDIH
-    public static final float INTRO_DURATION = 0f; //4f
+    public static final float INTRO_DURATION = 4f; //4f
 
     public static final float CARD_SIZE = 200f;
 

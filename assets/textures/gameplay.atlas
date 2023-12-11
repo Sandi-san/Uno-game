@@ -4,25 +4,11 @@ size: 1024, 1024
 format: RGBA8888
 filter: Nearest, Nearest
 repeat: none
-blue1
+background1
   rotate: false
   xy: 2, 233
-  size: 411, 586
-  orig: 411, 586
-  offset: 0, 0
-  index: -1
-blue2
-  rotate: false
-  xy: 415, 233
-  size: 411, 586
-  orig: 411, 586
-  offset: 0, 0
-  index: -1
-textLeaderboard
-  rotate: false
-  xy: 2, 821
-  size: 985, 130
-  orig: 985, 130
+  size: 1000, 667
+  orig: 1000, 667
   offset: 0, 0
   index: -1
 textTitle
@@ -34,6 +20,85 @@ textTitle
   index: -1
 
 gameplay2.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+background2
+  rotate: false
+  xy: 2, 134
+  size: 1000, 667
+  orig: 1000, 667
+  offset: 0, 0
+  index: -1
+textLeaderboard
+  rotate: false
+  xy: 2, 2
+  size: 985, 130
+  orig: 985, 130
+  offset: 0, 0
+  index: -1
+
+gameplay3.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+background3
+  rotate: false
+  xy: 2, 2
+  size: 1000, 667
+  orig: 1000, 667
+  offset: 0, 0
+  index: -1
+
+gameplay4.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+background4
+  rotate: false
+  xy: 2, 2
+  size: 1000, 667
+  orig: 1000, 667
+  offset: 0, 0
+  index: -1
+
+gameplay5.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+backgroundPane1
+  rotate: false
+  xy: 2, 2
+  size: 1000, 667
+  orig: 1000, 667
+  offset: 0, 0
+  index: -1
+
+gameplay6.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+blue1
+  rotate: false
+  xy: 2, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+blue2
+  rotate: false
+  xy: 415, 2
+  size: 411, 586
+  orig: 411, 586
+  offset: 0, 0
+  index: -1
+
+gameplay7.png
 size: 1024, 1024
 format: RGBA8888
 filter: Nearest, Nearest
@@ -53,7 +118,7 @@ blue4
   offset: 0, 0
   index: -1
 
-gameplay3.png
+gameplay8.png
 size: 1024, 1024
 format: RGBA8888
 filter: Nearest, Nearest
@@ -73,7 +138,7 @@ blue6
   offset: 0, 0
   index: -1
 
-gameplay4.png
+gameplay9.png
 size: 1024, 1024
 format: RGBA8888
 filter: Nearest, Nearest
@@ -93,7 +158,7 @@ blue8
   offset: 0, 0
   index: -1
 
-gameplay5.png
+gameplay10.png
 size: 1024, 1024
 format: RGBA8888
 filter: Nearest, Nearest
@@ -113,7 +178,7 @@ blueReverse
   offset: 0, 0
   index: -1
 
-gameplay6.png
+gameplay11.png
 size: 1024, 1024
 format: RGBA8888
 filter: Nearest, Nearest
@@ -133,7 +198,7 @@ green2
   offset: 0, 0
   index: -1
 
-gameplay7.png
+gameplay12.png
 size: 1024, 1024
 format: RGBA8888
 filter: Nearest, Nearest
@@ -153,7 +218,7 @@ green4
   offset: 0, 0
   index: -1
 
-gameplay8.png
+gameplay13.png
 size: 1024, 1024
 format: RGBA8888
 filter: Nearest, Nearest
@@ -173,7 +238,7 @@ green6
   offset: 0, 0
   index: -1
 
-gameplay9.png
+gameplay14.png
 size: 1024, 1024
 format: RGBA8888
 filter: Nearest, Nearest
@@ -193,7 +258,7 @@ green8
   offset: 0, 0
   index: -1
 
-gameplay10.png
+gameplay15.png
 size: 1024, 1024
 format: RGBA8888
 filter: Nearest, Nearest
@@ -213,7 +278,7 @@ greenReverse
   offset: 0, 0
   index: -1
 
-gameplay11.png
+gameplay16.png
 size: 1024, 1024
 format: RGBA8888
 filter: Nearest, Nearest
@@ -233,7 +298,7 @@ plus4
   offset: 0, 0
   index: -1
 
-gameplay12.png
+gameplay17.png
 size: 1024, 1024
 format: RGBA8888
 filter: Nearest, Nearest
@@ -253,7 +318,7 @@ plus2green
   offset: 0, 0
   index: -1
 
-gameplay13.png
+gameplay18.png
 size: 1024, 1024
 format: RGBA8888
 filter: Nearest, Nearest
@@ -273,7 +338,7 @@ plus2red
   offset: 0, 0
   index: -1
 
-gameplay14.png
+gameplay19.png
 size: 1024, 1024
 format: RGBA8888
 filter: Nearest, Nearest
@@ -293,7 +358,7 @@ redReverse
   offset: 0, 0
   index: -1
 
-gameplay15.png
+gameplay20.png
 size: 1024, 1024
 format: RGBA8888
 filter: Nearest, Nearest
@@ -313,7 +378,7 @@ stopGreen
   offset: 0, 0
   index: -1
 
-gameplay16.png
+gameplay21.png
 size: 1024, 1024
 format: RGBA8888
 filter: Nearest, Nearest
@@ -333,7 +398,7 @@ stopYellow
   offset: 0, 0
   index: -1
 
-gameplay17.png
+gameplay22.png
 size: 1024, 1024
 format: RGBA8888
 filter: Nearest, Nearest
@@ -353,7 +418,7 @@ yellow2
   offset: 0, 0
   index: -1
 
-gameplay18.png
+gameplay23.png
 size: 1024, 1024
 format: RGBA8888
 filter: Nearest, Nearest
@@ -373,7 +438,7 @@ yellow4
   offset: 0, 0
   index: -1
 
-gameplay19.png
+gameplay24.png
 size: 1024, 1024
 format: RGBA8888
 filter: Nearest, Nearest
@@ -393,7 +458,7 @@ yellow6
   offset: 0, 0
   index: -1
 
-gameplay20.png
+gameplay25.png
 size: 1024, 1024
 format: RGBA8888
 filter: Nearest, Nearest
@@ -413,7 +478,7 @@ yellow8
   offset: 0, 0
   index: -1
 
-gameplay21.png
+gameplay26.png
 size: 1024, 1024
 format: RGBA8888
 filter: Nearest, Nearest
@@ -433,7 +498,7 @@ yellowReverse
   offset: 0, 0
   index: -1
 
-gameplay22.png
+gameplay27.png
 size: 1024, 1024
 format: RGBA8888
 filter: Nearest, Nearest
@@ -453,7 +518,7 @@ red1
   offset: 0, 0
   index: -1
 
-gameplay23.png
+gameplay28.png
 size: 1024, 1024
 format: RGBA8888
 filter: Nearest, Nearest
@@ -473,7 +538,7 @@ red3
   offset: 0, 0
   index: -1
 
-gameplay24.png
+gameplay29.png
 size: 1024, 1024
 format: RGBA8888
 filter: Nearest, Nearest
@@ -493,7 +558,7 @@ red5
   offset: 0, 0
   index: -1
 
-gameplay25.png
+gameplay30.png
 size: 1024, 1024
 format: RGBA8888
 filter: Nearest, Nearest
@@ -513,7 +578,7 @@ red7
   offset: 0, 0
   index: -1
 
-gameplay26.png
+gameplay31.png
 size: 1024, 1024
 format: RGBA8888
 filter: Nearest, Nearest
@@ -533,7 +598,7 @@ red9
   offset: 0, 0
   index: -1
 
-gameplay27.png
+gameplay32.png
 size: 512, 1024
 format: RGBA8888
 filter: Nearest, Nearest

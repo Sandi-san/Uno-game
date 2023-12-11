@@ -69,6 +69,15 @@ public class RegionNames {
     public static final String textTitle = "textTitle";
     public static final String textLeaderboard = "textLeaderboard";
 
+    //BACKGROUNDS
+    public static final String background1 = "background1";
+    public static final String background2 = "background2";
+    public static final String background3 = "background3";
+    public static final String background4 = "background4";
+
+    public static final String backgroundPane1 = "backgroundPane1";
+
+
     /*
     //sounds
     public static final String PLAYERSHOOT = "playerShoot.wav";

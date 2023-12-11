@@ -106,8 +106,8 @@ public class MenuScreen extends ScreenAdapter {
         //titleText.setFontScale(4f);
 
         //BACKGROUND
-        //TextureRegion backgroundRegion = gameplayAtlas.findRegion(RegionNames.BACKGROUND);
-        //table.setBackground(new TextureRegionDrawable(backgroundRegion));
+        TextureRegion backgroundRegion = gameplayAtlas.findRegion(RegionNames.background3);
+        table.setBackground(new TextureRegionDrawable(backgroundRegion));
 
         /*
         TextButton introButton = new TextButton("Intro screen", skin);
@@ -155,9 +155,6 @@ public class MenuScreen extends ScreenAdapter {
 
         Table buttonTable = new Table();
         buttonTable.defaults();
-
-        //TextureRegion menuBackgroundRegion = gameplayAtlas.findRegion(RegionNames.MENU_BACKGROUND);
-        //buttonTable.setBackground(new TextureRegionDrawable(menuBackgroundRegion));
 
         //buttonTable.add(titleText).padBottom(15).row();
         //buttonTable.add(introButton).padBottom(15).expandX().fillX().row();
