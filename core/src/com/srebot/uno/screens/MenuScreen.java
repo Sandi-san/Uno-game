@@ -63,7 +63,7 @@ public class MenuScreen extends ScreenAdapter {
     public void render(float delta){
         //doloci barve ozadja
         float r=255/255f; //=1
-        float g=150/255f;
+        float g=190/255f;
         float b=0/255f;
         float a=0.5f; //prosojnost
         ScreenUtils.clear(r,g,b,a);
