@@ -11,11 +11,13 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.Container;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
@@ -87,10 +89,21 @@ public class MenuScreen extends ScreenAdapter {
         table.defaults().pad(20);
 
         //TITLE
-        //Image titleText = new Image(gameplayAtlas.findRegion(RegionNames.YOUR_IMAGE_REGION));
-        //table.add(titleText).padBottom(15).colspan(3).expandX().fill().row();
-        Label titleText = new Label("UNO",skin);
-        titleText.setFontScale(4f);
+        //kot slika
+        Image titleText = new Image(gameplayAtlas.findRegion(RegionNames.textTitle));
+        Container titleContainer = new Container(titleText);
+        //doloci velikost
+        float sizeX = GameConfig.TEXT_WIDTH;
+        float sizeY = GameConfig.TEXT_HEIGHT;
+        titleContainer.setSize(sizeX,sizeY);
+        titleText.setScaling(Scaling.fill);
+        titleText.setSize(sizeX,sizeY);
+        table.add(titleContainer).width(sizeX).height(sizeY)
+                .center().row();
+
+        //kot tekst (slabo skaliranje)
+        //Label titleText = new Label("UNO",skin);
+        //titleText.setFontScale(4f);
 
         //BACKGROUND
         //TextureRegion backgroundRegion = gameplayAtlas.findRegion(RegionNames.BACKGROUND);
@@ -146,7 +159,7 @@ public class MenuScreen extends ScreenAdapter {
         //TextureRegion menuBackgroundRegion = gameplayAtlas.findRegion(RegionNames.MENU_BACKGROUND);
         //buttonTable.setBackground(new TextureRegionDrawable(menuBackgroundRegion));
 
-        buttonTable.add(titleText).padBottom(15).row();
+        //buttonTable.add(titleText).padBottom(15).row();
         //buttonTable.add(introButton).padBottom(15).expandX().fillX().row();
         buttonTable.add(playButton).padBottom(15).expandX().fill().row();
         buttonTable.add(leaderboardButton).padBottom(15).fillX().row();

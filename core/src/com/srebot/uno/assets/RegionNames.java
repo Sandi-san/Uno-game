@@ -65,6 +65,10 @@ public class RegionNames {
     public static final String rainbow = "rainbow";
     public static final String back = "backside";
 
+    //TEKST
+    public static final String textTitle = "textTitle";
+    public static final String textLeaderboard = "textLeaderboard";
+
     /*
     //sounds
     public static final String PLAYERSHOOT = "playerShoot.wav";

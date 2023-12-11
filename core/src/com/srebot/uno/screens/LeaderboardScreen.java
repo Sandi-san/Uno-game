@@ -9,6 +9,7 @@ import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Container;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.List;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
@@ -18,11 +19,13 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.srebot.uno.Uno;
 import com.srebot.uno.assets.AssetDescriptors;
+import com.srebot.uno.assets.RegionNames;
 import com.srebot.uno.config.GameConfig;
 
 import java.util.ArrayList;
@@ -97,10 +100,26 @@ public class LeaderboardScreen extends ScreenAdapter {
         buttonTable.defaults();
 
         //TITLE
-        //Image titleText = new Image(gameplayAtlas.findRegion(RegionNames.YOUR_IMAGE_REGION));
-        //table.add(titleText).padBottom(15).colspan(3).expandX().fill().row();
+        //kot slika
+
+        Image titleText = new Image(gameplayAtlas.findRegion(RegionNames.textLeaderboard));
+        Container titleContainer = new Container(titleText);
+        //doloci velikost
+        float sizeX = GameConfig.TEXT_WIDTH*0.5f;
+        float sizeY = GameConfig.TEXT_HEIGHT*0.5f;
+        titleContainer.setSize(sizeX,sizeY);
+        titleText.setScaling(Scaling.fill);
+        titleText.setSize(sizeX,sizeY);
+        titleTable.add(titleContainer).width(sizeX).height(sizeY)
+                .center().padBottom(15).row();
+
+        //kot tekst (slabo skaliranje)
+        /*
         Label titleText = new Label("LEADERBOARD",skin);
         titleText.setFontScale(4f);
+        titleTable.add(titleText).padBottom(15).row();
+        */
+        titleTable.center();
 
         //BACKGROUND
         //TextureRegion backgroundRegion = gameplayAtlas.findRegion(RegionNames.BACKGROUND);
@@ -146,9 +165,6 @@ public class LeaderboardScreen extends ScreenAdapter {
         container.fillX();
 
 
-        titleTable.add(titleText).padBottom(15).row();
-        titleTable.center();
-
         scrollTable.add(container).expandX().fillX().row();
         scrollTable.center();
 
@@ -161,7 +177,7 @@ public class LeaderboardScreen extends ScreenAdapter {
         //buttonTable.add(leaderboardButton).padBottom(15).fillX().row();
 
         table.add(titleTable).row();
-        table.add(scrollTable).fill().row();
+        table.add(scrollTable).expand().fill().row();
         table.add(buttonTable);
 
         /*

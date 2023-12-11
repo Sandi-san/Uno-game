@@ -14,4 +14,8 @@ public class GameConfig {
     //CARD RATIO
     public static final float CARD_WIDTH = 0.7f;
     public static final float CARD_HEIGHT = 1f;
+
+    //TEXT SIZE RATIO
+    public static final float TEXT_WIDTH = WIDTH*0.25f;
+    public static final float TEXT_HEIGHT = HEIGHT*0.25f;
 }

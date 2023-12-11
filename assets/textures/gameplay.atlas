@@ -6,16 +6,30 @@ filter: Nearest, Nearest
 repeat: none
 blue1
   rotate: false
-  xy: 2, 2
+  xy: 2, 233
   size: 411, 586
   orig: 411, 586
   offset: 0, 0
   index: -1
 blue2
   rotate: false
-  xy: 415, 2
+  xy: 415, 233
   size: 411, 586
   orig: 411, 586
+  offset: 0, 0
+  index: -1
+textLeaderboard
+  rotate: false
+  xy: 2, 821
+  size: 985, 130
+  orig: 985, 130
+  offset: 0, 0
+  index: -1
+textTitle
+  rotate: false
+  xy: 2, 2
+  size: 589, 229
+  orig: 589, 229
   offset: 0, 0
   index: -1
 
