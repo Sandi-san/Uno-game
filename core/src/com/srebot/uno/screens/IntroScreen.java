@@ -2,6 +2,7 @@ package com.srebot.uno.screens;
 
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -26,6 +27,7 @@ public class IntroScreen extends ScreenAdapter {
 
     private final Uno game;
     private final AssetManager assetManager;
+    private final Music music;
 
     private Viewport viewport;
     private TextureAtlas gameplayAtlas;
@@ -38,6 +40,7 @@ public class IntroScreen extends ScreenAdapter {
     public IntroScreen(Uno game) {
         this.game = game;
         assetManager = game.getAssetManager();
+        music = game.getMusic();
     }
 
     @Override
@@ -49,7 +52,14 @@ public class IntroScreen extends ScreenAdapter {
         assetManager.load(AssetDescriptors.UI_FONT);
         assetManager.load(AssetDescriptors.UI_SKIN);
         assetManager.load(AssetDescriptors.GAMEPLAY);
+        //assetManager.load(AssetDescriptors.SET_SOUND);
+        //assetManager.load(AssetDescriptors.PICK_SOUND);
+        assetManager.load(AssetDescriptors.MAIN_MUSIC);
+        assetManager.load(AssetDescriptors.GAME_MUSIC_1);
+        assetManager.load(AssetDescriptors.GAME_MUSIC_2);
         assetManager.finishLoading();
+
+        game.setMusic(assetManager.get(AssetDescriptors.MAIN_MUSIC));
 
         gameplayAtlas = assetManager.get(AssetDescriptors.GAMEPLAY);
         TextureRegion backgroundText = gameplayAtlas.findRegion(RegionNames.background1);

@@ -3,6 +3,7 @@ package com.srebot.uno.screens;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.g2d.NinePatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -13,7 +14,6 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Container;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.List;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Slider;
@@ -30,14 +30,19 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 import com.srebot.uno.Uno;
 import com.srebot.uno.assets.AssetDescriptors;
 import com.srebot.uno.assets.RegionNames;
+import com.srebot.uno.classes.PlayerData;
 import com.srebot.uno.config.GameConfig;
+import com.srebot.uno.config.GameManager;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class LeaderboardScreen extends ScreenAdapter {
 
     private final Uno game;
     private final AssetManager assetManager;
+    private GameManager manager;
 
     private Viewport viewport;
     private Stage stage;
@@ -45,9 +50,15 @@ public class LeaderboardScreen extends ScreenAdapter {
     private Skin skin;
     private TextureAtlas gameplayAtlas;
 
+    private Music music;
+
     public LeaderboardScreen(Uno game) {
         this.game = game;
         assetManager = game.getAssetManager();
+        manager = game.getManager();
+        if(manager.getMusicPref()) {
+            game.playMusic();
+        }
     }
 
     @Override
@@ -151,18 +162,26 @@ public class LeaderboardScreen extends ScreenAdapter {
         Table listTable = new Table(skin);
 
         //SEZNAM PODATKOV
-        int n=15;
+        List<PlayerData> listData = manager.loadFromJson();
+
+        // Sort the list by score in descending order
+        Collections.sort(listData, (player1, player2) -> Integer.compare(player2.getScore(), player1.getScore()));
+
         listTable.add(new Label("Player",skin)).pad(5);
         listTable.add(new Label("Score",skin)).pad(5);
         listTable.row();
-        for(int i=1;i<=n;i++){
-            listTable.add(new Label("Player "+i,skin)).pad(5);
-            listTable.add(new Label(String.valueOf(n*100-100*i),skin)).pad(5);
+        if(listData.size()==0){
+            listTable.add(new Label("No data available", skin)).pad(5).colspan(2).center();
+            listTable.row();
+        }
+        for(PlayerData playerData : listData) {
+            listTable.add(new Label(playerData.getName(), skin)).pad(5);
+            listTable.add(new Label(String.valueOf(playerData.getScore()), skin)).pad(5);
             listTable.row();
         }
         listTable.setWidth(GameConfig.WIDTH/3f);
         listTable.setHeight(
-                Math.min(GameConfig.HEIGHT/3f,n*(10)));
+                Math.min(GameConfig.HEIGHT/3f,150));
 
         final ScrollPane scrollPane = new ScrollPane(listTable,skin);
         scrollPane.setFadeScrollBars(false);

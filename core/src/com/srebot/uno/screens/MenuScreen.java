@@ -3,6 +3,7 @@ package com.srebot.uno.screens;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -25,6 +26,7 @@ import com.srebot.uno.Uno;
 import com.srebot.uno.assets.AssetDescriptors;
 import com.srebot.uno.assets.RegionNames;
 import com.srebot.uno.config.GameConfig;
+import com.srebot.uno.config.GameManager;
 
 import java.awt.Color;
 
@@ -32,6 +34,8 @@ public class MenuScreen extends ScreenAdapter {
 
     private final Uno game;
     private final AssetManager assetManager;
+    private final GameManager manager;
+    private Music music;
 
     private Viewport viewport;
     private Stage stage;
@@ -39,9 +43,15 @@ public class MenuScreen extends ScreenAdapter {
     private Skin skin;
     private TextureAtlas gameplayAtlas;
 
+
     public MenuScreen(Uno game) {
         this.game = game;
         assetManager = game.getAssetManager();
+        manager = game.getManager();
+
+        if(manager.getMusicPref()) {
+            game.playMusic();
+        }
     }
 
     @Override

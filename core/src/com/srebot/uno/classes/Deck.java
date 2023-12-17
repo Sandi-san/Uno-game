@@ -1,14 +1,22 @@
 package com.srebot.uno.classes;
 
 import com.badlogic.gdx.utils.Array;
+import com.srebot.uno.Uno;
+import com.srebot.uno.config.GameManager;
+
+import java.util.Objects;
 
 public class Deck {
+
+    private GameManager manager;
+
     private int size;
     private Array<Card> cards;
 
-    public Deck(int size){
+    public Deck(int size, Uno game){
         this.size = size;
         this.cards = new Array<Card>(size);
+        manager = game.getManager();
     }
 
     public void generateRandom(){
@@ -80,25 +88,27 @@ public class Deck {
             cards.add(Card.generateSpecific(CardValues.Y8));
             cards.add(Card.generateSpecific(CardValues.Y9));
         }
-        for(int i=0;i<numSpecial;++i){
-            cards.add(Card.generateSpecific(CardValues.BS));
-            cards.add(Card.generateSpecific(CardValues.GS));
-            cards.add(Card.generateSpecific(CardValues.RS));
-            cards.add(Card.generateSpecific(CardValues.YS));
-            cards.add(Card.generateSpecific(CardValues.BR));
-            cards.add(Card.generateSpecific(CardValues.GR));
-            cards.add(Card.generateSpecific(CardValues.RR));
-            cards.add(Card.generateSpecific(CardValues.YR));
-        }
-        for(int i=0;i<numWild;++i){
-            cards.add(Card.generateSpecific(CardValues.WC));
-            cards.add(Card.generateSpecific(CardValues.P4));
-            cards.add(Card.generateSpecific(CardValues.P2B));
-            cards.add(Card.generateSpecific(CardValues.P2R));
-            cards.add(Card.generateSpecific(CardValues.P2G));
-            cards.add(Card.generateSpecific(CardValues.P2Y));
-            cards.add(Card.generateSpecific(CardValues.P2GY));
-            cards.add(Card.generateSpecific(CardValues.P2BR));
+        if(Objects.equals(manager.getPresetPref(), "All")) {
+            for (int i = 0; i < numSpecial; ++i) {
+                cards.add(Card.generateSpecific(CardValues.BS));
+                cards.add(Card.generateSpecific(CardValues.GS));
+                cards.add(Card.generateSpecific(CardValues.RS));
+                cards.add(Card.generateSpecific(CardValues.YS));
+                cards.add(Card.generateSpecific(CardValues.BR));
+                cards.add(Card.generateSpecific(CardValues.GR));
+                cards.add(Card.generateSpecific(CardValues.RR));
+                cards.add(Card.generateSpecific(CardValues.YR));
+            }
+            for (int i = 0; i < numWild; ++i) {
+                cards.add(Card.generateSpecific(CardValues.WC));
+                cards.add(Card.generateSpecific(CardValues.P4));
+                cards.add(Card.generateSpecific(CardValues.P2B));
+                cards.add(Card.generateSpecific(CardValues.P2R));
+                cards.add(Card.generateSpecific(CardValues.P2G));
+                cards.add(Card.generateSpecific(CardValues.P2Y));
+                cards.add(Card.generateSpecific(CardValues.P2GY));
+                cards.add(Card.generateSpecific(CardValues.P2BR));
+            }
         }
     }
 }

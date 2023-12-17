@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.g2d.NinePatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -36,15 +37,14 @@ import com.srebot.uno.Uno;
 import com.srebot.uno.assets.AssetDescriptors;
 import com.srebot.uno.assets.RegionNames;
 import com.srebot.uno.config.GameConfig;
+import com.srebot.uno.config.GameManager;
 
 import java.util.ArrayList;
 
 public class SettingsScreen extends ScreenAdapter {
-
-    Preferences prefs = Gdx.app.getPreferences("GameSettings");
-
     private final Uno game;
     private final AssetManager assetManager;
+    private final GameManager manager;
 
     private Viewport viewport;
     private Stage stage;
@@ -52,9 +52,15 @@ public class SettingsScreen extends ScreenAdapter {
     private Skin skin;
     private TextureAtlas gameplayAtlas;
 
+    private Music music;
+
     public SettingsScreen(Uno game) {
         this.game = game;
         assetManager = game.getAssetManager();
+        manager = game.getManager();
+        if(manager.getMusicPref()) {
+            game.playMusic();
+        }
     }
 
     @Override
@@ -148,12 +154,12 @@ public class SettingsScreen extends ScreenAdapter {
         //buttonTable.setBackground(new TextureRegionDrawable(menuBackgroundRegion));
 
         //DOBI VREDNOSTI IZ NASTAVITEV
-        String namePref = prefs.getString("currentPlayer","Player 1");
-        String presetPref = prefs.getString("cardPreset","All");
-        String starterPref = prefs.getString("starterPlayer","Player");
-        String orderPref = prefs.getString("cardOrder","Clockwise");
-        boolean soundPref = prefs.getBoolean("soundEnabled", true);
-        boolean musicPref = prefs.getBoolean("musicEnabled", true);
+        String namePref = manager.getNamePref();
+        String presetPref = manager.getPresetPref();
+        String starterPref = manager.getStarterPref();
+        String orderPref = manager.getOrderPref();
+        boolean soundPref = manager.getSoundPref();
+        boolean musicPref = manager.getMusicPref();
 
         //PRIPRAVI SEZNAME ZA BOX
         String[] presetValues = new String[]{"All", "Numbers only"};
@@ -195,17 +201,17 @@ public class SettingsScreen extends ScreenAdapter {
         settingsTable.add(soundCheckBox).pad(10);
         settingsTable.add(musicCheckBox).pad(10).row();
 
-        TextButton menuButton = new TextButton("Save and return", skin);
+        final TextButton menuButton = new TextButton("Save and return", skin);
         menuButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                prefs.putString("currentPlayer", nameField.getText());
-                prefs.putString("cardPreset", presetBox.getSelected());
-                prefs.putString("starterPlayer", starterBox.getSelected());
-                prefs.putString("cardOrder", orderBox.getSelected());
-                prefs.putBoolean("soundEnabled", soundCheckBox.isChecked());
-                prefs.putBoolean("musicEnabled", musicCheckBox.isChecked());
-                prefs.flush();
+                manager.setNamePref(nameField.getText());
+                manager.setPresetPref(presetBox.getSelected());
+                manager.setStarterPref(starterBox.getSelected());
+                manager.setOrderPref(orderBox.getSelected());
+                manager.setSoundPref(soundCheckBox.isChecked());
+                manager.setMusicPref(musicCheckBox.isChecked());
+                manager.savePrefs();
                 game.setScreen(new MenuScreen(game));
             }
         });

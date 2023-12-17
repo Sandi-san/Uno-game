@@ -3,6 +3,7 @@ package com.srebot.uno.screens;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -17,11 +18,13 @@ import com.srebot.uno.assets.RegionNames;
 import com.srebot.uno.classes.Card;
 import com.srebot.uno.classes.Deck;
 import com.srebot.uno.config.GameConfig;
+import com.srebot.uno.config.GameManager;
 
 public class GameScreen extends ScreenAdapter {
 
     private final Uno game;
     private final AssetManager assetManager;
+    private final GameManager manager;
 
     private Viewport viewport;
     private Stage stage;
@@ -29,6 +32,8 @@ public class GameScreen extends ScreenAdapter {
 
     private Skin skin;
     private TextureAtlas gameplayAtlas;
+
+    private Music music;
 
     //globale za igro
     //deki za vlecenje in za opuscanje
@@ -43,7 +48,13 @@ public class GameScreen extends ScreenAdapter {
     public GameScreen(Uno game) {
         this.game = game;
         assetManager = game.getAssetManager();
+        manager = game.getManager();
 
+        if(manager.getMusicPref()) {
+            game.stopMusic();
+            game.setMusic(assetManager.get(AssetDescriptors.GAME_MUSIC_1));
+            game.playMusic();
+        }
         batch = new SpriteBatch();
         initGame();
     }
@@ -105,14 +116,14 @@ public class GameScreen extends ScreenAdapter {
 
     public void initGame(){
         //ustvari main deck
-        deckDraw = new Deck(deckSize);
+        deckDraw = new Deck(deckSize,game);
         //deckDraw.generateRandom();
         deckDraw.generateByRules(2,2,2);
         deckDraw.shuffleDeck();
         //vzemi eno karto iz deka
         topCard = deckDraw.pickCard();
         //ustvari discard dek in polozi to karto nanj
-        deckDiscard = new Deck(deckSize);
+        deckDiscard = new Deck(deckSize,game);
         deckDiscard.setCard(topCard);
     }
 }
