@@ -20,7 +20,6 @@ public class Uno extends Game {
 		batch = new SpriteBatch();
 		assetManager = new AssetManager();
 
-		//setScreen(new MenuScreen(this));
 		setScreen(new IntroScreen(this));
 	}
 	

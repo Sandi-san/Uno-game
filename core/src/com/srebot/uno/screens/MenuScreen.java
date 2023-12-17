@@ -135,7 +135,7 @@ public class MenuScreen extends ScreenAdapter {
             }
         });
 
-        /*
+
         TextButton settingsButton = new TextButton("Settings", skin);
         settingsButton.addListener(new ClickListener() {
             @Override
@@ -143,7 +143,6 @@ public class MenuScreen extends ScreenAdapter {
                 game.setScreen(new SettingsScreen(game));
             }
         });
-         */
 
         TextButton quitButton = new TextButton("Quit", skin);
         quitButton.addListener(new ClickListener() {
@@ -160,7 +159,7 @@ public class MenuScreen extends ScreenAdapter {
         //buttonTable.add(introButton).padBottom(15).expandX().fillX().row();
         buttonTable.add(playButton).padBottom(15).expandX().fill().row();
         buttonTable.add(leaderboardButton).padBottom(15).fillX().row();
-        //buttonTable.add(settingsButton).padBottom(15).fillX().row();
+        buttonTable.add(settingsButton).padBottom(15).fillX().row();
         buttonTable.add(quitButton).fillX();
         buttonTable.center();
 

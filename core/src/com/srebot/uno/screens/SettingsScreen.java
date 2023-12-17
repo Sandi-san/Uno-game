@@ -1,6 +1,7 @@
 package com.srebot.uno.screens;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.g2d.NinePatch;
@@ -10,19 +11,23 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.CheckBox;
 import com.badlogic.gdx.scenes.scene2d.ui.Container;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.List;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
+import com.badlogic.gdx.scenes.scene2d.ui.SelectBox;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Slider;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
@@ -34,7 +39,9 @@ import com.srebot.uno.config.GameConfig;
 
 import java.util.ArrayList;
 
-public class LeaderboardScreen extends ScreenAdapter {
+public class SettingsScreen extends ScreenAdapter {
+
+    Preferences prefs = Gdx.app.getPreferences("GameSettings");
 
     private final Uno game;
     private final AssetManager assetManager;
@@ -45,7 +52,7 @@ public class LeaderboardScreen extends ScreenAdapter {
     private Skin skin;
     private TextureAtlas gameplayAtlas;
 
-    public LeaderboardScreen(Uno game) {
+    public SettingsScreen(Uno game) {
         this.game = game;
         assetManager = game.getAssetManager();
     }
@@ -97,8 +104,8 @@ public class LeaderboardScreen extends ScreenAdapter {
         final Table titleTable = new Table();
         titleTable.defaults();
 
-        final Table scrollTable = new Table();
-        scrollTable.defaults();
+        final Table settingsTable = new Table();
+        settingsTable.defaults();
 
         final Table buttonTable = new Table();
         buttonTable.defaults();
@@ -125,7 +132,7 @@ public class LeaderboardScreen extends ScreenAdapter {
         titleTable.center();
 
         //BACKGROUND
-        TextureRegion backgroundRegion = gameplayAtlas.findRegion(RegionNames.background2);
+        TextureRegion backgroundRegion = gameplayAtlas.findRegion(RegionNames.background4);
         table.setBackground(new TextureRegionDrawable(backgroundRegion));
 
         /*
@@ -137,55 +144,75 @@ public class LeaderboardScreen extends ScreenAdapter {
         });
         */
 
-        TextButton menuButton = new TextButton("Back", skin);
-        menuButton.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                game.setScreen(new MenuScreen(game));
-            }
-        });
-
         //TextureRegion menuBackgroundRegion = gameplayAtlas.findRegion(RegionNames.MENU_BACKGROUND);
         //buttonTable.setBackground(new TextureRegionDrawable(menuBackgroundRegion));
 
-        Table listTable = new Table(skin);
+        //DOBI VREDNOSTI IZ NASTAVITEV
+        String namePref = prefs.getString("currentPlayer","Player 1");
+        String presetPref = prefs.getString("cardPreset","All");
+        String starterPref = prefs.getString("starterPlayer","Player");
+        String orderPref = prefs.getString("cardOrder","Clockwise");
+        boolean soundPref = prefs.getBoolean("soundEnabled", true);
+        boolean musicPref = prefs.getBoolean("musicEnabled", true);
 
-        //SEZNAM PODATKOV
-        int n=15;
-        listTable.add(new Label("Player",skin)).pad(5);
-        listTable.add(new Label("Score",skin)).pad(5);
-        listTable.row();
-        for(int i=1;i<=n;i++){
-            listTable.add(new Label("Player "+i,skin)).pad(5);
-            listTable.add(new Label(String.valueOf(n*100-100*i),skin)).pad(5);
-            listTable.row();
-        }
-        listTable.setWidth(GameConfig.WIDTH/3f);
-        listTable.setHeight(
-                Math.min(GameConfig.HEIGHT/3f,n*(10)));
+        //PRIPRAVI SEZNAME ZA BOX
+        String[] presetValues = new String[]{"All", "Numbers only"};
+        String[] starterValues = new String[]{"Player", "Computer"};
+        String[] orderValues = new String[]{"Clockwise", "Counter Clockwise"};
 
-        final ScrollPane scrollPane = new ScrollPane(listTable,skin);
-        scrollPane.setFadeScrollBars(false);
+        //USTVARI WIDGETE
+        final TextField nameField = new TextField("",skin);
+        nameField.setText(namePref);
+        final SelectBox<String> presetBox = new SelectBox<String>(skin);
+        //NAPOLNI SEZNAM IN NASTAVI PRIKAZAN ELEMENT
+        presetBox.setItems(presetValues);
+        presetBox.setSelected(presetPref);
+        final SelectBox<String> starterBox = new SelectBox<String>(skin);
+        starterBox.setItems(starterValues);
+        starterBox.setSelected(starterPref);
+        final SelectBox<String> orderBox = new SelectBox<String>(skin);
+        orderBox.setItems(orderValues);
+        orderBox.setSelected(orderPref);
 
-        /*
-        TextureRegion paneBackground = gameplayAtlas.findRegion(RegionNames.background1);
-        scrollTable.setBackground(new TextureRegionDrawable(paneBackground));
-        */
-        NinePatch patch = new NinePatch(gameplayAtlas.findRegion(RegionNames.backgroundPane1));
-        NinePatchDrawable paneBackground = new NinePatchDrawable(patch);
-        scrollTable.setBackground(paneBackground);
+        final CheckBox soundCheckBox = new CheckBox("Enable Sound", skin);
+        soundCheckBox.setChecked(soundPref);
+        final CheckBox musicCheckBox = new CheckBox("Enable Music", skin);
+        musicCheckBox.setChecked(musicPref);
 
-        Container container = new Container(scrollPane);
-        container.fillX();
+        Label nameLabel = new Label("Player name: ",skin);
+        Label presetLabel = new Label("Card preset: ",skin);
+        Label starterLabel = new Label("Starting player: ",skin);
+        Label orderLabel = new Label("Turn order: ",skin);
 
-        scrollTable.add(container).expandX().fillX().row();
-        scrollTable.center();
+        settingsTable.add(nameLabel).pad(10);
+        settingsTable.add(nameField).pad(10).row();
+        settingsTable.add(presetLabel).pad(10);
+        settingsTable.add(presetBox).pad(10).width(nameField.getWidth()).row();
+        settingsTable.add(starterLabel).pad(10);
+        settingsTable.add(starterBox).pad(10).width(nameField.getWidth()).row();
+        settingsTable.add(orderLabel).pad(10);
+        settingsTable.add(orderBox).pad(10).width(nameField.getWidth()).row();
+        settingsTable.add(soundCheckBox).pad(10);
+        settingsTable.add(musicCheckBox).pad(10).row();
 
+        TextButton menuButton = new TextButton("Save and return", skin);
+        menuButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                prefs.putString("currentPlayer", nameField.getText());
+                prefs.putString("cardPreset", presetBox.getSelected());
+                prefs.putString("starterPlayer", starterBox.getSelected());
+                prefs.putString("cardOrder", orderBox.getSelected());
+                prefs.putBoolean("soundEnabled", soundCheckBox.isChecked());
+                prefs.putBoolean("musicEnabled", musicCheckBox.isChecked());
+                prefs.flush();
+                game.setScreen(new MenuScreen(game));
+            }
+        });
         buttonTable.add(menuButton).row();
-        buttonTable.center();
 
         table.add(titleTable).row();
-        table.add(scrollTable).row();
+        table.add(settingsTable).row();
         table.add(buttonTable);
 
         table.center();

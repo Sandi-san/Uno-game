@@ -3,6 +3,7 @@ package com.srebot.uno.screens;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
@@ -19,7 +20,7 @@ import com.srebot.uno.config.GameConfig;
 public class IntroScreen extends ScreenAdapter {
 
     //DOLZINA INTRO V SEKUNDIH
-    public static final float INTRO_DURATION = 4f; //4f
+    public static final float INTRO_DURATION = 0f; //4f
 
     public static final float CARD_SIZE = 200f;
 
@@ -31,6 +32,8 @@ public class IntroScreen extends ScreenAdapter {
 
     private float duration=0f;
     private Stage stage;
+
+    private Image backgroundImage;
 
     public IntroScreen(Uno game) {
         this.game = game;
@@ -49,6 +52,11 @@ public class IntroScreen extends ScreenAdapter {
         assetManager.finishLoading();
 
         gameplayAtlas = assetManager.get(AssetDescriptors.GAMEPLAY);
+        TextureRegion backgroundText = gameplayAtlas.findRegion(RegionNames.background1);
+        backgroundImage = new Image(backgroundText);
+
+        backgroundImage.setSize(stage.getWidth(),stage.getHeight());
+        stage.addActor(backgroundImage);
 
         stage.addActor(createAnimation1());
         stage.addActor(createAnimation2());
@@ -61,6 +69,7 @@ public class IntroScreen extends ScreenAdapter {
     @Override
     public void resize(int width, int height){
         viewport.update(width,height,true);
+        backgroundImage.setSize(width,height);
     }
 
     @Override
@@ -79,7 +88,12 @@ public class IntroScreen extends ScreenAdapter {
             game.setScreen(new MenuScreen(game));
         }
 
+        //TextureRegion background = gameplayAtlas.findRegion(RegionNames.background1);
+
         stage.act(delta);
+        //stage.getBatch().begin();
+        //stage.getBatch().draw(background,0,0,GameConfig.WIDTH,GameConfig.HEIGHT);
+        //stage.getBatch().end();
         stage.draw();
     }
 
