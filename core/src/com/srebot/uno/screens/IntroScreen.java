@@ -52,8 +52,8 @@ public class IntroScreen extends ScreenAdapter {
         assetManager.load(AssetDescriptors.UI_FONT);
         assetManager.load(AssetDescriptors.UI_SKIN);
         assetManager.load(AssetDescriptors.GAMEPLAY);
-        //assetManager.load(AssetDescriptors.SET_SOUND);
-        //assetManager.load(AssetDescriptors.PICK_SOUND);
+        assetManager.load(AssetDescriptors.SET_SOUND);
+        assetManager.load(AssetDescriptors.PICK_SOUND);
         assetManager.load(AssetDescriptors.MAIN_MUSIC);
         assetManager.load(AssetDescriptors.GAME_MUSIC_1);
         assetManager.load(AssetDescriptors.GAME_MUSIC_2);

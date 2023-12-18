@@ -99,8 +99,8 @@ public class GameScreen extends ScreenAdapter {
     public void draw(){
         String textureName = topCard.getTexture();
         TextureRegion region = gameplayAtlas.findRegion(textureName);
-        float posX = GameConfig.WIDTH;
-        float posY = GameConfig.HEIGHT;
+        float posX = GameConfig.WIDTH/10f;
+        float posY = GameConfig.HEIGHT/10f;
         batch.draw(region,posX,posY);
     }
 
