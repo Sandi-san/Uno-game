@@ -63,4 +63,7 @@ public class Uno extends Game {
 			music.dispose();
 		}
 	}
+	public void setVolume(float volume){
+		music.setVolume(volume);
+	}
 }

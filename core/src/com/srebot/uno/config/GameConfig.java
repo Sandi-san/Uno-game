@@ -11,9 +11,12 @@ public class GameConfig {
     public static final float WORLD_WIDTH = 80f;
     public static final float WORLD_HEIGHT = 60f;
 
-    //CARD RATIO
-    public static final float CARD_WIDTH = 0.7f;
-    public static final float CARD_HEIGHT = 1f;
+    //CARD RATIO (za intro)
+    public static final float CARD_WIDTH_RATIO = 0.7f;
+    public static final float CARD_HEIGHT_RATIO = 1f;
+    //CARD SIZE IN WORLD UNITS
+    public static final float CARD_WIDTH = 16f;
+    public static final float CARD_HEIGHT = 11.2f;
 
     //TEXT SIZE RATIO
     public static final float TEXT_WIDTH = WIDTH*0.25f;

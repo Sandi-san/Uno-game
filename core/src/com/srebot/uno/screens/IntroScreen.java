@@ -60,6 +60,7 @@ public class IntroScreen extends ScreenAdapter {
         assetManager.finishLoading();
 
         game.setMusic(assetManager.get(AssetDescriptors.MAIN_MUSIC));
+        game.setVolume(0.5f);
 
         gameplayAtlas = assetManager.get(AssetDescriptors.GAMEPLAY);
         TextureRegion backgroundText = gameplayAtlas.findRegion(RegionNames.background1);
@@ -119,8 +120,8 @@ public class IntroScreen extends ScreenAdapter {
     private Actor createAnimation1(){
         Image card = new Image(gameplayAtlas.findRegion(RegionNames.B1));
         //VELIKOST OBJEKTA V WU
-        card.setWidth(CARD_SIZE*GameConfig.CARD_WIDTH);
-        card.setHeight(CARD_SIZE*GameConfig.CARD_HEIGHT);
+        card.setWidth(CARD_SIZE*GameConfig.CARD_WIDTH_RATIO);
+        card.setHeight(CARD_SIZE*GameConfig.CARD_HEIGHT_RATIO);
         //POZICIONIRAJ OBJEKT
         card.setPosition(0,0);
         //ORIGIN TRANSFORMACIJE ACTORJA
@@ -155,8 +156,8 @@ public class IntroScreen extends ScreenAdapter {
     private Actor createAnimation2(){
         Image card = new Image(gameplayAtlas.findRegion(RegionNames.G2));
         //VELIKOST OBJEKTA V WU
-        card.setWidth(CARD_SIZE*GameConfig.CARD_WIDTH);
-        card.setHeight(CARD_SIZE*GameConfig.CARD_HEIGHT);
+        card.setWidth(CARD_SIZE*GameConfig.CARD_WIDTH_RATIO);
+        card.setHeight(CARD_SIZE*GameConfig.CARD_HEIGHT_RATIO);
         //POZICIONIRAJ OBJEKT
         card.setPosition(0,viewport.getWorldHeight()-card.getHeight());
         //ORIGIN TRANSFORMACIJE ACTORJA
@@ -190,8 +191,8 @@ public class IntroScreen extends ScreenAdapter {
     private Actor createAnimation3(){
         Image card = new Image(gameplayAtlas.findRegion(RegionNames.R3));
         //VELIKOST OBJEKTA V WU
-        card.setWidth(CARD_SIZE*GameConfig.CARD_WIDTH);
-        card.setHeight(CARD_SIZE*GameConfig.CARD_HEIGHT);
+        card.setWidth(CARD_SIZE*GameConfig.CARD_WIDTH_RATIO);
+        card.setHeight(CARD_SIZE*GameConfig.CARD_HEIGHT_RATIO);
         //POZICIONIRAJ OBJEKT
         card.setPosition(viewport.getWorldWidth()-card.getWidth(),0);
         //ORIGIN TRANSFORMACIJE ACTORJA
@@ -225,8 +226,8 @@ public class IntroScreen extends ScreenAdapter {
     private Actor createAnimation4(){
         Image card = new Image(gameplayAtlas.findRegion(RegionNames.Y4));
         //VELIKOST OBJEKTA V WU
-        card.setWidth(CARD_SIZE*GameConfig.CARD_WIDTH);
-        card.setHeight(CARD_SIZE*GameConfig.CARD_HEIGHT);
+        card.setWidth(CARD_SIZE*GameConfig.CARD_WIDTH_RATIO);
+        card.setHeight(CARD_SIZE*GameConfig.CARD_HEIGHT_RATIO);
         //POZICIONIRAJ OBJEKT
         card.setPosition(viewport.getWorldWidth()-card.getWidth(),
                 viewport.getWorldHeight()-card.getHeight());
@@ -278,8 +279,8 @@ public class IntroScreen extends ScreenAdapter {
         final float centerY = viewport.getWorldHeight() / 2f;
 
         //VELIKOST OBJEKTA V WU
-        card.setWidth(CARD_SIZE*GameConfig.CARD_WIDTH);
-        card.setHeight(CARD_SIZE*GameConfig.CARD_HEIGHT);
+        card.setWidth(CARD_SIZE*GameConfig.CARD_WIDTH_RATIO);
+        card.setHeight(CARD_SIZE*GameConfig.CARD_HEIGHT_RATIO);
         //card.setWidth(0f);
         //card.setHeight(0f);
 

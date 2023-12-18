@@ -145,7 +145,7 @@ public class GameManager {
         }
     }
 
-    private PlayerData getPlayerByName(List<PlayerData> playerDataList, String name) {
+    public PlayerData getPlayerByName(List<PlayerData> playerDataList, String name) {
         for (PlayerData playerData : playerDataList) {
             if (playerData.getName().equals(name)) {
                 return playerData;

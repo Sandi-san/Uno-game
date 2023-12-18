@@ -1,5 +1,7 @@
 package com.srebot.uno.classes;
 
+import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 import java.util.Random;
@@ -21,6 +23,13 @@ public class Card {
     }
     public String getTexture(){
         return texture;
+    }
+
+    public static void render(SpriteBatch batch,TextureRegion texture,
+                              float x,float y,
+                              float sizeX, float sizeY){
+        batch.draw(texture,x,y,
+                sizeX,sizeY);
     }
 
     //generiraj random karto z CardValues vrednosti
