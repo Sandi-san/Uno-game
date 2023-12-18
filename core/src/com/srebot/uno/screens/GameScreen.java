@@ -1,6 +1,7 @@
 package com.srebot.uno.screens;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.audio.Music;
@@ -8,6 +9,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -133,7 +135,8 @@ public class GameScreen extends ScreenAdapter {
         //POZICIJA
         float topX = (GameConfig.WORLD_WIDTH-sizeX)/2f;
         float topY = (GameConfig.WORLD_HEIGHT-sizeY)/2f;
-        Card.render(batch, topCardRegion,topX,topY,sizeX,sizeY);
+        topCard.setPositionAndBounds(topX,topY,sizeX,sizeY);
+        Card.render(batch, topCardRegion,topCard);
 
         //DRAW DECK
         TextureRegion drawDeckRegion = gameplayAtlas.findRegion(RegionNames.back);
@@ -171,10 +174,11 @@ public class GameScreen extends ScreenAdapter {
         }
         //narisi karte
         for(int i=0;i<size;++i){
+            Card card = cards.get(i);
             String texture;
             TextureRegion region;
             if(isPlayer) {
-                texture = cards.get(i).getTexture();
+                texture = card.getTexture();
                 region = gameplayAtlas.findRegion(texture);
             }
             else{
@@ -189,7 +193,8 @@ public class GameScreen extends ScreenAdapter {
                 posY = GameConfig.WORLD_HEIGHT - sizeY - startY;
             }
              */
-            Card.render(batch,region,posX,posY,sizeX,sizeY);
+            card.setPositionAndBounds(posX,posY,sizeX,sizeY);
+            Card.render(batch, region,card);
         }
     }
 
@@ -198,16 +203,57 @@ public class GameScreen extends ScreenAdapter {
         update(Gdx.graphics.getDeltaTime());
     }
     private void handleInput() {
-        if (Gdx.input.justTouched()) {
-            //za mouse
+        //touch == phone touchscreen?
+        //if (Gdx.input.justTouched()) {
+        //za mouse
+        if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
             float touchX = Gdx.input.getX();
             float touchY = Gdx.input.getY();
 
             //pretvori screen koordinate v world koordinate
             Vector3 worldCoords = viewport.unproject(new Vector3(touchX, touchY, 0));
 
+            for(Card card : player.getHand().getCards()){
+                if (isClickedOnCard(worldCoords.x, worldCoords.y, card)) {
+                    // Player clicked on this card
+                    playPlayerCard(card);
+                    // Perform other actions as needed
+                }
+            }
+
+            // Simulate computer's move
+            //playComputerCard(computer.getRandomCard());
         }
     }
+
+    private boolean isClickedOnCard(float mouseX, float mouseY, Card card) {
+        // Check if the mouse click is within the bounds of the card
+        // Implement the logic based on your card rendering and positioning
+        // You may need to consider the card's position, size, and orientation
+        // For simplicity, assuming the cards are arranged horizontally
+        Vector2 position = card.getPosition();
+        Rectangle bounds = card.getBounds();
+        return mouseX >= position.x && mouseX <= position.x + bounds.width
+                && mouseY >= position.y && mouseY <= position.y + bounds.height;
+    }
+
+    private void playPlayerCard(Card card) {
+        // Remove the card from the player's hand
+        player.getHand();
+        //player.getHand().removeCard(card);
+        // Place the card on top of the discard deck
+        //discardDeck.addCard(card);
+        // Perform other actions related to playing the card
+    }
+/*
+    private void playComputerCard(Card card) {
+        // Remove the card from the computer's hand
+        computer.getHand().removeCard(card);
+        // Place the card on top of the discard deck
+        discardDeck.addCard(card);
+        // Perform other actions related to the computer playing the card
+    }
+    */
     private void update(float delta){}
 
     @Override
