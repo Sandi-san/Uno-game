@@ -68,6 +68,7 @@ public class RegionNames {
     //TEKST
     public static final String textTitle = "textTitle";
     public static final String textLeaderboard = "textLeaderboard";
+    public static final String textSettings = "textSettings";
 
     //BACKGROUNDS
     public static final String background1 = "background1";

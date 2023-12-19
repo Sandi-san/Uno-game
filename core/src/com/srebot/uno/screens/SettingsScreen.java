@@ -1,34 +1,25 @@
 package com.srebot.uno.screens;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.audio.Music;
-import com.badlogic.gdx.graphics.g2d.NinePatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
-import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.CheckBox;
 import com.badlogic.gdx.scenes.scene2d.ui.Container;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.List;
-import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.SelectBox;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-import com.badlogic.gdx.scenes.scene2d.ui.Slider;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
-import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
-import com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
-import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
@@ -38,8 +29,6 @@ import com.srebot.uno.assets.AssetDescriptors;
 import com.srebot.uno.assets.RegionNames;
 import com.srebot.uno.config.GameConfig;
 import com.srebot.uno.config.GameManager;
-
-import java.util.ArrayList;
 
 public class SettingsScreen extends ScreenAdapter {
     private final Uno game;
@@ -61,6 +50,9 @@ public class SettingsScreen extends ScreenAdapter {
         if(manager.getMusicPref()) {
             game.playMusic();
         }
+        else{
+            game.stopMusic();
+        }
     }
 
     @Override
@@ -71,7 +63,7 @@ public class SettingsScreen extends ScreenAdapter {
         skin = assetManager.get(AssetDescriptors.UI_SKIN);
         gameplayAtlas = assetManager.get(AssetDescriptors.GAMEPLAY);
 
-        stage.addActor(createLeaderboard());
+        stage.addActor(createTable());
         Gdx.input.setInputProcessor(stage);
     }
 
@@ -102,7 +94,7 @@ public class SettingsScreen extends ScreenAdapter {
         stage.dispose();
     }
 
-    private Actor createLeaderboard() {
+    private Actor createTable() {
         //TABELA
         final Table table = new Table();
         table.defaults().pad(20);
@@ -118,7 +110,7 @@ public class SettingsScreen extends ScreenAdapter {
 
         //TITLE
         //kot slika
-        Image titleText = new Image(gameplayAtlas.findRegion(RegionNames.textLeaderboard));
+        Image titleText = new Image(gameplayAtlas.findRegion(RegionNames.textSettings));
         Container titleContainer = new Container(titleText);
         //doloci velikost
         float sizeX = GameConfig.TEXT_WIDTH*0.5f;

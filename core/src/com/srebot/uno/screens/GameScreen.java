@@ -5,6 +5,7 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
@@ -12,8 +13,14 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
@@ -27,6 +34,9 @@ import com.srebot.uno.classes.Hand;
 import com.srebot.uno.classes.PlayerData;
 import com.srebot.uno.config.GameConfig;
 import com.srebot.uno.config.GameManager;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class GameScreen extends ScreenAdapter {
 
@@ -45,6 +55,8 @@ public class GameScreen extends ScreenAdapter {
     private TextureAtlas gameplayAtlas;
 
     private Music music;
+    private Sound sfxPickup;
+    private Sound sfxCollect;
 
     //globale za igro
     //deki za vlecenje in za opuscanje
@@ -58,6 +70,7 @@ public class GameScreen extends ScreenAdapter {
     //playerji
     private PlayerData player;
     private PlayerData computer;
+    private List<PlayerData> playerData;
 
     public GameScreen(Uno game) {
         this.game = game;
@@ -68,6 +81,13 @@ public class GameScreen extends ScreenAdapter {
             game.stopMusic();
             game.setMusic(assetManager.get(AssetDescriptors.GAME_MUSIC_1));
             game.playMusic();
+        }
+        else{
+            game.stopMusic();
+        }
+        if(manager.getSoundPref()){
+            sfxPickup = assetManager.get(AssetDescriptors.PICK_SOUND);
+            sfxCollect = assetManager.get(AssetDescriptors.SET_SOUND);
         }
         playerTurn = manager.getOrderPref();
 
@@ -91,7 +111,7 @@ public class GameScreen extends ScreenAdapter {
         gameplayAtlas = assetManager.get(AssetDescriptors.GAMEPLAY);
 
         //KO JE KONEC IGRE
-        //stage.addActor(createExitButton());
+        stage.addActor(createExitButton());
         //Gdx.input.setInputProcessor(stage);
     }
 
@@ -118,8 +138,8 @@ public class GameScreen extends ScreenAdapter {
         draw();
         batch.end();
 
-        //stage.act(delta);
-        //stage.draw();
+        stage.act(delta);
+        stage.draw();
     }
 
     public void draw(){
@@ -213,6 +233,16 @@ public class GameScreen extends ScreenAdapter {
             //pretvori screen koordinate v world koordinate
             Vector3 worldCoords = viewport.unproject(new Vector3(touchX, touchY, 0));
 
+            // Check if the player clicked on the exit button
+            Actor hitActor = stage.hit(worldCoords.x, worldCoords.y, true);
+            if (hitActor instanceof Label) {
+                Gdx.app.log("Button Clicked", "Exit button clicked!");
+
+                manager.appendToJson(playerData);
+                game.setScreen(new MenuScreen(game));
+                return; // Exit the method to avoid processing card clicks
+            }
+
             for(Card card : player.getHand().getCards()){
                 if (isClickedOnCard(worldCoords.x, worldCoords.y, card)) {
                     // Player clicked on this card
@@ -223,6 +253,9 @@ public class GameScreen extends ScreenAdapter {
 
             // Simulate computer's move
             //playComputerCard(computer.getRandomCard());
+
+            //je kliknil na exit button?
+
         }
     }
 
@@ -239,7 +272,9 @@ public class GameScreen extends ScreenAdapter {
 
     private void playPlayerCard(Card card) {
         // Remove the card from the player's hand
-        player.getHand();
+        if(sfxCollect!=null){
+            sfxCollect.play();
+        }
         //player.getHand().removeCard(card);
         // Place the card on top of the discard deck
         //discardDeck.addCard(card);
@@ -263,10 +298,18 @@ public class GameScreen extends ScreenAdapter {
     @Override
     public void dispose(){
         stage.dispose();
+        /*
+        batch.dispose();
+        skin.dispose();
+        gameplayAtlas.dispose();
+        sfxPickup.dispose();
+        sfxCollect.dispose();
+         */
     }
 
 
     public void initGame(){
+        playerData = new ArrayList<>();
         //USTVARI DECKE
         //ustvari main deck
         deckDraw = new Deck(deckSize,game);
@@ -289,7 +332,6 @@ public class GameScreen extends ScreenAdapter {
             player = new PlayerData(manager.getNamePref(),0,playerHand);
         }
         else{
-            player.setScore(0);
             player.setHand(playerHand);
         }
         player.getHand().pickCards(deckDraw,5);
@@ -297,5 +339,38 @@ public class GameScreen extends ScreenAdapter {
         Hand computerHand = new Hand();
         computer = new PlayerData("Computer",0,computerHand);
         computer.getHand().pickCards(deckDraw,5);
+
+        //for each player dodaj v playerData (za json shranjevanje)
+        playerData.add(player);
+    }
+
+    public Actor createExitButton(){
+        Label label = new Label("Exit",skin);
+        // Create a TextButton with "Exit" label and the skin
+        TextButton exitButton = new TextButton("", skin);
+        exitButton.add(label);
+/*
+        // Set a ClickListener to handle the button click event
+        exitButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                Gdx.app.log("Button Clicked", "Exit button clicked!");
+                game.setScreen(new MenuScreen(game));
+            }
+        });
+ */
+        float width = 1f;
+        float height = 1f;
+        exitButton.setSize(width,height);
+
+        // Add the exit button to a table for layout purposes
+        Table table = new Table();
+        table.setFillParent(true); // Make the table take up the whole stage
+        table.left();
+        table.add(exitButton);
+        table.setWidth(width);
+        table.setHeight(height);
+
+        return table;
     }
 }

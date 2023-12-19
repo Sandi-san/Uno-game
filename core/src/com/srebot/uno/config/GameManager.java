@@ -91,9 +91,9 @@ public class GameManager {
         PREFS.flush();
     }
 
-    public void appendToJson(String namePref, int scorePlayer){
+    public void appendToJson(List<PlayerData> playerDataList){
         // Load existing data from the JSON file
-        List<PlayerData> playerDataList = loadFromJson();
+        //List<PlayerData> playerDataList = loadFromJson();
 
         // Check if the player with the given name already exists
         PlayerData existingPlayer = getPlayerByName(playerDataList, namePref);
@@ -118,8 +118,8 @@ public class GameManager {
             JsonValue root = new JsonReader().parse(jsonData);
 
             for (JsonValue entry = root.child(); entry != null; entry = entry.next()) {
-                String playerName = entry.getString("namePref");
-                int playerScore = entry.getInt("scorePlayer");
+                String playerName = entry.getString("name");
+                int playerScore = entry.getInt("score");
                 playerDataList.add(new PlayerData(playerName, playerScore));
             }
 
@@ -131,9 +131,16 @@ public class GameManager {
         return playerDataList;
     }
 
-
     public void saveDataToJsonFile(List<PlayerData> playerDataList) {
         try {
+            //ne shranjevat Hand in nastavi score na -1, ce je score 0
+            //ker json ne zna shranit int=0
+            for(PlayerData i : playerDataList){
+                //ALTERNATIVNO, ne shranit PlayerData, ce ima score 0
+                if(i.getScore()==0)
+                    i.setScore(-1);
+                i.setHand(null);
+            }
             // Serialize the list of PlayerData to JSON
             String jsonData = json.toJson(playerDataList);
 

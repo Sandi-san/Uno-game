@@ -11,9 +11,10 @@ public class PlayerData {
 
     public PlayerData(String name, int score){
         this.name = name;
-        this.score = score;
+        if(score==-1) this.score=0;
+        else this.score = score;
     }
-    public PlayerData(String name, int score,Hand playerHand){
+    public PlayerData(String name, int score, Hand playerHand){
         this.name = name;
         this.score = score;
         this.playerHand = playerHand;

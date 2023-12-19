@@ -50,7 +50,14 @@ public class MenuScreen extends ScreenAdapter {
         manager = game.getManager();
 
         if(manager.getMusicPref()) {
+            if(game.getMusic().isPlaying()){
+                game.setMusic(assetManager.get(AssetDescriptors.MAIN_MUSIC));
+                game.setVolume(0.5f);
+            }
             game.playMusic();
+        }
+        else{
+            game.stopMusic();
         }
     }
 

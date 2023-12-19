@@ -59,6 +59,9 @@ public class LeaderboardScreen extends ScreenAdapter {
         if(manager.getMusicPref()) {
             game.playMusic();
         }
+        else{
+            game.stopMusic();
+        }
     }
 
     @Override
@@ -174,6 +177,7 @@ public class LeaderboardScreen extends ScreenAdapter {
             listTable.add(new Label("No data available", skin)).pad(5).colspan(2).center();
             listTable.row();
         }
+
         for(PlayerData playerData : listData) {
             listTable.add(new Label(playerData.getName(), skin)).pad(5);
             listTable.add(new Label(String.valueOf(playerData.getScore()), skin)).pad(5);
