@@ -1,16 +1,11 @@
 package com.srebot.uno.classes;
 
-import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
-import com.srebot.uno.assets.RegionNames;
-
-import org.w3c.dom.css.Rect;
 
 import java.util.Random;
-import java.util.SimpleTimeZone;
 
 public class Card {
     private int priority; //AI
@@ -21,10 +16,12 @@ public class Card {
     //za izbiranje na ekranu
     private Vector2 position;
     private Rectangle bounds;
+    private boolean isSelected;
 
     public Card(){
         position = new Vector2();
         bounds = new Rectangle();
+        isSelected = false;
     }
 
     public int getPriority(){
@@ -45,6 +42,8 @@ public class Card {
     public Rectangle getBounds() {
         return bounds;
     }
+    public boolean getSelection() {return isSelected;}
+    public void setSelection(boolean value) {this.isSelected=value;}
     public void setPosition(Vector2 position) {
         this.position = position;
     }
@@ -57,7 +56,6 @@ public class Card {
         this.position.y = y;
         this.bounds.width = sizeX;
         this.bounds.height = sizeY;
-
     }
 
     public static void render(SpriteBatch batch, TextureRegion texture,
@@ -70,6 +68,16 @@ public class Card {
                               float sizeX, float sizeY){
         batch.draw(texture,x,y,
                 sizeX,sizeY);
+    }
+
+    public boolean containsColor(String color){
+        //eden od card je anyColor
+        if(color.equals("-") || this.color.equals("-"))
+            return true;
+        //vsaj en vsebuje color
+        if(color.contains(this.color) || this.color.contains(color))
+            return true;
+        return false;
     }
 
     //generiraj random karto z CardValues vrednosti

@@ -21,4 +21,8 @@ public class GameConfig {
     //TEXT SIZE RATIO
     public static final float TEXT_WIDTH = WIDTH*0.25f;
     public static final float TEXT_HEIGHT = HEIGHT*0.25f;
+
+    //BUTTON SIZE IN WORLD UNITS
+    public static final float BUTTON_WIDTH = 20f;
+    public static final float BUTTON_HEIGHT = 14f;
 }

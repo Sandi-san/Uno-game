@@ -1,5 +1,7 @@
 package com.srebot.uno.classes;
 
+import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.srebot.uno.Uno;
 import com.srebot.uno.config.GameManager;
@@ -7,16 +9,21 @@ import com.srebot.uno.config.GameManager;
 import java.util.Objects;
 
 public class Deck {
-
     private GameManager manager;
 
     private int size;
     private Array<Card> cards;
 
+    //za izbiranje na ekranu
+    private Vector2 position;
+    private Rectangle bounds;
+
     public Deck(int size, Uno game){
         this.size = size;
         this.cards = new Array<Card>(size);
         manager = game.getManager();
+        position = new Vector2();
+        bounds = new Rectangle();
     }
 
     public void generateRandom(){
@@ -43,6 +50,13 @@ public class Deck {
     //dobi top karto iz deka
     public Card getTopCard(){
         return cards.peek();
+    }
+
+    //poglej ce je konec deka
+    public boolean isEmpty(){
+        if(cards.isEmpty())
+            return true;
+        return false;
     }
 
     //ustvari karte: 1-9, reverse in stop, plus in wildcard
@@ -110,5 +124,19 @@ public class Deck {
                 cards.add(Card.generateSpecific(CardValues.P2BR));
             }
         }
+    }
+
+    public Vector2 getPosition() {
+        return position;
+    }
+    public Rectangle getBounds() {
+        return bounds;
+    }
+    public void setPositionAndBounds(float x,float y,
+                                     float sizeX, float sizeY){
+        this.position.x = x;
+        this.position.y = y;
+        this.bounds.width = sizeX;
+        this.bounds.height = sizeY;
     }
 }

@@ -6,22 +6,31 @@ import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
+import com.badlogic.gdx.graphics.g2d.NinePatch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Container;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
@@ -37,8 +46,13 @@ import com.srebot.uno.config.GameManager;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class GameScreen extends ScreenAdapter {
+    //status igre
+    public enum State{
+        Running, Paused, Over
+    }
 
     private final Uno game;
     private final AssetManager assetManager;
@@ -53,10 +67,12 @@ public class GameScreen extends ScreenAdapter {
 
     private Skin skin;
     private TextureAtlas gameplayAtlas;
-
     private Music music;
     private Sound sfxPickup;
     private Sound sfxCollect;
+    private BitmapFont font;
+
+    State state;
 
     //globale za igro
     //deki za vlecenje in za opuscanje
@@ -70,13 +86,16 @@ public class GameScreen extends ScreenAdapter {
     //playerji
     private PlayerData player;
     private PlayerData computer;
-    private List<PlayerData> playerData;
+    private List<PlayerData> playersData;
+
 
     public GameScreen(Uno game) {
         this.game = game;
         assetManager = game.getAssetManager();
         manager = game.getManager();
+        state = State.Running;
 
+        //music on?
         if(manager.getMusicPref()) {
             game.stopMusic();
             game.setMusic(assetManager.get(AssetDescriptors.GAME_MUSIC_1));
@@ -85,12 +104,16 @@ public class GameScreen extends ScreenAdapter {
         else{
             game.stopMusic();
         }
+        //sounds on?
         if(manager.getSoundPref()){
             sfxPickup = assetManager.get(AssetDescriptors.PICK_SOUND);
             sfxCollect = assetManager.get(AssetDescriptors.SET_SOUND);
         }
         playerTurn = manager.getOrderPref();
 
+        font = assetManager.get(AssetDescriptors.UI_FONT);
+        //shapeRenderer = new ShapeRenderer();
+        //exitButton = new Rectangle();
         batch = new SpriteBatch();
         initGame();
     }
@@ -100,7 +123,8 @@ public class GameScreen extends ScreenAdapter {
         camera = new OrthographicCamera();
         viewport = new FitViewport(GameConfig.WORLD_WIDTH,GameConfig.WORLD_HEIGHT,camera);
         hudViewport = new FitViewport(GameConfig.HUD_WIDTH,GameConfig.HUD_HEIGHT);
-        stage = new Stage(viewport, game.getBatch());
+        stage = new Stage(hudViewport, game.getBatch());
+
 
         //nastavi pozicijo kamere
         camera.position.set(GameConfig.WORLD_WIDTH/2f,
@@ -110,9 +134,7 @@ public class GameScreen extends ScreenAdapter {
         skin = assetManager.get(AssetDescriptors.UI_SKIN);
         gameplayAtlas = assetManager.get(AssetDescriptors.GAMEPLAY);
 
-        //KO JE KONEC IGRE
         stage.addActor(createExitButton());
-        //Gdx.input.setInputProcessor(stage);
     }
 
     @Override
@@ -130,53 +152,70 @@ public class GameScreen extends ScreenAdapter {
         float a=0.7f; //prosojnost
         ScreenUtils.clear(r,g,b,a);
 
-        gameControl();
+        checkGamestate();
+        handleInput();
 
-        viewport.apply();
-        batch.setProjectionMatrix(viewport.getCamera().combined);
-        batch.begin();
-        draw();
-        batch.end();
-
-        stage.act(delta);
-        stage.draw();
+        switch (state) {
+            case Running:
+                viewport.apply();
+                //setProjectionMatrix - uporabi viewport za prikaz sveta (WORLD UNITS)
+                batch.setProjectionMatrix(viewport.getCamera().combined);
+                batch.begin();
+                draw();
+                batch.end();
+                break;
+            case Over:
+                stage.act(delta);
+                stage.draw();
+                Gdx.input.setInputProcessor(stage);
+                break;
+        }
     }
 
     public void draw(){
         //TODO HUD
 
-        //VELIKOST kart (v WORLD UNITS)
-        float sizeX = GameConfig.CARD_HEIGHT;
-        float sizeY = GameConfig.CARD_WIDTH;
+        switch (state) {
+            case Running:
+                //VELIKOST kart (v WORLD UNITS)
+                float sizeX = GameConfig.CARD_HEIGHT;
+                float sizeY = GameConfig.CARD_WIDTH;
 
-        //MIDDLE DECK
-        String topCardTexture = topCard.getTexture();
-        TextureRegion topCardRegion = gameplayAtlas.findRegion(topCardTexture);
-        //POZICIJA
-        float topX = (GameConfig.WORLD_WIDTH-sizeX)/2f;
-        float topY = (GameConfig.WORLD_HEIGHT-sizeY)/2f;
-        topCard.setPositionAndBounds(topX,topY,sizeX,sizeY);
-        Card.render(batch, topCardRegion,topCard);
+                //MIDDLE DECK
+                String topCardTexture = topCard.getTexture();
+                TextureRegion topCardRegion = gameplayAtlas.findRegion(topCardTexture);
+                //POZICIJA
+                float topX = (GameConfig.WORLD_WIDTH - sizeX) / 2f;
+                float topY = (GameConfig.WORLD_HEIGHT - sizeY) / 2f;
+                topCard.setPositionAndBounds(topX, topY, sizeX, sizeY);
+                Card.render(batch, topCardRegion, topCard);
 
-        //DRAW DECK
-        TextureRegion drawDeckRegion = gameplayAtlas.findRegion(RegionNames.back);
-        float drawX = (GameConfig.WORLD_WIDTH-sizeX);
-        float drawY = (GameConfig.WORLD_HEIGHT-sizeY)/2f;
-        Card.render(batch, drawDeckRegion,drawX,drawY,sizeX,sizeY);
+                //DRAW DECK
+                TextureRegion drawDeckRegion = gameplayAtlas.findRegion(RegionNames.back);
+                float drawX = (GameConfig.WORLD_WIDTH - sizeX);
+                float drawY = (GameConfig.WORLD_HEIGHT - sizeY) / 2f;
+                deckDraw.setPositionAndBounds(drawX, drawY, sizeX, sizeY);
+                Card.render(batch, drawDeckRegion, drawX, drawY, sizeX, sizeY);
 
-        //DRAW PLAYER in COMPUTER HANDS
-        Hand playerHand = player.getHand();
-        drawHand(playerHand,0,
-                sizeX, sizeY, true);
-        Hand computerHand = computer.getHand();
-        drawHand(computerHand,(GameConfig.WORLD_HEIGHT - sizeY),
-                sizeX, sizeY, false);
+                //DRAW PLAYER in COMPUTER HANDS
+                Hand playerHand = player.getHand();
+                drawHand(playerHand, 0,
+                        sizeX, sizeY, true);
+                Hand computerHand = computer.getHand();
+                drawHand(computerHand, (GameConfig.WORLD_HEIGHT - sizeY),
+                        sizeX, sizeY, false);
+                break;
+            case Over:
+                //DRAW EXIT BUTTON
+                //drawExitButton();
+                break;
+        }
     }
     private void drawHand(Hand hand, float startY, float sizeX,float sizeY, boolean isPlayer){
         Array<Card> cards = hand.getCards();
         int size = cards.size;
 
-        float overlap = 0.2f;
+        float overlap = 0f;
         for(int i=5;i<size;++i)
             overlap+=0.2f;
         overlap = sizeX*overlap;
@@ -189,74 +228,162 @@ public class GameScreen extends ScreenAdapter {
             startX = (GameConfig.WORLD_WIDTH - size * spacing) / 2f;
         }
         else {
-            spacing = overlap;
+            spacing = sizeX-overlap;
             startX = (GameConfig.WORLD_WIDTH - (size-1)*spacing)/2f;
         }
-        //narisi karte
-        for(int i=0;i<size;++i){
+        //narisi karte (ki niso hoverane)
+        int j=-1;
+        for(int i=0;i<size;++i) {
             Card card = cards.get(i);
             String texture;
             TextureRegion region;
-            if(isPlayer) {
-                texture = card.getTexture();
-                region = gameplayAtlas.findRegion(texture);
+            if (!card.getSelection()) {
+                if (isPlayer) {
+                    texture = card.getTexture();
+                    region = gameplayAtlas.findRegion(texture);
+                } else {
+                    region = gameplayAtlas.findRegion(RegionNames.back);
+                }
+                float posX = startX + i * spacing;
+                float posY = startY;
+                /*
+                if (isPlayer) {
+                    posY = startY;
+                } else {
+                    posY = GameConfig.WORLD_HEIGHT - sizeY - startY;
+                }
+                 */
+                card.setPositionAndBounds(posX, posY, sizeX, sizeY);
+                Card.render(batch, region, card);
             }
             else{
+                j=i;
+            }
+        }
+        //narisi karto ki je hoverana
+        if(j!=-1) {
+            Card card = cards.get(j);
+            String texture;
+            TextureRegion region;
+            if (isPlayer) {
+                texture = card.getTexture();
+                region = gameplayAtlas.findRegion(texture);
+            } else {
                 region = gameplayAtlas.findRegion(RegionNames.back);
             }
-            float posX = startX+i*spacing;
-            float posY = startY;
-            /*
-            if (isPlayer) {
-                posY = startY;
-            } else {
-                posY = GameConfig.WORLD_HEIGHT - sizeY - startY;
-            }
-             */
-            card.setPositionAndBounds(posX,posY,sizeX,sizeY);
-            Card.render(batch, region,card);
+            float posX = startX + j * spacing;
+            float posY = startY + 1f;
+            card.setPositionAndBounds(posX, posY, sizeX, sizeY);
+            Card.render(batch, region, card);
         }
     }
+    /*
+    public void drawExitButton(){
+        float width=GameConfig.BUTTON_WIDTH;
+        float height=GameConfig.BUTTON_HEIGHT;
+        exitButton.setSize(width,height);
+        exitButton.x=0;
+        exitButton.y=0;
+        exitButton.setPosition((GameConfig.WORLD_WIDTH - exitButton.width) / 2f,
+                (GameConfig.WORLD_HEIGHT - exitButton.height) / 2f);
 
-    private void gameControl(){
-        handleInput();
-        update(Gdx.graphics.getDeltaTime());
+        //setProjectionMatirx - uporabi viewport za prikaz sveta (WORLD UNITS)
+        shapeRenderer.setProjectionMatrix(viewport.getCamera().combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(Color.RED);
+        shapeRenderer.rect(exitButton.x,exitButton.y,exitButton.width,exitButton.height);
+        shapeRenderer.end();
+
+        //dodaj label na button
+        boolean wasBatchDrawing = batch.isDrawing();
+        if(wasBatchDrawing)
+            batch.end();
+        batch.begin();
+
+        // Use GlyphLayout to calculate the width and height of the text
+        GlyphLayout glyphLayout = new GlyphLayout();
+        glyphLayout.setText(font, "Exit");
+
+        // Scale the font to fit within the button bounds
+        float textScaleX = exitButton.width / glyphLayout.width;
+        float textScaleY = exitButton.height / glyphLayout.height;
+        font.getData().setScale(Math.min(textScaleX, textScaleY));
+
+        font.draw(batch,"Exit",exitButton.x,
+                exitButton.y);
+        // Reset the font scale to its original state
+        font.getData().setScale(1f);
+
+        if(!wasBatchDrawing)
+            batch.end();
+    }
+     */
+
+    private void checkGamestate(){
+        if(deckDraw.isEmpty())
+            state = State.Over;
+            //calc pointe
+    }
+
+    private void gameControl(Card card){
+        //iste barve?
+        if(topCard.containsColor(card.getColor())){
+
+        }
     }
     private void handleInput() {
         //touch == phone touchscreen?
         //if (Gdx.input.justTouched()) {
         //za mouse
-        if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+        //if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
             float touchX = Gdx.input.getX();
             float touchY = Gdx.input.getY();
 
             //pretvori screen koordinate v world koordinate
-            Vector3 worldCoords = viewport.unproject(new Vector3(touchX, touchY, 0));
+            Vector2 worldCoords = viewport.unproject(new Vector2(touchX, touchY));
 
-            // Check if the player clicked on the exit button
-            Actor hitActor = stage.hit(worldCoords.x, worldCoords.y, true);
-            if (hitActor instanceof Label) {
-                Gdx.app.log("Button Clicked", "Exit button clicked!");
+            if(state==State.Running) {
+                if (isClickedOnDeck(worldCoords.x, worldCoords.y, deckDraw)) {
+                    if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+                        // Player clicked on this card
+                        if (sfxPickup != null) {
+                            sfxPickup.play();
+                        }
+                        player.getHand().pickCard(deckDraw);
+                    }
+                }
+                for (Card card : player.getHand().getCards()) {
+                    if (isClickedOnCard(worldCoords.x, worldCoords.y, card)) {
+                       card.setSelection(true);
+                        if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+                            // Player clicked on this card
+                            if(sfxCollect!=null){
+                                sfxCollect.play();
+                            }
+                            gameControl(card);
+                            break;
+                            //state = State.Over;
+                            // Perform other actions as needed
+                        }
+                    }
+                    else{
+                        card.setSelection(false);
+                    }
+                }
 
-                manager.appendToJson(playerData);
-                game.setScreen(new MenuScreen(game));
-                return; // Exit the method to avoid processing card clicks
+                // Simulate computer's move
+                //playComputerCard(computer.getRandomCard());
             }
-
-            for(Card card : player.getHand().getCards()){
-                if (isClickedOnCard(worldCoords.x, worldCoords.y, card)) {
-                    // Player clicked on this card
-                    playPlayerCard(card);
-                    // Perform other actions as needed
+            /*
+            else if(state==State.Over) {
+                //je kliknil na exit button?
+                if (exitButton.contains(worldCoords)) {
+                    manager.appendToJson(playersData);
+                    game.setScreen(new MenuScreen(game));
+                    return;
                 }
             }
-
-            // Simulate computer's move
-            //playComputerCard(computer.getRandomCard());
-
-            //je kliknil na exit button?
-
-        }
+            */
     }
 
     private boolean isClickedOnCard(float mouseX, float mouseY, Card card) {
@@ -266,6 +393,16 @@ public class GameScreen extends ScreenAdapter {
         // For simplicity, assuming the cards are arranged horizontally
         Vector2 position = card.getPosition();
         Rectangle bounds = card.getBounds();
+        return mouseX >= position.x && mouseX <= position.x + bounds.width
+                && mouseY >= position.y && mouseY <= position.y + bounds.height;
+    }
+    private boolean isClickedOnDeck(float mouseX, float mouseY, Deck deck) {
+        // Check if the mouse click is within the bounds of the card
+        // Implement the logic based on your card rendering and positioning
+        // You may need to consider the card's position, size, and orientation
+        // For simplicity, assuming the cards are arranged horizontally
+        Vector2 position = deck.getPosition();
+        Rectangle bounds = deck.getBounds();
         return mouseX >= position.x && mouseX <= position.x + bounds.width
                 && mouseY >= position.y && mouseY <= position.y + bounds.height;
     }
@@ -289,7 +426,6 @@ public class GameScreen extends ScreenAdapter {
         // Perform other actions related to the computer playing the card
     }
     */
-    private void update(float delta){}
 
     @Override
     public void hide(){
@@ -309,7 +445,7 @@ public class GameScreen extends ScreenAdapter {
 
 
     public void initGame(){
-        playerData = new ArrayList<>();
+        playersData = new ArrayList<>();
         //USTVARI DECKE
         //ustvari main deck
         deckDraw = new Deck(deckSize,game);
@@ -341,35 +477,43 @@ public class GameScreen extends ScreenAdapter {
         computer.getHand().pickCards(deckDraw,5);
 
         //for each player dodaj v playerData (za json shranjevanje)
-        playerData.add(player);
+        playersData.add(player);
     }
 
+
+    //z scene2d
     public Actor createExitButton(){
-        Label label = new Label("Exit",skin);
-        // Create a TextButton with "Exit" label and the skin
-        TextButton exitButton = new TextButton("", skin);
-        exitButton.add(label);
-/*
-        // Set a ClickListener to handle the button click event
+        Table table = new Table();
+        table.defaults().pad(20);
+        /*
+        //BACKGROUND
+        TextureRegion backgroundRegion = gameplayAtlas.findRegion(RegionNames.background3);
+        table.setBackground(new TextureRegionDrawable(backgroundRegion));
+        */
+
+        TextButton exitButton = new TextButton("Exit", skin);
         exitButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 Gdx.app.log("Button Clicked", "Exit button clicked!");
+                //shrani player podatke v json
+                manager.appendToJson(playersData);
                 game.setScreen(new MenuScreen(game));
             }
         });
- */
-        float width = 1f;
-        float height = 1f;
-        exitButton.setSize(width,height);
 
-        // Add the exit button to a table for layout purposes
-        Table table = new Table();
-        table.setFillParent(true); // Make the table take up the whole stage
-        table.left();
-        table.add(exitButton);
-        table.setWidth(width);
-        table.setHeight(height);
+        Table buttonTable = new Table();
+        buttonTable.defaults();
+
+        //buttonTable.add(titleText).padBottom(15).row();
+        //buttonTable.add(introButton).padBottom(15).expandX().fillX().row();
+        buttonTable.add(exitButton).padBottom(15).expandX().fill().row();
+        buttonTable.center();
+
+        table.add(buttonTable);
+        table.center();
+        table.setFillParent(true);
+        table.pack();
 
         return table;
     }
