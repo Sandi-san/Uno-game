@@ -6,31 +6,21 @@ import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.GlyphLayout;
-import com.badlogic.gdx.graphics.g2d.NinePatch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Container;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
-import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
@@ -53,6 +43,10 @@ public class GameScreen extends ScreenAdapter {
     public enum State{
         Running, Paused, Over
     }
+    //kdo je zmagovalec?
+    public enum Winner{
+        Player, Computer, None
+    }
 
     private final Uno game;
     private final AssetManager assetManager;
@@ -73,6 +67,7 @@ public class GameScreen extends ScreenAdapter {
     private BitmapFont font;
 
     State state;
+    Winner winner;
 
     //globale za igro
     //deki za vlecenje in za opuscanje
@@ -82,7 +77,9 @@ public class GameScreen extends ScreenAdapter {
     //karta, ki je na vrhu discard kupa
     private Card topCard;
     //trenutni turn
-    private String playerTurn;
+    private int playerTurn;
+    //vrstni red
+    private boolean clockwiseOrder;
     //playerji
     private PlayerData player;
     private PlayerData computer;
@@ -109,7 +106,8 @@ public class GameScreen extends ScreenAdapter {
             sfxPickup = assetManager.get(AssetDescriptors.PICK_SOUND);
             sfxCollect = assetManager.get(AssetDescriptors.SET_SOUND);
         }
-        playerTurn = manager.getOrderPref();
+        getFirstTurn();
+        getFirstRotation();
 
         font = assetManager.get(AssetDescriptors.UI_FONT);
         //shapeRenderer = new ShapeRenderer();
@@ -215,29 +213,34 @@ public class GameScreen extends ScreenAdapter {
         Array<Card> cards = hand.getCards();
         int size = cards.size;
 
+        //TODO popravi da se ne bo vec levo izrisal ce je ze max levo (pri veliko kartih)
+
         float overlap = 0f;
         for(int i=5;i<size;++i)
-            overlap+=0.2f;
-        overlap = sizeX*overlap;
+            overlap+=0.1f;
+        //overlap = sizeX*overlap;
+        overlap = sizeX*(1-overlap);
         float startX;
-        float spacing;
+        float spacing = sizeX;
 
         //doloci spacing ce vec kart v roki
         if(size<=5){
-            spacing=sizeX;
-            startX = (GameConfig.WORLD_WIDTH - size * spacing) / 2f;
+            startX = (GameConfig.WORLD_WIDTH - size * sizeX) / 2f;
         }
         else {
-            spacing = sizeX-overlap;
-            startX = (GameConfig.WORLD_WIDTH - (size-1)*spacing)/2f;
+            spacing = overlap;
+            startX = (GameConfig.WORLD_WIDTH - size * sizeX)/2f;
         }
+        if(startX<0)
+            startX=0;
+
+        Array<Integer> indexHover = new Array<Integer>();
         //narisi karte (ki niso hoverane)
-        int j=-1;
         for(int i=0;i<size;++i) {
             Card card = cards.get(i);
             String texture;
             TextureRegion region;
-            if (!card.getSelection()) {
+            if (!card.getHighlight()) {
                 if (isPlayer) {
                     texture = card.getTexture();
                     region = gameplayAtlas.findRegion(texture);
@@ -246,35 +249,30 @@ public class GameScreen extends ScreenAdapter {
                 }
                 float posX = startX + i * spacing;
                 float posY = startY;
-                /*
-                if (isPlayer) {
-                    posY = startY;
-                } else {
-                    posY = GameConfig.WORLD_HEIGHT - sizeY - startY;
-                }
-                 */
                 card.setPositionAndBounds(posX, posY, sizeX, sizeY);
                 Card.render(batch, region, card);
             }
             else{
-                j=i;
+                indexHover.add(i);
             }
         }
         //narisi karto ki je hoverana
-        if(j!=-1) {
-            Card card = cards.get(j);
-            String texture;
-            TextureRegion region;
-            if (isPlayer) {
-                texture = card.getTexture();
-                region = gameplayAtlas.findRegion(texture);
-            } else {
-                region = gameplayAtlas.findRegion(RegionNames.back);
+        if(!indexHover.isEmpty()) {
+            for(int j : indexHover) {
+                Card card = cards.get(j);
+                String texture;
+                TextureRegion region;
+                if (isPlayer) {
+                    texture = card.getTexture();
+                    region = gameplayAtlas.findRegion(texture);
+                } else {
+                    region = gameplayAtlas.findRegion(RegionNames.back);
+                }
+                float posX = startX + j * spacing;
+                float posY = startY + 1f; //slightly gor
+                card.setPositionAndBounds(posX, posY, sizeX, sizeY);
+                Card.render(batch, region, card);
             }
-            float posX = startX + j * spacing;
-            float posY = startY + 1f;
-            card.setPositionAndBounds(posX, posY, sizeX, sizeY);
-            Card.render(batch, region, card);
         }
     }
     /*
@@ -320,16 +318,71 @@ public class GameScreen extends ScreenAdapter {
      */
 
     private void checkGamestate(){
-        if(deckDraw.isEmpty())
+        if(deckDraw.isEmpty()) {
             state = State.Over;
-            //calc pointe
+            winner = Winner.None;
+        }
+        else if(player.getHand().getCards().isEmpty()) {
+            state = State.Over;
+            winner = Winner.Player;
+        }
+        else if(computer.getHand().getCards().isEmpty()) {
+            state = State.Over;
+            winner = Winner.Computer;
+        }
+        //calc pointe
     }
 
-    private void gameControl(Card card){
-        //iste barve?
-        if(topCard.containsColor(card.getColor())){
+    private void gameControl(Card card, Hand hand){
+        Gdx.app.log("Card",card.asString());
+        int index;
+        //iste barve ali simbola
+        if(topCard.containsColor(card) || topCard.containsSymbol(card)){
+            hand.setCard(deckDiscard,card);
+            topCard = card;
+            if(card.isSpecial()){
+                String special = card.getSpecial();
+                switch (special){
+                    //Stop
+                    case "S":
+                        //dobi naslednjega playerja glede na turnOrder pref
+                        //blokiraj njihov turn
+                        playerTurn = getNextTurn(playerTurn);
+                        break;
+                    //Reverse
+                    case "R":
+                        //spremeni turnOrder
+                        clockwiseOrder=!clockwiseOrder;
+                        break;
+                    //Plus 2
+                    case "P2":
+                        //dobi naslednjega playerja glede na turnOrder pref
+                        //naj vlecejo +2
+                        index = getNextTurn(playerTurn);
+                        while(playersData.get(index-1)==null)
+                            index = getNextTurn(index);
+                        playersData.get(playerTurn-1).getHand().pickCards(deckDraw,2);
+                        break;
+                    //Plus 4
+                    case "P4":
+                        //dobi naslednjega playerja glede na turnOrder pref
+                        //naj vlecejo +4
+                        index = getNextTurn(playerTurn);
+                        while(playersData.get(index-1)==null)
+                            index = getNextTurn(index);
+                        playersData.get(playerTurn-1).getHand().pickCards(deckDraw,4);
+                        break;
+                    //Rainbow
+                    default:
+                        //TODO select color screen da izberes nov color od topCard
 
+                }
+            }
         }
+        index = getNextTurn(playerTurn);
+        while(playersData.get(index-1)==null)
+            index = getNextTurn(index);
+        playerTurn = index;
     }
     private void handleInput() {
         //touch == phone touchscreen?
@@ -354,20 +407,21 @@ public class GameScreen extends ScreenAdapter {
                 }
                 for (Card card : player.getHand().getCards()) {
                     if (isClickedOnCard(worldCoords.x, worldCoords.y, card)) {
-                       card.setSelection(true);
+                       card.setHighlight(true);
                         if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
                             // Player clicked on this card
                             if(sfxCollect!=null){
                                 sfxCollect.play();
                             }
-                            gameControl(card);
+                            //TODO izbira vec kart (isHighlighted) in posli vse v discard deck
+                            gameControl(card,player.getHand());
                             break;
                             //state = State.Over;
                             // Perform other actions as needed
                         }
                     }
                     else{
-                        card.setSelection(false);
+                        card.setHighlight(false);
                     }
                 }
 
@@ -417,6 +471,45 @@ public class GameScreen extends ScreenAdapter {
         //discardDeck.addCard(card);
         // Perform other actions related to playing the card
     }
+
+    //s cigavim turn se igra zacne
+    private void getFirstTurn(){
+        /*
+        1-bottom
+        2-left
+        3-top
+        4-right
+         */
+        if(Objects.equals(manager.getStarterPref(), "Player"))
+            playerTurn=1;
+        else if(Objects.equals(manager.getStarterPref(), "Computer"))
+            playerTurn=3;
+    }
+    //vrni naslednji turn index
+    private int getNextTurn(int playerTurn){
+        if(clockwiseOrder){
+            if(playerTurn<4)
+                return playerTurn+1;
+            else
+                return 1;
+        }
+        else {
+            if(playerTurn>1)
+                return playerTurn-1;
+            else
+                return 4;
+        }
+    }
+    //dobi rotacijo
+    private void getFirstRotation() {
+        if (Objects.equals(manager.getOrderPref(), "Clockwise")) {
+            clockwiseOrder=true;
+        }
+        else if (Objects.equals(manager.getOrderPref(), "Counter Clockwise")) {
+            clockwiseOrder=false;
+        }
+    }
+
 /*
     private void playComputerCard(Card card) {
         // Remove the card from the computer's hand
@@ -476,8 +569,12 @@ public class GameScreen extends ScreenAdapter {
         computer = new PlayerData("Computer",0,computerHand);
         computer.getHand().pickCards(deckDraw,5);
 
-        //for each player dodaj v playerData (za json shranjevanje)
-        playersData.add(player);
+        //for each player dodaj v playerData
+        //Pomembni order: bottom->left->top->right
+        playersData.add(player); //bottom
+        playersData.add(null);  //left
+        playersData.add(computer); //top
+        playersData.add(null);  //right
     }
 
 

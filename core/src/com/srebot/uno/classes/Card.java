@@ -16,12 +16,12 @@ public class Card {
     //za izbiranje na ekranu
     private Vector2 position;
     private Rectangle bounds;
-    private boolean isSelected;
+    private boolean isHighlighted;
 
     public Card(){
         position = new Vector2();
         bounds = new Rectangle();
-        isSelected = false;
+        isHighlighted = false;
     }
 
     public int getPriority(){
@@ -42,8 +42,8 @@ public class Card {
     public Rectangle getBounds() {
         return bounds;
     }
-    public boolean getSelection() {return isSelected;}
-    public void setSelection(boolean value) {this.isSelected=value;}
+    public boolean getHighlight() {return isHighlighted;}
+    public void setHighlight(boolean value) {this.isHighlighted =value;}
     public void setPosition(Vector2 position) {
         this.position = position;
     }
@@ -70,7 +70,8 @@ public class Card {
                 sizeX,sizeY);
     }
 
-    public boolean containsColor(String color){
+    public boolean containsColor(Card card){
+        String color = card.getColor();
         //eden od card je anyColor
         if(color.equals("-") || this.color.equals("-"))
             return true;
@@ -78,6 +79,49 @@ public class Card {
         if(color.contains(this.color) || this.color.contains(color))
             return true;
         return false;
+    }
+    public boolean containsSymbol(Card card){
+        //preveri karte z stevilkami
+        int value = card.getValue();
+        if(value<10 && value==this.value)
+            return true;
+
+        String texture = card.getTexture();
+        //preveri stop karte
+        if(texture.contains("stop") && this.texture.contains("stop"))
+            return true;
+        //preveri reverse karte
+        if(texture.contains("Reverse") && this.texture.contains("Reverse"))
+            return true;
+        //preveri plus2 karte
+        if(texture.contains("plus2") && this.texture.contains("plus2"))
+            return true;
+        return false;
+    }
+    //karta je posebna (ni regular stevilka)
+    public boolean isSpecial(){
+        if(this.value>9)
+            return true;
+        return false;
+    }
+    //ce je karta special, vrni katera je
+    public String getSpecial(){
+        //preveri stop karte
+        if(this.texture.contains("stop"))
+            return "S";
+        //preveri reverse karte
+        if(this.texture.contains("Reverse"))
+            return "R";
+        //preveri plus2 karte
+        if(this.texture.contains("plus2"))
+            return "P2";
+        //preveri plus4 karte
+        if(this.texture.contains("plus4"))
+            return "P4";
+        //preveri rainbow karte
+        //if(this.texture.contains("rainbow"))
+        //    return "-";
+        return "-";
     }
 
     //generiraj random karto z CardValues vrednosti
@@ -102,5 +146,20 @@ public class Card {
         card.texture = value.getTexture();
 
         return card;
+    }
+
+    //izpisi vrednosti karte kot string (debug only)
+    public String asString(){
+        String priority = String.valueOf(this.getPriority());
+        String value = String.valueOf(this.getValue());
+        String color = this.getColor();
+        String texture = this.getTexture();
+        String position = String.valueOf(this.getPosition());
+        String bounds = String.valueOf(this.getBounds());
+        String isHighlighted = String.valueOf(this.getHighlight());
+        return "\""+texture+"\"" + " ("+color+", "+value+") "
+                + "Priority: "+priority
+                + " Position: "+position + " Bounds: "+bounds
+                +" Hightlight? "+isHighlighted;
     }
 }
