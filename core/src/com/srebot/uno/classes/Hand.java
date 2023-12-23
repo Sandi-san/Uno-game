@@ -20,8 +20,9 @@ public class Hand {
             cards.add(card);
         }
     }
-    public void setCard(Deck deck, Card card){
-        deck.setCard(card);
+    public void setCard(Card card,Deck deck){
+        if(deck!=null)
+            deck.setCard(card);
         //odstrani iz hand
         int cardIndex = cards.indexOf(card,true);
         if(cardIndex != -1){
@@ -30,5 +31,19 @@ public class Hand {
     }
     public Array<Card> getCards(){
         return cards;
+    }
+
+    public Card getHighestPriorityCard(){
+        int priority = 0;
+        Card card = null;
+        if(!cards.isEmpty()) {
+            for (Card c : cards) {
+                if (c.getPriority() > priority) {
+                    priority = c.getPriority();
+                    card=c;
+                }
+            }
+        }
+        return card;
     }
 }

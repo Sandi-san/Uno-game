@@ -26,7 +26,7 @@ public class GameManager {
     //DOBI VREDNOSTI IZ NASTAVITEV
     private String namePref;
     private String presetPref;
-    private String starterPref;
+    private int difficultyPref;
     private String orderPref;
     private boolean soundPref;
     private boolean musicPref;
@@ -39,7 +39,7 @@ public class GameManager {
         //DOBI VREDNOSTI IZ NASTAVITEV
         namePref = PREFS.getString("currentPlayer","Player 1");
         presetPref = PREFS.getString("cardPreset","All");
-        starterPref = PREFS.getString("starterPlayer","Player");
+        difficultyPref = PREFS.getInteger("difficulty",2);
         orderPref = PREFS.getString("cardOrder","Clockwise");
         soundPref = PREFS.getBoolean("soundEnabled", true);
         musicPref = PREFS.getBoolean("musicEnabled", true);
@@ -50,8 +50,8 @@ public class GameManager {
     public String getPresetPref() {
         return presetPref;
     }
-    public String getStarterPref() {
-        return starterPref;
+    public int getDifficultyPref() {
+        return difficultyPref;
     }
     public String getOrderPref() {
         return orderPref;
@@ -64,16 +64,19 @@ public class GameManager {
     }
 
     public void setNamePref(String namePref) {
-        this.namePref = namePref;
-        PREFS.putString("currentPlayer", namePref);
+        //player name ne sme biti "Computer"
+        //rezervirano za AI playerja
+        if(!namePref.equals("Computer"))
+            this.namePref = namePref;
+            PREFS.putString("currentPlayer", namePref);
     }
     public void setPresetPref(String presetPref) {
         this.presetPref = presetPref;
         PREFS.putString("cardPreset", presetPref);
     }
-    public void setStarterPref(String starterPref) {
-        this.starterPref = starterPref;
-        PREFS.putString("starterPlayer", starterPref);
+    public void setDifficultyPref(int difficultyPref) {
+        this.difficultyPref = difficultyPref;
+        PREFS.putInteger("difficultyPref", difficultyPref);
     }
     public void setOrderPref(String orderPref) {
         this.orderPref = orderPref;
@@ -135,6 +138,7 @@ public class GameManager {
         try {
             //ne shranjevat Hand in nastavi score na -1, ce je score 0
             //ker json ne zna shranit int=0
+            //TODO ne shranit player z imenom "Computer"
             for(PlayerData i : playerDataList){
                 //ALTERNATIVNO, ne shranit PlayerData, ce ima score 0
                 if(i.getScore()==0)

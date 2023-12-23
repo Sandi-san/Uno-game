@@ -69,17 +69,23 @@ public class GameScreen extends ScreenAdapter {
     State state;
     Winner winner;
 
-    //globale za igro
-    //deki za vlecenje in za opuscanje
+    //GLOBALE ZA IGRO
+    //DECKI
     private int deckSize = 104; //MAX st. kart
     private Deck deckDraw;
     private Deck deckDiscard;
     //karta, ki je na vrhu discard kupa
     private Card topCard;
+
     //trenutni turn
     private int playerTurn;
+    //preglej ce trenutni player naredil akcijo
+    private boolean playerPerformedAction;
     //vrstni red
     private boolean clockwiseOrder;
+    //AI difficulty
+    private int difficultyAI;
+
     //playerji
     private PlayerData player;
     private PlayerData computer;
@@ -106,8 +112,6 @@ public class GameScreen extends ScreenAdapter {
             sfxPickup = assetManager.get(AssetDescriptors.PICK_SOUND);
             sfxCollect = assetManager.get(AssetDescriptors.SET_SOUND);
         }
-        getFirstTurn();
-        getFirstRotation();
 
         font = assetManager.get(AssetDescriptors.UI_FONT);
         //shapeRenderer = new ShapeRenderer();
@@ -333,57 +337,6 @@ public class GameScreen extends ScreenAdapter {
         //calc pointe
     }
 
-    private void gameControl(Card card, Hand hand){
-        Gdx.app.log("Card",card.asString());
-        int index;
-        //iste barve ali simbola
-        if(topCard.containsColor(card) || topCard.containsSymbol(card)){
-            hand.setCard(deckDiscard,card);
-            topCard = card;
-            if(card.isSpecial()){
-                String special = card.getSpecial();
-                switch (special){
-                    //Stop
-                    case "S":
-                        //dobi naslednjega playerja glede na turnOrder pref
-                        //blokiraj njihov turn
-                        playerTurn = getNextTurn(playerTurn);
-                        break;
-                    //Reverse
-                    case "R":
-                        //spremeni turnOrder
-                        clockwiseOrder=!clockwiseOrder;
-                        break;
-                    //Plus 2
-                    case "P2":
-                        //dobi naslednjega playerja glede na turnOrder pref
-                        //naj vlecejo +2
-                        index = getNextTurn(playerTurn);
-                        while(playersData.get(index-1)==null)
-                            index = getNextTurn(index);
-                        playersData.get(playerTurn-1).getHand().pickCards(deckDraw,2);
-                        break;
-                    //Plus 4
-                    case "P4":
-                        //dobi naslednjega playerja glede na turnOrder pref
-                        //naj vlecejo +4
-                        index = getNextTurn(playerTurn);
-                        while(playersData.get(index-1)==null)
-                            index = getNextTurn(index);
-                        playersData.get(playerTurn-1).getHand().pickCards(deckDraw,4);
-                        break;
-                    //Rainbow
-                    default:
-                        //TODO select color screen da izberes nov color od topCard
-
-                }
-            }
-        }
-        index = getNextTurn(playerTurn);
-        while(playersData.get(index-1)==null)
-            index = getNextTurn(index);
-        playerTurn = index;
-    }
     private void handleInput() {
         //touch == phone touchscreen?
         //if (Gdx.input.justTouched()) {
@@ -396,37 +349,61 @@ public class GameScreen extends ScreenAdapter {
             Vector2 worldCoords = viewport.unproject(new Vector2(touchX, touchY));
 
             if(state==State.Running) {
-                if (isClickedOnDeck(worldCoords.x, worldCoords.y, deckDraw)) {
-                    if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
-                        // Player clicked on this card
-                        if (sfxPickup != null) {
-                            sfxPickup.play();
-                        }
-                        player.getHand().pickCard(deckDraw);
-                    }
-                }
-                for (Card card : player.getHand().getCards()) {
-                    if (isClickedOnCard(worldCoords.x, worldCoords.y, card)) {
-                       card.setHighlight(true);
-                        if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
-                            // Player clicked on this card
-                            if(sfxCollect!=null){
-                                sfxCollect.play();
+                //player se ni imel poteze ta turn
+                if(!playerPerformedAction){
+                    //player trenutnega turna
+                    PlayerData currentPlayer = playersData.get(playerTurn-1);
+                    Gdx.app.log("Current player",currentPlayer.getName());
+                    //current player je human
+                    if(!Objects.equals(currentPlayer.getName(), "Computer")) {
+                        //kliknil na deck
+                        if (isClickedOnDeck(worldCoords.x, worldCoords.y, deckDraw)) {
+                            if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+                                if (sfxPickup != null) {
+                                    sfxPickup.play();
+                                }
+                                currentPlayer.getHand().pickCard(deckDraw);
+                                playerPerformedAction=true;
                             }
-                            //TODO izbira vec kart (isHighlighted) in posli vse v discard deck
-                            gameControl(card,player.getHand());
-                            break;
-                            //state = State.Over;
-                            // Perform other actions as needed
+                        }
+                        //kliknil na card - kateri card v roki
+                        for (Card card : player.getHand().getCards()) {
+                            if (isClickedOnCard(worldCoords.x, worldCoords.y, card)) {
+                                //izbran card ima highlight
+                                card.setHighlight(true);
+                                if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+                                    if (sfxCollect != null) {
+                                        sfxCollect.play();
+                                    }
+                                    //TODO izbira vec kart (isHighlighted) in posli vse v discard deck
+                                    gameControl(card, currentPlayer.getHand());
+                                    topCard = deckDiscard.getTopCard();
+                                    break;
+                                }
+                            } else {
+                                card.setHighlight(false);
+                            }
                         }
                     }
+                    //current player je computer
                     else{
-                        card.setHighlight(false);
+                        //TODO computer igranje (3 difficulty)
+                        switch (difficultyAI){
+                            case 1:
+                                //random select kart
+                                //cardAIrandom();
+                                break;
+                            case 3:
+                                //gleda od playerjev karte
+                                //cardAIcheater();
+                                break;
+                            default:
+                                //gleda prioritete svojih kart
+                                cardAIpriority();
+                        }
                     }
+                    playerPerformedAction=false;
                 }
-
-                // Simulate computer's move
-                //playComputerCard(computer.getRandomCard());
             }
             /*
             else if(state==State.Over) {
@@ -439,37 +416,96 @@ public class GameScreen extends ScreenAdapter {
             }
             */
     }
+    private void cardAIpriority(){
+        //kopija roke
+        Hand phantomHand = computer.getHand();
+        Card card = null;
+        do{
+            //dobi karto iz roke z najvecjo prioriteto
+            card = phantomHand.getHighestPriorityCard();
+            phantomHand.setCard(card,null);
+            //computer nima validnih kart v decku, draw new card
+            if(phantomHand.getCards().isEmpty()){
+                break;
+            }
+        }while(!topCard.containsColor(card) && !topCard.containsSymbol(card));
+        if(phantomHand.getCards().isEmpty()){
+            computer.getHand().pickCard(deckDraw);
+            playerPerformedAction=true;
+        }
+        else if(card!=null){
+            phantomHand.setCard(card,deckDiscard);
+            topCard = deckDiscard.getTopCard();
+            if(card.isSpecial()){
+                specialCardAction(card);
+            }
+            playerPerformedAction=true;
+        }
+        if(playerPerformedAction)
+            playerTurn = getNextTurn(playerTurn);
+    }
 
+    private void gameControl(Card card, Hand hand){
+        Gdx.app.log("Card",card.asString());
+        //iste barve ali simbola
+        if(topCard.containsColor(card) || topCard.containsSymbol(card)){
+            hand.setCard(card,deckDiscard);
+            playerPerformedAction=true;
+            if(card.isSpecial()){
+                specialCardAction(card);
+            }
+        }
+        playerTurn = getNextTurn(playerTurn);
+    }
+    void specialCardAction(Card card){
+        int index;
+        String special = card.getSpecial();
+        switch (special){
+            //Stop
+            case "S":
+                //dobi naslednjega playerja glede na turnOrder pref
+                //blokiraj njihov turn
+                playerTurn = getNextTurn(playerTurn);
+                break;
+            //Reverse
+            case "R":
+                //spremeni turnOrder
+                clockwiseOrder=!clockwiseOrder;
+                break;
+            //Plus 2
+            case "P2":
+                //dobi naslednjega playerja glede na turnOrder pref
+                //naj vlecejo +2
+                index = getNextTurn(playerTurn);
+                playersData.get(index-1).getHand().pickCards(deckDraw,2);
+                break;
+            //Plus 4
+            case "P4":
+                //dobi naslednjega playerja glede na turnOrder pref
+                //naj vlecejo +4
+                index = getNextTurn(playerTurn);
+                playersData.get(index-1).getHand().pickCards(deckDraw,4);
+                break;
+            //Rainbow
+            default:
+                //TODO select color screen da izberes nov color od topCard
+
+        }
+    }
+
+    //glej ce je mouse click na karti
     private boolean isClickedOnCard(float mouseX, float mouseY, Card card) {
-        // Check if the mouse click is within the bounds of the card
-        // Implement the logic based on your card rendering and positioning
-        // You may need to consider the card's position, size, and orientation
-        // For simplicity, assuming the cards are arranged horizontally
         Vector2 position = card.getPosition();
         Rectangle bounds = card.getBounds();
         return mouseX >= position.x && mouseX <= position.x + bounds.width
                 && mouseY >= position.y && mouseY <= position.y + bounds.height;
     }
+    //glej ce je mouse click na decku
     private boolean isClickedOnDeck(float mouseX, float mouseY, Deck deck) {
-        // Check if the mouse click is within the bounds of the card
-        // Implement the logic based on your card rendering and positioning
-        // You may need to consider the card's position, size, and orientation
-        // For simplicity, assuming the cards are arranged horizontally
         Vector2 position = deck.getPosition();
         Rectangle bounds = deck.getBounds();
         return mouseX >= position.x && mouseX <= position.x + bounds.width
                 && mouseY >= position.y && mouseY <= position.y + bounds.height;
-    }
-
-    private void playPlayerCard(Card card) {
-        // Remove the card from the player's hand
-        if(sfxCollect!=null){
-            sfxCollect.play();
-        }
-        //player.getHand().removeCard(card);
-        // Place the card on top of the discard deck
-        //discardDeck.addCard(card);
-        // Perform other actions related to playing the card
     }
 
     //s cigavim turn se igra zacne
@@ -480,25 +516,30 @@ public class GameScreen extends ScreenAdapter {
         3-top
         4-right
          */
+        playerTurn = 1;
+        /*
         if(Objects.equals(manager.getStarterPref(), "Player"))
             playerTurn=1;
         else if(Objects.equals(manager.getStarterPref(), "Computer"))
             playerTurn=3;
+         */
     }
-    //vrni naslednji turn index
-    private int getNextTurn(int playerTurn){
-        if(clockwiseOrder){
-            if(playerTurn<4)
-                return playerTurn+1;
-            else
-                return 1;
-        }
-        else {
-            if(playerTurn>1)
-                return playerTurn-1;
-            else
-                return 4;
-        }
+    //vrni turn index naslednjega playerja, ce obstaja
+    private int getNextTurn(int index){
+        do {
+            if (clockwiseOrder) {
+                if (index < 4)
+                    index += 1;
+                else
+                    index = 1;
+            } else {
+                if (index > 1)
+                    index -= 1;
+                else
+                    index = 4;
+            }
+        } while(playersData.get(index-1)==null);
+        return index;
     }
     //dobi rotacijo
     private void getFirstRotation() {
@@ -509,16 +550,6 @@ public class GameScreen extends ScreenAdapter {
             clockwiseOrder=false;
         }
     }
-
-/*
-    private void playComputerCard(Card card) {
-        // Remove the card from the computer's hand
-        computer.getHand().removeCard(card);
-        // Place the card on top of the discard deck
-        discardDeck.addCard(card);
-        // Perform other actions related to the computer playing the card
-    }
-    */
 
     @Override
     public void hide(){
@@ -575,6 +606,12 @@ public class GameScreen extends ScreenAdapter {
         playersData.add(null);  //left
         playersData.add(computer); //top
         playersData.add(null);  //right
+
+        //pripravi globale
+        getFirstTurn();
+        getFirstRotation();
+        playerPerformedAction = false;
+        difficultyAI = manager.getDifficultyPref();
     }
 
 
@@ -602,8 +639,6 @@ public class GameScreen extends ScreenAdapter {
         Table buttonTable = new Table();
         buttonTable.defaults();
 
-        //buttonTable.add(titleText).padBottom(15).row();
-        //buttonTable.add(introButton).padBottom(15).expandX().fillX().row();
         buttonTable.add(exitButton).padBottom(15).expandX().fill().row();
         buttonTable.center();
 

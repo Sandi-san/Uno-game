@@ -148,14 +148,14 @@ public class SettingsScreen extends ScreenAdapter {
         //DOBI VREDNOSTI IZ NASTAVITEV
         String namePref = manager.getNamePref();
         String presetPref = manager.getPresetPref();
-        String starterPref = manager.getStarterPref();
+        int difficultyPref = manager.getDifficultyPref();
         String orderPref = manager.getOrderPref();
         boolean soundPref = manager.getSoundPref();
         boolean musicPref = manager.getMusicPref();
 
         //PRIPRAVI SEZNAME ZA BOX
         String[] presetValues = new String[]{"All", "Numbers only"};
-        String[] starterValues = new String[]{"Player", "Computer"};
+        Integer[] difficultyValues = new Integer[]{1,2,3};
         String[] orderValues = new String[]{"Clockwise", "Counter Clockwise"};
 
         //USTVARI WIDGETE
@@ -165,9 +165,9 @@ public class SettingsScreen extends ScreenAdapter {
         //NAPOLNI SEZNAM IN NASTAVI PRIKAZAN ELEMENT
         presetBox.setItems(presetValues);
         presetBox.setSelected(presetPref);
-        final SelectBox<String> starterBox = new SelectBox<String>(skin);
-        starterBox.setItems(starterValues);
-        starterBox.setSelected(starterPref);
+        final SelectBox<Integer> difficultyBody = new SelectBox<Integer>(skin);
+        difficultyBody.setItems(difficultyValues);
+        difficultyBody.setSelected(difficultyPref);
         final SelectBox<String> orderBox = new SelectBox<String>(skin);
         orderBox.setItems(orderValues);
         orderBox.setSelected(orderPref);
@@ -187,7 +187,7 @@ public class SettingsScreen extends ScreenAdapter {
         settingsTable.add(presetLabel).pad(10);
         settingsTable.add(presetBox).pad(10).width(nameField.getWidth()).row();
         settingsTable.add(starterLabel).pad(10);
-        settingsTable.add(starterBox).pad(10).width(nameField.getWidth()).row();
+        settingsTable.add(difficultyBody).pad(10).width(nameField.getWidth()).row();
         settingsTable.add(orderLabel).pad(10);
         settingsTable.add(orderBox).pad(10).width(nameField.getWidth()).row();
         settingsTable.add(soundCheckBox).pad(10);
@@ -199,7 +199,7 @@ public class SettingsScreen extends ScreenAdapter {
             public void clicked(InputEvent event, float x, float y) {
                 manager.setNamePref(nameField.getText());
                 manager.setPresetPref(presetBox.getSelected());
-                manager.setStarterPref(starterBox.getSelected());
+                manager.setDifficultyPref(difficultyBody.getSelected());
                 manager.setOrderPref(orderBox.getSelected());
                 manager.setSoundPref(soundCheckBox.isChecked());
                 manager.setMusicPref(musicCheckBox.isChecked());
