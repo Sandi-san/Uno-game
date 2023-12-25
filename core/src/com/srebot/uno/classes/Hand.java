@@ -8,14 +8,31 @@ public class Hand {
     public Hand(){
         this.cards = new Array<Card>();
     }
+    //copy constructor
+    public Hand(Hand hand){
+        this.cards = new Array<Card>(hand.getCards());
+    }
+
+    public Hand(Card lastCard) {
+        Array<Card> cards = new Array<Card>();
+        cards.add(lastCard);
+        this.cards = cards;
+    }
+
+    public Array<Card> getCards(){
+        return cards;
+    }
 
     public void pickCard(Deck deck){
-        Card card = deck.pickCard();
-        cards.add(card);
+        if(!deck.isEmpty()) {
+            Card card = deck.pickCard();
+            cards.add(card);
+        }
     }
     public void pickCards(Deck deck, int n){
         Card card;
         for(int i=0;i<n;++i){
+            if(deck.isEmpty()) break;
             card = deck.pickCard();
             cards.add(card);
         }
@@ -28,9 +45,6 @@ public class Hand {
         if(cardIndex != -1){
             cards.removeIndex(cardIndex);
         }
-    }
-    public Array<Card> getCards(){
-        return cards;
     }
 
     public Card getHighestPriorityCard(){
@@ -45,5 +59,19 @@ public class Hand {
             }
         }
         return card;
+    }
+    public Card getLastCard(){
+        if(!cards.isEmpty()){
+            return cards.get(cards.size-1);
+        }
+        return null;
+    }
+    //dobi vsoto vseh tock kart v roki
+    public int getSumCardPoints(){
+        int value=0;
+        for(Card card : cards){
+            value+=card.getValue();
+        }
+        return value;
     }
 }

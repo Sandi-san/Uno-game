@@ -8,7 +8,9 @@ import com.badlogic.gdx.utils.JsonValue;
 import com.srebot.uno.classes.PlayerData;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 public class GameManager {
     public static final GameManager INSTANCE = new GameManager();
@@ -138,12 +140,23 @@ public class GameManager {
         try {
             //ne shranjevat Hand in nastavi score na -1, ce je score 0
             //ker json ne zna shranit int=0
-            //TODO ne shranit player z imenom "Computer"
-            for(PlayerData i : playerDataList){
+            Iterator<PlayerData> iterator = playerDataList.iterator();
+            while (iterator.hasNext()) {
+                PlayerData player = iterator.next();
+                if (player != null) {
+                    // ne shranit playerja z imenom "Computer"
+                    if (Objects.equals(player.getName(), "Computer")) {
+                        iterator.remove();
+                    } else {
+                        player.setHand(null);
+                    }
+                }
+                /*
                 //ALTERNATIVNO, ne shranit PlayerData, ce ima score 0
                 if(i.getScore()==0)
                     i.setScore(-1);
                 i.setHand(null);
+                 */
             }
             // Serialize the list of PlayerData to JSON
             String jsonData = json.toJson(playerDataList);

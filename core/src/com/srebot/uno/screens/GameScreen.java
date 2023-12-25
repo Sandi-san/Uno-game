@@ -43,9 +43,11 @@ public class GameScreen extends ScreenAdapter {
     public enum State{
         Running, Paused, Over
     }
-    //kdo je zmagovalec?
+    //kdo je zmagovalec? (za vse player-je)
     public enum Winner{
-        Player, Computer, None
+        Player1, Player2,
+        Player3, Player4,
+        None
     }
 
     private final Uno game;
@@ -61,7 +63,6 @@ public class GameScreen extends ScreenAdapter {
 
     private Skin skin;
     private TextureAtlas gameplayAtlas;
-    private Music music;
     private Sound sfxPickup;
     private Sound sfxCollect;
     private BitmapFont font;
@@ -114,8 +115,6 @@ public class GameScreen extends ScreenAdapter {
         }
 
         font = assetManager.get(AssetDescriptors.UI_FONT);
-        //shapeRenderer = new ShapeRenderer();
-        //exitButton = new Rectangle();
         batch = new SpriteBatch();
         initGame();
     }
@@ -154,8 +153,10 @@ public class GameScreen extends ScreenAdapter {
         float a=0.7f; //prosojnost
         ScreenUtils.clear(r,g,b,a);
 
-        checkGamestate();
-        handleInput();
+        if(state!=State.Over){
+            checkGamestate();
+            handleInput();
+        }
 
         switch (state) {
             case Running:
@@ -326,16 +327,65 @@ public class GameScreen extends ScreenAdapter {
             state = State.Over;
             winner = Winner.None;
         }
-        else if(player.getHand().getCards().isEmpty()) {
-            state = State.Over;
-            winner = Winner.Player;
+        for(int i=0;i<playersData.size();++i){
+            if(state == State.Over) break;
+            PlayerData player = playersData.get(i);
+            if(player!=null) {
+                if(player.getHand().getCards().isEmpty()) {
+                    switch (i) {
+                        case 0:
+                            winner = Winner.Player1;
+                            state = State.Over;
+                            //calcPoints(player);
+                            break;
+                        case 1:
+                            winner = Winner.Player2;
+                            state = State.Over;
+                            //calcPoints(player);
+                            break;
+                        case 2:
+                            winner = Winner.Player3;
+                            state = State.Over;
+                            //calcPoints(player);
+                            break;
+                        case 3:
+                            winner = Winner.Player4;
+                            state = State.Over;
+                            //calcPoints(player);
+                            break;
+                    }
+                }
+            }
         }
-        else if(computer.getHand().getCards().isEmpty()) {
-            state = State.Over;
-            winner = Winner.Computer;
+        if(state == State.Over){
+            calcPoints();
         }
-        //calc pointe
     }
+    void calcPoints(){
+        for(PlayerData currentPlayer : playersData){
+            int sumPoints = 0;
+            if(currentPlayer!=null) {
+                for (PlayerData otherPlayer : playersData) {
+                    if(otherPlayer!=null) {
+                        if (!Objects.equals(otherPlayer.getName(), currentPlayer.getName())) {
+                            sumPoints += otherPlayer.getHand().getSumCardPoints();
+                        }
+                    }
+                }
+                currentPlayer.setScore(sumPoints);
+            }
+        }
+    }
+    /*
+    void calcPoints(PlayerData player){
+        int sumPoints = 0;
+        for(PlayerData p : playersData){
+            if(!Objects.equals(p.getName(), player.getName())){
+                sumPoints+=p.getHand().getSumCardPoints();
+            }
+        }
+        player.setScore(sumPoints);
+    }*/
 
     private void handleInput() {
         //touch == phone touchscreen?
@@ -353,7 +403,7 @@ public class GameScreen extends ScreenAdapter {
                 if(!playerPerformedAction){
                     //player trenutnega turna
                     PlayerData currentPlayer = playersData.get(playerTurn-1);
-                    Gdx.app.log("Current player",currentPlayer.getName());
+                    //Gdx.app.log("Current player",currentPlayer.getName());
                     //current player je human
                     if(!Objects.equals(currentPlayer.getName(), "Computer")) {
                         //kliknil na deck
@@ -363,6 +413,8 @@ public class GameScreen extends ScreenAdapter {
                                     sfxPickup.play();
                                 }
                                 currentPlayer.getHand().pickCard(deckDraw);
+                                //ce hocemo da konec tren player turna, ko vlece karto iz decka
+                                playerTurn = getNextTurn(playerTurn);
                                 playerPerformedAction=true;
                             }
                         }
@@ -387,7 +439,7 @@ public class GameScreen extends ScreenAdapter {
                     }
                     //current player je computer
                     else{
-                        //TODO computer igranje (3 difficulty)
+                        //TODO ostala 2 difficulty-ja
                         switch (difficultyAI){
                             case 1:
                                 //random select kart
@@ -418,27 +470,31 @@ public class GameScreen extends ScreenAdapter {
     }
     private void cardAIpriority(){
         //kopija roke
-        Hand phantomHand = computer.getHand();
+        Hand phantomHand = new Hand(computer.getHand());
         Card card = null;
-        do{
+        while(true){
             //dobi karto iz roke z najvecjo prioriteto
             card = phantomHand.getHighestPriorityCard();
             phantomHand.setCard(card,null);
-            //computer nima validnih kart v decku, draw new card
-            if(phantomHand.getCards().isEmpty()){
+            //karta je validna
+            if(topCard.containsColor(card) || topCard.containsSymbol(card)){
+                computer.getHand().setCard(card,deckDiscard);
+                topCard = deckDiscard.getTopCard();
+                if(card.isSpecial()){
+                    specialCardAction(card);
+                }
+                playerPerformedAction=true;
                 break;
             }
-        }while(!topCard.containsColor(card) && !topCard.containsSymbol(card));
+            //computer nima validnih kart v roki, draw new card
+            if(phantomHand.getCards().isEmpty()){
+                computer.getHand().pickCard(deckDraw);
+                //copy ampak samo zadnji card (redundanca)
+                phantomHand = new Hand(computer.getHand().getLastCard());
+            }
+        }
         if(phantomHand.getCards().isEmpty()){
             computer.getHand().pickCard(deckDraw);
-            playerPerformedAction=true;
-        }
-        else if(card!=null){
-            phantomHand.setCard(card,deckDiscard);
-            topCard = deckDiscard.getTopCard();
-            if(card.isSpecial()){
-                specialCardAction(card);
-            }
             playerPerformedAction=true;
         }
         if(playerPerformedAction)
@@ -450,12 +506,13 @@ public class GameScreen extends ScreenAdapter {
         //iste barve ali simbola
         if(topCard.containsColor(card) || topCard.containsSymbol(card)){
             hand.setCard(card,deckDiscard);
-            playerPerformedAction=true;
             if(card.isSpecial()){
                 specialCardAction(card);
             }
+            //player polozil karto na deck
+            playerPerformedAction=true;
+            playerTurn = getNextTurn(playerTurn);
         }
-        playerTurn = getNextTurn(playerTurn);
     }
     void specialCardAction(Card card){
         int index;
@@ -469,8 +526,9 @@ public class GameScreen extends ScreenAdapter {
                 break;
             //Reverse
             case "R":
-                //spremeni turnOrder
+                //spremeni turnOrder in current player ponovno potezo
                 clockwiseOrder=!clockwiseOrder;
+                playerTurn = getNextTurn(playerTurn);
                 break;
             //Plus 2
             case "P2":
