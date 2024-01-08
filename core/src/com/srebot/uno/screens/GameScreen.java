@@ -145,74 +145,67 @@ public class GameScreen extends ScreenAdapter {
     }
 
     @Override
-    public void render(float delta){
+    public void render(float delta) {
         //doloci barve ozadja
-        float r=200/255f;
-        float g=30/255f;
-        float b=100/255f;
-        float a=0.7f; //prosojnost
-        ScreenUtils.clear(r,g,b,a);
+        float r = 200 / 255f;
+        float g = 30 / 255f;
+        float b = 100 / 255f;
+        float a = 0.7f; //prosojnost
+        ScreenUtils.clear(r, g, b, a);
 
-        if(state!=State.Over){
+        if (state != State.Over) {
             checkGamestate();
             handleInput();
         }
 
-        switch (state) {
-            case Running:
-                viewport.apply();
-                //setProjectionMatrix - uporabi viewport za prikaz sveta (WORLD UNITS)
-                batch.setProjectionMatrix(viewport.getCamera().combined);
-                batch.begin();
-                draw();
-                batch.end();
-                break;
-            case Over:
-                stage.act(delta);
-                stage.draw();
-                Gdx.input.setInputProcessor(stage);
-                break;
+        viewport.apply();
+        //setProjectionMatrix - uporabi viewport za prikaz sveta (WORLD UNITS)
+        batch.setProjectionMatrix(viewport.getCamera().combined);
+        batch.begin();
+        draw();
+        batch.end();
+
+        if (state == State.Over) {
+            stage.act(delta);
+            stage.draw();
+            Gdx.input.setInputProcessor(stage);
         }
     }
 
-    public void draw(){
+    public void draw() {
         //TODO HUD
 
-        switch (state) {
-            case Running:
-                //VELIKOST kart (v WORLD UNITS)
-                float sizeX = GameConfig.CARD_HEIGHT;
-                float sizeY = GameConfig.CARD_WIDTH;
+        //VELIKOST kart (v WORLD UNITS)
+        float sizeX = GameConfig.CARD_HEIGHT;
+        float sizeY = GameConfig.CARD_WIDTH;
 
-                //MIDDLE DECK
-                String topCardTexture = topCard.getTexture();
-                TextureRegion topCardRegion = gameplayAtlas.findRegion(topCardTexture);
-                //POZICIJA
-                float topX = (GameConfig.WORLD_WIDTH - sizeX) / 2f;
-                float topY = (GameConfig.WORLD_HEIGHT - sizeY) / 2f;
-                topCard.setPositionAndBounds(topX, topY, sizeX, sizeY);
-                Card.render(batch, topCardRegion, topCard);
+        if (state == State.Running) {
+            //MIDDLE DECK
+            String topCardTexture = topCard.getTexture();
+            TextureRegion topCardRegion = gameplayAtlas.findRegion(topCardTexture);
+            //POZICIJA
+            float topX = (GameConfig.WORLD_WIDTH - sizeX) / 2f;
+            float topY = (GameConfig.WORLD_HEIGHT - sizeY) / 2f;
+            topCard.setPositionAndBounds(topX, topY, sizeX, sizeY);
+            Card.render(batch, topCardRegion, topCard);
 
-                //DRAW DECK
-                TextureRegion drawDeckRegion = gameplayAtlas.findRegion(RegionNames.back);
-                float drawX = (GameConfig.WORLD_WIDTH - sizeX);
-                float drawY = (GameConfig.WORLD_HEIGHT - sizeY) / 2f;
-                deckDraw.setPositionAndBounds(drawX, drawY, sizeX, sizeY);
-                Card.render(batch, drawDeckRegion, drawX, drawY, sizeX, sizeY);
-
-                //DRAW PLAYER in COMPUTER HANDS
-                Hand playerHand = player.getHand();
-                drawHand(playerHand, 0,
-                        sizeX, sizeY, true);
-                Hand computerHand = computer.getHand();
-                drawHand(computerHand, (GameConfig.WORLD_HEIGHT - sizeY),
-                        sizeX, sizeY, false);
-                break;
-            case Over:
-                //DRAW EXIT BUTTON
-                //drawExitButton();
-                break;
+            //DRAW DECK
+            TextureRegion drawDeckRegion = gameplayAtlas.findRegion(RegionNames.back);
+            float drawX = (GameConfig.WORLD_WIDTH - sizeX);
+            float drawY = (GameConfig.WORLD_HEIGHT - sizeY) / 2f;
+            deckDraw.setPositionAndBounds(drawX, drawY, sizeX, sizeY);
+            Card.render(batch, drawDeckRegion, drawX, drawY, sizeX, sizeY);
         }
+        //DRAW PLAYER in COMPUTER HANDS
+        Hand playerHand = player.getHand();
+        drawHand(playerHand, 0,
+                sizeX, sizeY, true);
+        Hand computerHand = computer.getHand();
+        drawHand(computerHand, (GameConfig.WORLD_HEIGHT - sizeY),
+                sizeX, sizeY, false);
+
+        //DRAW EXIT BUTTON
+        //drawExitButton();
     }
     private void drawHand(Hand hand, float startY, float sizeX,float sizeY, boolean isPlayer){
         Array<Card> cards = hand.getCards();
@@ -246,7 +239,7 @@ public class GameScreen extends ScreenAdapter {
             String texture;
             TextureRegion region;
             if (!card.getHighlight()) {
-                if (isPlayer) {
+                if (isPlayer || state==State.Over) {
                     texture = card.getTexture();
                     region = gameplayAtlas.findRegion(texture);
                 } else {
@@ -267,14 +260,14 @@ public class GameScreen extends ScreenAdapter {
                 Card card = cards.get(j);
                 String texture;
                 TextureRegion region;
-                if (isPlayer) {
+                if (isPlayer || state==State.Over) {
                     texture = card.getTexture();
                     region = gameplayAtlas.findRegion(texture);
                 } else {
                     region = gameplayAtlas.findRegion(RegionNames.back);
                 }
                 float posX = startX + j * spacing;
-                float posY = startY + 1f; //slightly gor
+                float posY = startY + 2f; //slightly gor
                 card.setPositionAndBounds(posX, posY, sizeX, sizeY);
                 Card.render(batch, region, card);
             }

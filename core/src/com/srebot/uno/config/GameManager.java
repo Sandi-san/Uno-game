@@ -68,9 +68,10 @@ public class GameManager {
     public void setNamePref(String namePref) {
         //player name ne sme biti "Computer"
         //rezervirano za AI playerja
-        if(!namePref.equals("Computer"))
+        if(!namePref.equals("Computer")) {
             this.namePref = namePref;
             PREFS.putString("currentPlayer", namePref);
+        }
     }
     public void setPresetPref(String presetPref) {
         this.presetPref = presetPref;
@@ -138,6 +139,7 @@ public class GameManager {
 
     public void saveDataToJsonFile(List<PlayerData> playerDataList) {
         try {
+            List<PlayerData> playersFromJson = loadFromJson();
             //ne shranjevat Hand in nastavi score na -1, ce je score 0
             //ker json ne zna shranit int=0
             Iterator<PlayerData> iterator = playerDataList.iterator();
@@ -147,16 +149,22 @@ public class GameManager {
                     // ne shranit playerja z imenom "Computer"
                     if (Objects.equals(player.getName(), "Computer")) {
                         iterator.remove();
-                    } else {
+                        continue;
+                    }
+                    else {
+                        //ce ima trenutni player manjsi score kot njegov max ki je ze v jsonu
+                        //potem nastavi trenutni na max (da ne bo zmanjsal njegov highscore)
+                        PlayerData playerFromJson = getPlayerByName(playersFromJson, player.getName());
+                        if(playerFromJson!=null) {
+                            if (player.getScore() < playerFromJson.getScore())
+                                player.setScore(playerFromJson.getScore());
+                        }
+                        //ce je score==0, nastavi na -1, da lahko shrani v json
+                        if(player.getScore()==0)
+                            player.setScore(-1);
                         player.setHand(null);
                     }
                 }
-                /*
-                //ALTERNATIVNO, ne shranit PlayerData, ce ima score 0
-                if(i.getScore()==0)
-                    i.setScore(-1);
-                i.setHand(null);
-                 */
             }
             // Serialize the list of PlayerData to JSON
             String jsonData = json.toJson(playerDataList);
