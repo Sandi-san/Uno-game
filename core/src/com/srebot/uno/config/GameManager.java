@@ -33,7 +33,6 @@ public class GameManager {
     private boolean soundPref;
     private boolean musicPref;
 
-    private int scorePlayer;
     private PlayerData playersData;
 
     public GameManager() {
@@ -97,25 +96,6 @@ public class GameManager {
         PREFS.flush();
     }
 
-    public void appendToJson(List<PlayerData> playerDataList){
-        // Load existing data from the JSON file
-        //List<PlayerData> playerDataList = loadFromJson();
-
-        // Check if the player with the given name already exists
-        PlayerData existingPlayer = getPlayerByName(playerDataList, namePref);
-
-        if (existingPlayer != null) {
-            // If the player exists, update the score
-            existingPlayer.setScore(existingPlayer.getScore() + scorePlayer);
-        } else {
-            // If the player doesn't exist, create a new entry
-            PlayerData newPlayer = new PlayerData(namePref, scorePlayer);
-            playerDataList.add(newPlayer);
-        }
-
-        // Save the updated data back to the JSON file
-        saveDataToJsonFile(playerDataList);
-    }
     public List<PlayerData> loadFromJson() {
         List<PlayerData> playerDataList = new ArrayList<>();
 
@@ -137,9 +117,37 @@ public class GameManager {
         return playerDataList;
     }
 
+    //zdruzi playerje iz json z playerje trenutne igre
+    public List<PlayerData>  mergeJson(List<PlayerData> playerDataList) {
+        List<PlayerData> playersFromJson = loadFromJson();
+        //iteriraj skozi playersFromJson in zdruzi s playerDataList
+        for (PlayerData playerJson : playersFromJson) {
+            boolean playerExists = false;
+            for (PlayerData existingPlayer : playerDataList) {
+                if (existingPlayer != null) {
+                    if (Objects.equals(playerJson.getName(), existingPlayer.getName())) {
+                        //posodobi player rezultat le ce je visji
+                        if (playerJson.getScore() > existingPlayer.getScore()) {
+                            existingPlayer.setScore(playerJson.getScore());
+                        }
+                        playerExists = true;
+                        break;
+                    }
+                }
+            }
+            //ce player se ne obstaja v trenutni listi, dodaj
+            if (!playerExists) {
+                playerDataList.add(playerJson);
+            }
+        }
+        return playerDataList;
+    }
+
     public void saveDataToJsonFile(List<PlayerData> playerDataList) {
         try {
-            List<PlayerData> playersFromJson = loadFromJson();
+            //zdruzi loadJson in playerDataList
+            playerDataList = mergeJson(playerDataList);
+
             //ne shranjevat Hand in nastavi score na -1, ce je score 0
             //ker json ne zna shranit int=0
             Iterator<PlayerData> iterator = playerDataList.iterator();
@@ -152,19 +160,15 @@ public class GameManager {
                         continue;
                     }
                     else {
-                        //ce ima trenutni player manjsi score kot njegov max ki je ze v jsonu
-                        //potem nastavi trenutni na max (da ne bo zmanjsal njegov highscore)
-                        PlayerData playerFromJson = getPlayerByName(playersFromJson, player.getName());
-                        if(playerFromJson!=null) {
-                            if (player.getScore() < playerFromJson.getScore())
-                                player.setScore(playerFromJson.getScore());
-                        }
                         //ce je score==0, nastavi na -1, da lahko shrani v json
                         if(player.getScore()==0)
                             player.setScore(-1);
                         player.setHand(null);
                     }
                 }
+                //odstrani null primerke (pomembno, sicer error pri load)
+                else
+                    iterator.remove();
             }
             // Serialize the list of PlayerData to JSON
             String jsonData = json.toJson(playerDataList);

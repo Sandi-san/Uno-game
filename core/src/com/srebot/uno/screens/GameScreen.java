@@ -166,6 +166,8 @@ public class GameScreen extends ScreenAdapter {
         batch.end();
 
         if (state == State.Over) {
+            if(manager.getMusicPref())
+                game.stopMusic();
             stage.act(delta);
             stage.draw();
             Gdx.input.setInputProcessor(stage);
@@ -484,6 +486,9 @@ public class GameScreen extends ScreenAdapter {
                 computer.getHand().pickCard(deckDraw);
                 //copy ampak samo zadnji card (redundanca)
                 phantomHand = new Hand(computer.getHand().getLastCard());
+                //ce hocemo da vlece le eno karto, nato player poteza
+                playerPerformedAction=true;
+                break;
             }
         }
         if(phantomHand.getCards().isEmpty()){
@@ -682,7 +687,7 @@ public class GameScreen extends ScreenAdapter {
             public void clicked(InputEvent event, float x, float y) {
                 Gdx.app.log("Button Clicked", "Exit button clicked!");
                 //shrani player podatke v json
-                manager.appendToJson(playersData);
+                manager.saveDataToJsonFile(playersData);
                 game.setScreen(new MenuScreen(game));
             }
         });
