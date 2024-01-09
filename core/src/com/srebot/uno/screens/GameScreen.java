@@ -463,6 +463,7 @@ public class GameScreen extends ScreenAdapter {
             }
             */
     }
+
     private void cardAIpriority(){
         //kopija roke
         Hand phantomHand = new Hand(computer.getHand());
@@ -490,6 +491,11 @@ public class GameScreen extends ScreenAdapter {
                 playerPerformedAction=true;
                 break;
             }
+        }
+        //computer oddal zadnjo karto in zmagal
+        if(computer.getHand().getCards().isEmpty()){
+            playerPerformedAction=true;
+            return;
         }
         if(phantomHand.getCards().isEmpty()){
             computer.getHand().pickCard(deckDraw);

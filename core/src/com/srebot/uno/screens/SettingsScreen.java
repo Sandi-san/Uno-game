@@ -179,7 +179,7 @@ public class SettingsScreen extends ScreenAdapter {
 
         Label nameLabel = new Label("Player name: ",skin);
         Label presetLabel = new Label("Card preset: ",skin);
-        Label starterLabel = new Label("Starting player: ",skin);
+        Label starterLabel = new Label("AI difficulty: ",skin);
         Label orderLabel = new Label("Turn order: ",skin);
 
         settingsTable.add(nameLabel).pad(10);

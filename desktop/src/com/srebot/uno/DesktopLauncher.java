@@ -10,7 +10,7 @@ public class DesktopLauncher {
 		Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
 		config.setForegroundFPS(60);
 		config.setTitle("Uno");
-		config.setWindowedMode(800,600);
+		config.setWindowedMode(1000,750); //800x600
 		new Lwjgl3Application(new Uno(), config);
 	}
 }
