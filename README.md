@@ -1,18 +1,18 @@
-# Uno (Ena)
+# Uno (One)
 
-## Dinamika
-- igralec (player 1)
-- nasprotnik (computer)
-- turn-based igra (najprej poteza player 1, nato computer,...)
+## Dynamics
+- player/players (player 1/players 1, 2,...)
+- opponent (computer)
+- turn-based game (player 1 moves first, then computer/player 2,...)
 
-# Mehanika
-- izvlek kart iz kupčka
-- polaganje kart na igralno polje
-- določanje katero karto položiti (lahko tudi več)
+# Mechanics
+- drawing cards from the pile
+- placing cards on the playing field
+- determining which card to lay down (can be more than one)
 
-# Elementi
-- kupček kart iz katerih vlečeta igralca
-- igralno polje oz. kamor se polagajo karte
-- karte v rokah igralca in computer-ja
-- informacije (npr. UI) z številom kart v rokah vsakega
-- posamezne karte (karte s številkami, karte katerih nasprotnik vleče več kart,...)
+# Elements
+- pile of cards from which players draw
+- the playing field or where the cards are placed
+- cards in the hands of the player/s and the computer
+- information (e.g. UI) with the number of cards in each hand
+- individual cards (cards with numbers, cards which makes opponents draw more cards, etc.)
