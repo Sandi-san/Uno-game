@@ -25,4 +25,7 @@ public class GameConfig {
     //BUTTON SIZE IN WORLD UNITS
     public static final float BUTTON_WIDTH = 20f;
     public static final float BUTTON_HEIGHT = 14f;
+
+    //MAX CARDS TO SHOW IN PLAYER HANDS AT ONE TIME
+    public static final int MAX_CARDS_SHOW = 7;
 }

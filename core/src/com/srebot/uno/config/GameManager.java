@@ -32,6 +32,8 @@ public class GameManager {
     private String orderPref;
     private boolean soundPref;
     private boolean musicPref;
+    private float soundVPref;
+    private float musicVPref;
 
     private PlayerData playersData;
 
@@ -44,6 +46,8 @@ public class GameManager {
         orderPref = PREFS.getString("cardOrder","Clockwise");
         soundPref = PREFS.getBoolean("soundEnabled", true);
         musicPref = PREFS.getBoolean("musicEnabled", true);
+        soundVPref = PREFS.getFloat("soundVolume", 1f);
+        musicVPref = PREFS.getFloat("musicVolume", 0.5f);
     }
     public String getNamePref() {
         return namePref;
@@ -62,6 +66,12 @@ public class GameManager {
     }
     public boolean getMusicPref(){
         return musicPref;
+    }
+    public float getSoundVolumePref(){
+        return soundVPref;
+    }
+    public float getMusicVolumePref(){
+        return musicVPref;
     }
 
     public void setNamePref(String namePref) {
@@ -92,6 +102,14 @@ public class GameManager {
         this.musicPref = musicPref;
         PREFS.putBoolean("musicEnabled", musicPref);
     }
+    public void setSoundVolumePref(float soundVPref) {
+        this.soundVPref = soundVPref;
+        PREFS.putFloat("soundVolume", soundVPref);
+    }
+    public void setMusicVolumePref(float musicVPref) {
+        this.musicVPref = musicVPref;
+        PREFS.putFloat("musicVolume", musicVPref);
+    }
     public void savePrefs(){
         PREFS.flush();
     }
@@ -110,7 +128,6 @@ public class GameManager {
             }
 
         } catch (Exception e) {
-            // Handle exceptions (file not found, parse error, etc.)
             e.printStackTrace();
         }
 

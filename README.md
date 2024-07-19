@@ -1,4 +1,4 @@
-# Uno (One)
+# Uno (Board game)
 
 ## Dynamics
 - player/players (player 1/players 1, 2,...)

@@ -65,6 +65,13 @@ size: 1024, 1024
 format: RGBA8888
 filter: Nearest, Nearest
 repeat: none
+Arrow
+  rotate: false
+  xy: 834, 62
+  size: 158, 233
+  orig: 158, 233
+  offset: 0, 0
+  index: -1
 background3
   rotate: false
   xy: 2, 297

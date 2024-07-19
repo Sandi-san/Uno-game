@@ -72,7 +72,7 @@ public class GameScreen extends ScreenAdapter {
 
     //GLOBALE ZA IGRO
     //DECKI
-    private int deckSize = 104; //MAX st. kart
+    private int deckSize = 104; //MAX st. kart (daj v GameConfig?)
     private Deck deckDraw;
     private Deck deckDiscard;
     //karta, ki je na vrhu discard kupa
@@ -92,7 +92,6 @@ public class GameScreen extends ScreenAdapter {
     private PlayerData computer;
     private List<PlayerData> playersData;
 
-
     public GameScreen(Uno game) {
         this.game = game;
         assetManager = game.getAssetManager();
@@ -104,6 +103,7 @@ public class GameScreen extends ScreenAdapter {
             game.stopMusic();
             game.setMusic(assetManager.get(AssetDescriptors.GAME_MUSIC_1));
             game.playMusic();
+            game.setMusicVolume(manager.getMusicVolumePref());
         }
         else{
             game.stopMusic();
@@ -200,6 +200,7 @@ public class GameScreen extends ScreenAdapter {
         }
         //DRAW PLAYER in COMPUTER HANDS
         Hand playerHand = player.getHand();
+        playerHand.setArrowRegions(gameplayAtlas.findRegion(RegionNames.arrow));
         drawHand(playerHand, 0,
                 sizeX, sizeY, true);
         Hand computerHand = computer.getHand();
@@ -212,31 +213,52 @@ public class GameScreen extends ScreenAdapter {
     private void drawHand(Hand hand, float startY, float sizeX,float sizeY, boolean isPlayer){
         Array<Card> cards = hand.getCards();
         int size = cards.size;
+        //hand.setIndexLast();
+        int firstIndex = hand.getIndexFirst();
+        int lastIndex = hand.getIndexLast();
 
         //TODO popravi da se ne bo vec levo izrisal ce je ze max levo (pri veliko kartih)
 
+        //OVERLAP CARD KO IMAS VEC KOT 5
         float overlap = 0f;
-        for(int i=5;i<size;++i)
-            overlap+=0.1f;
+        for (int i = 5; i < size; ++i) {
+            if (i >= GameConfig.MAX_CARDS_SHOW) break;
+            overlap += 0.1f;
+        }
         //overlap = sizeX*overlap;
         overlap = sizeX*(1-overlap);
         float startX;
         float spacing = sizeX;
 
-        //doloci spacing ce vec kart v roki
+        //brez spacing
         if(size<=5){
+            hand.setIndexLast();
+            lastIndex = hand.getIndexLast();
             startX = (GameConfig.WORLD_WIDTH - size * sizeX) / 2f;
         }
-        else {
+        //spacing le dokler ne reachas MaxCardsToShow
+        else if(size<=GameConfig.MAX_CARDS_SHOW) {
+            hand.setIndexLast();
+            lastIndex = hand.getIndexLast();
             spacing = overlap;
             startX = (GameConfig.WORLD_WIDTH - size * sizeX)/2f;
         }
-        if(startX<0)
-            startX=0;
+        //ne vec spacingat ko je imas card kot MaxCardsToShow
+        else{
+            spacing = overlap;
+            startX = (GameConfig.WORLD_WIDTH - GameConfig.MAX_CARDS_SHOW * sizeX) / 2f;
+        }
 
+        //LIMIT RENDER CARDS LEVO (plac vmes je 70% card width)
+        if(startX<(sizeX*0.7f))
+            startX = (sizeX*0.7f);
+
+        //IZRISI CARDE
         Array<Integer> indexHover = new Array<Integer>();
-        //narisi karte (ki niso hoverane)
-        for(int i=0;i<size;++i) {
+        for(int i=firstIndex;i<=size-1;++i) {
+            //==i<=lastIndex razen ko settamo Card (izogni index izven array)
+            //TODO: remove spacing pri vec kot 7 aka max cardov, popravi endX
+            if(i>lastIndex) break;
             Card card = cards.get(i);
             String texture;
             TextureRegion region;
@@ -256,7 +278,7 @@ public class GameScreen extends ScreenAdapter {
                 indexHover.add(i);
             }
         }
-        //narisi karto ki je hoverana
+        //IZRISI CARDE KI SO HOVERANE
         if(!indexHover.isEmpty()) {
             for(int j : indexHover) {
                 Card card = cards.get(j);
@@ -273,6 +295,37 @@ public class GameScreen extends ScreenAdapter {
                 card.setPositionAndBounds(posX, posY, sizeX, sizeY);
                 Card.render(batch, region, card);
             }
+        }
+
+        //kakuliraj kje se bo koncala zadnja karta
+        //float endX = GameConfig.MAX_CARDS_SHOW*sizeX-overlap;
+        float endX = 0;
+        if (!hand.getCards().isEmpty())
+            endX = (hand.getCards().get(lastIndex).getPosition().x+sizeX);
+
+        Gdx.app.log("DRAW","size to see: "+(lastIndex+1)+" | actualSize: "+size);
+
+        //LIMIT RENDER CARDS DESNO (plac vmes je 70% card width)
+        if(endX>GameConfig.WORLD_WIDTH-(sizeX*0.7f))
+            endX = (GameConfig.WORLD_WIDTH-(sizeX*0.7f));
+
+        //render button left
+        if(size>=GameConfig.MAX_CARDS_SHOW && isPlayer){
+            float arrowX = startX-sizeX/2-(sizeX*0.1f);
+            //float arrowY = startY + arrowRegion.getRegionHeight() / 2;
+            float arrowY = startY + (sizeY*0.2f);
+            hand.setArrowRegionLeft(arrowX, arrowY, sizeX/2, sizeY/2);
+            hand.renderArrowLeft(batch);
+            //batch.draw(arrowRegionLeft,arrowX, arrowY,sizeX/2, sizeY/2);
+        }
+        //render button right
+        if(size>=GameConfig.MAX_CARDS_SHOW && isPlayer){
+            float arrowX = endX+(sizeX*0.1f);
+            //float arrowY = startY + arrowRegion.getRegionHeight() / 2;
+            float arrowY = startY + (sizeY*0.2f);
+            //batch.draw(arrowRegion, arrowX, arrowY);
+            hand.setArrowRegionRight(arrowX, arrowY, sizeX/2, sizeY/2);
+            hand.renderArrowRight(batch);
         }
     }
     /*
@@ -657,10 +710,15 @@ public class GameScreen extends ScreenAdapter {
             player.setHand(playerHand);
         }
         player.getHand().pickCards(deckDraw,5);
+        //playerHand.initIndexes();
+
         //computer
         Hand computerHand = new Hand();
         computer = new PlayerData("Computer",0,computerHand);
         computer.getHand().pickCards(deckDraw,5);
+        //computerHand.initIndexes();
+
+        //ZA VSE OSTALE PLAYERJE
 
         //for each player dodaj v playerData
         //Pomembni order: bottom->left->top->right

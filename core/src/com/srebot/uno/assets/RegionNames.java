@@ -65,7 +65,7 @@ public class RegionNames {
     public static final String rainbow = "rainbow";
     public static final String back = "backside";
 
-    //TEKST
+    //TEXT
     public static final String textTitle = "textTitle";
     public static final String textLeaderboard = "textLeaderboard";
     public static final String textSettings = "textSettings";
@@ -78,6 +78,8 @@ public class RegionNames {
 
     public static final String backgroundPane1 = "backgroundPane1";
 
+    //OTHER
+    public static final String arrow = "Arrow";
 
     /*
     //sounds

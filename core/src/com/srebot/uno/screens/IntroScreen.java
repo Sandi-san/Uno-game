@@ -61,7 +61,7 @@ public class IntroScreen extends ScreenAdapter {
         assetManager.finishLoading();
 
         game.setMusic(assetManager.get(AssetDescriptors.MAIN_MUSIC));
-        game.setVolume(0.5f);
+        //game.setMusicVolume(0.5f);
 
         gameplayAtlas = assetManager.get(AssetDescriptors.GAMEPLAY);
         TextureRegion backgroundText = gameplayAtlas.findRegion(RegionNames.background1);

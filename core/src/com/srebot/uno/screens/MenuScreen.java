@@ -28,8 +28,6 @@ import com.srebot.uno.assets.RegionNames;
 import com.srebot.uno.config.GameConfig;
 import com.srebot.uno.config.GameManager;
 
-import java.awt.Color;
-
 public class MenuScreen extends ScreenAdapter {
 
     private final Uno game;
@@ -45,16 +43,18 @@ public class MenuScreen extends ScreenAdapter {
 
 
     public MenuScreen(Uno game) {
+        //SET GLOBAL VARS
         this.game = game;
         assetManager = game.getAssetManager();
         manager = game.getManager();
 
+        //SET MUSIC
         if(manager.getMusicPref()) {
             game.setMusic(assetManager.get(AssetDescriptors.MAIN_MUSIC));
-            if(game.getMusic().isPlaying()){
-                game.setVolume(0.5f);
-            }
             game.playMusic();
+            if(game.getMusic().isPlaying()){
+                game.setMusicVolume(manager.getMusicVolumePref());
+            }
         }
         else{
             game.stopMusic();

@@ -15,9 +15,11 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.SelectBox;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.Slider;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Scaling;
@@ -47,6 +49,7 @@ public class SettingsScreen extends ScreenAdapter {
         this.game = game;
         assetManager = game.getAssetManager();
         manager = game.getManager();
+        game.setMusicVolume(manager.getMusicVolumePref());
         if(manager.getMusicPref()) {
             game.playMusic();
         }
@@ -133,14 +136,6 @@ public class SettingsScreen extends ScreenAdapter {
         TextureRegion backgroundRegion = gameplayAtlas.findRegion(RegionNames.background4);
         table.setBackground(new TextureRegionDrawable(backgroundRegion));
 
-        /*
-        introButton.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                game.setScreen(new IntroScreen(game));
-           }
-        });
-        */
 
         //TextureRegion menuBackgroundRegion = gameplayAtlas.findRegion(RegionNames.MENU_BACKGROUND);
         //buttonTable.setBackground(new TextureRegionDrawable(menuBackgroundRegion));
@@ -152,6 +147,8 @@ public class SettingsScreen extends ScreenAdapter {
         String orderPref = manager.getOrderPref();
         boolean soundPref = manager.getSoundPref();
         boolean musicPref = manager.getMusicPref();
+        float soundVPref = manager.getSoundVolumePref();
+        float musicVPref = manager.getMusicVolumePref();
 
         //PRIPRAVI SEZNAME ZA BOX
         String[] presetValues = new String[]{"All", "Numbers only"};
@@ -177,11 +174,16 @@ public class SettingsScreen extends ScreenAdapter {
         final CheckBox musicCheckBox = new CheckBox("Enable Music", skin);
         musicCheckBox.setChecked(musicPref);
 
+        final Slider musicVolumeSlider = new Slider(0f,1f,0.01f, false,skin);
+        musicVolumeSlider.setValue(musicVPref);
+
         Label nameLabel = new Label("Player name: ",skin);
         Label presetLabel = new Label("Card preset: ",skin);
         Label starterLabel = new Label("AI difficulty: ",skin);
         Label orderLabel = new Label("Turn order: ",skin);
+        Label musicVolumeLabel = new Label("Music volume: ",skin);
 
+        //STYLING
         settingsTable.add(nameLabel).pad(10);
         settingsTable.add(nameField).pad(10).row();
         settingsTable.add(presetLabel).pad(10);
@@ -192,6 +194,32 @@ public class SettingsScreen extends ScreenAdapter {
         settingsTable.add(orderBox).pad(10).width(nameField.getWidth()).row();
         settingsTable.add(soundCheckBox).pad(10);
         settingsTable.add(musicCheckBox).pad(10).row();
+        settingsTable.add(musicVolumeLabel).pad(10);
+        settingsTable.add(musicVolumeSlider).pad(10).row();
+
+        //dynamic spreminjanje music play glede na slider
+        musicCheckBox.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                boolean value = musicCheckBox.isChecked();
+                if(value){
+                    game.playMusic();
+                }
+                else{
+                    game.stopMusic();
+                }
+            }
+        });
+
+        //dynamic spreminjanje music volume glede na slider
+        musicVolumeSlider.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                float value = musicVolumeSlider.getValue();
+                game.setMusicVolume(value);
+            }
+        });
+
 
         final TextButton menuButton = new TextButton("Save and return", skin);
         menuButton.addListener(new ClickListener() {
@@ -203,6 +231,7 @@ public class SettingsScreen extends ScreenAdapter {
                 manager.setOrderPref(orderBox.getSelected());
                 manager.setSoundPref(soundCheckBox.isChecked());
                 manager.setMusicPref(musicCheckBox.isChecked());
+                manager.setMusicVolumePref(musicVolumeSlider.getValue());
                 manager.savePrefs();
                 game.setScreen(new MenuScreen(game));
             }
