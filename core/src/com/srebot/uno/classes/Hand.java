@@ -1,5 +1,6 @@
 package com.srebot.uno.classes;
 
+import com.badlogic.gdx.Game;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -7,6 +8,7 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.srebot.uno.assets.RegionNames;
+import com.srebot.uno.config.GameConfig;
 
 public class Hand {
     private Array<Card> cards;
@@ -72,6 +74,20 @@ public class Hand {
         this.boundsArrowRegionRight.width = sizeX;
         this.boundsArrowRegionRight.height = sizeY;
     }
+
+    public Vector2 getPositionArrowRegionLeft() {
+        return positionArrowRegionLeft;
+    }
+    public Vector2 getPositionArrowRegionRight() {
+        return positionArrowRegionRight;
+    }
+    public Rectangle getBoundsArrowRegionLeft() {
+        return boundsArrowRegionLeft;
+    }
+    public Rectangle getBoundsArrowRegionRight() {
+        return boundsArrowRegionRight;
+    }
+
     public void renderArrowLeft(SpriteBatch batch){
         if(arrowRegionLeft!=null) {
             batch.draw(arrowRegionLeft,positionArrowRegionLeft.x,positionArrowRegionLeft.y,
@@ -86,19 +102,47 @@ public class Hand {
     }
 
     public int getIndexLast(){return this.indexLast;}
-    //actual set
-    public void setIndexLast(int index){this.indexLast=index;}
     //set default (v tem classu)
-    public void setIndexLast(){
-        this.indexLast=this.cards.size-1;
-    }
+    public void setIndexLast(){this.indexLast=this.cards.size-1;}
 
     public int getIndexFirst(){return indexFirst;}
-    //actual set
-    public void setIndexFirst(int index){this.indexFirst=index;}
     //set default (v tem classu)
     public void setIndexFirst(){
         this.indexFirst=0;
+    }
+
+    //actual set
+    public void firstIndexIncrement(){
+        //da ne bo inkrementiral firstIndex ko imamo manj kot MaxCards v roki
+        if(indexDiffValid())
+        this.indexFirst++;
+    }
+    public void firstIndexDecrement(){
+        if(this.indexFirst-1>=0)
+            this.indexFirst--;
+    }
+    //actual set
+    public void lastIndexIncrement(){
+        if(this.indexLast+1<=this.cards.size-1)
+            this.indexLast++;
+    }
+    public void lastIndexDecrement(){
+        this.indexLast--;
+    }
+
+    public void lastIndexIncrement(int num){
+        //TODO: fix ustrezno premikanje first/last index ko ti opponent vrze +2/+4 card
+        if(this.indexLast+num<GameConfig.MAX_CARDS_SHOW)
+        //if(this.indexLast+num<this.cards.size)
+            this.indexLast=this.indexLast+num;
+        else
+            this.indexLast=GameConfig.MAX_CARDS_SHOW;
+    }
+    //ne spreminjaj indekse ce difference med first in last index (za show) ni vec kot st. card ki prikazujes
+    private boolean indexDiffValid(){
+        if((this.indexLast+this.indexFirst)>=GameConfig.MAX_CARDS_SHOW-1)
+            return true;
+        return false;
     }
 
     public Array<Card> getCards(){
