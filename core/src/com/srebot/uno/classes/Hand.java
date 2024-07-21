@@ -131,12 +131,12 @@ public class Hand {
     }
 
     public void lastIndexIncrement(int num){
-        //TODO: fix ustrezno premikanje first/last index ko ti opponent vrze +2/+4 card
-        if(this.indexLast+num<GameConfig.MAX_CARDS_SHOW)
-        //if(this.indexLast+num<this.cards.size)
-            this.indexLast=this.indexLast+num;
-        else
-            this.indexLast=GameConfig.MAX_CARDS_SHOW;
+        int newLast = this.indexLast+num;
+        this.indexLast=newLast;
+        //ustrezno premikanje first/last index ko ti opponent vrze +2/+4 card
+        if(newLast>=GameConfig.MAX_CARDS_SHOW) {
+            this.indexFirst = indexLast - (GameConfig.MAX_CARDS_SHOW-1);
+        }
     }
     //ne spreminjaj indekse ce difference med first in last index (za show) ni vec kot st. card ki prikazujes
     private boolean indexDiffValid(){

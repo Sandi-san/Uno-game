@@ -91,6 +91,10 @@ public class GameScreen extends ScreenAdapter {
     private PlayerData computer;
     private List<PlayerData> playersData;
 
+    //player hand arrow button display
+    private boolean showLeftArrow;
+    private boolean showRightArrow;
+
     public GameScreen(Uno game) {
         this.game = game;
         assetManager = game.getAssetManager();
@@ -268,8 +272,6 @@ public class GameScreen extends ScreenAdapter {
         int firstIndex = hand.getIndexFirst();
         int lastIndex = hand.getIndexLast();
 
-        //TODO popravi da se ne bo vec levo izrisal ce je ze max levo (pri veliko kartih)
-
         //OVERLAP CARD KO IMAS VEC KOT 5
         float overlap = 0f;
         for (int i = 5; i < size; ++i) {
@@ -308,7 +310,6 @@ public class GameScreen extends ScreenAdapter {
         Array<Integer> indexHover = new Array<Integer>();
         for(int i=firstIndex;i<size;++i) {
             //==i<=lastIndex razen ko settamo Card (izogni index izven array)
-            //TODO: remove spacing pri vec kot 7 aka max cardov, popravi endX
             if(i>lastIndex)
                 break;
             Card card = cards.get(i);
@@ -361,22 +362,31 @@ public class GameScreen extends ScreenAdapter {
         if(endX>GameConfig.WORLD_WIDTH-(sizeX*0.7f))
             endX = (GameConfig.WORLD_WIDTH-(sizeX*0.7f));
 
+        //preveri ce so arrowi prikazani
+        if(firstIndex!=0 && isPlayer)
+            showLeftArrow=true;
+        else if(isPlayer)
+            showLeftArrow=false;
+        if(lastIndex!=cards.size-1 && isPlayer)
+            showRightArrow=true;
+        else if(isPlayer)
+            showRightArrow=false;
+
         //render button left
-        if(size>=GameConfig.MAX_CARDS_SHOW && isPlayer && firstIndex!=0){
-            float arrowX = startX-sizeX/2-(sizeX*0.1f);
+        if(size>=GameConfig.MAX_CARDS_SHOW && isPlayer && showLeftArrow) {
+            float arrowX = startX - sizeX / 2 - (sizeX * 0.1f);
             //float arrowY = startY + arrowRegion.getRegionHeight() / 2;
-            float arrowY = startY + (sizeY*0.2f);
-            hand.setArrowRegionLeft(arrowX, arrowY, sizeX/2, sizeY/2);
+            float arrowY = startY + (sizeY * 0.2f);
+            hand.setArrowRegionLeft(arrowX, arrowY, sizeX / 2, sizeY / 2);
             hand.renderArrowLeft(batch);
-            //batch.draw(arrowRegionLeft,arrowX, arrowY,sizeX/2, sizeY/2);
         }
         //render button right
-        if(size>=GameConfig.MAX_CARDS_SHOW && isPlayer && lastIndex!=cards.size-1){
-            float arrowX = endX+(sizeX*0.1f);
+        if(size>=GameConfig.MAX_CARDS_SHOW && isPlayer && showRightArrow) {
+            float arrowX = endX + (sizeX * 0.1f);
             //float arrowY = startY + arrowRegion.getRegionHeight() / 2;
-            float arrowY = startY + (sizeY*0.2f);
+            float arrowY = startY + (sizeY * 0.2f);
             //batch.draw(arrowRegion, arrowX, arrowY);
-            hand.setArrowRegionRight(arrowX, arrowY, sizeX/2, sizeY/2);
+            hand.setArrowRegionRight(arrowX, arrowY, sizeX / 2, sizeY / 2);
             hand.renderArrowRight(batch);
         }
     }
@@ -505,12 +515,12 @@ public class GameScreen extends ScreenAdapter {
                 //TODO: get actual player turn-a
                 Hand currentHand = player.getHand();
                 if(isClickedOnArrowButtonLeft(worldCoords.x,worldCoords.y, currentHand)){
-                    if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+                    if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT) && showLeftArrow) {
                         handArrowLeftClicked(currentHand);
                     }
                 }
                 else if(isClickedOnArrowButtonRight(worldCoords.x,worldCoords.y, currentHand)){
-                    if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+                    if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)  && showRightArrow) {
                         handArrowRightClicked(currentHand);
                     }
                 }
@@ -528,10 +538,11 @@ public class GameScreen extends ScreenAdapter {
                                     sfxPickup.play();
                                 }
                                 currentPlayer.getHand().pickCard(deckDraw);
-                                handArrowRightClicked(currentPlayer.getHand());
                                 //ce hocemo da konec tren player turna, ko vlece karto iz decka
                                 playerTurn = getNextTurn(playerTurn);
                                 playerPerformedAction=true;
+                                //move hand index right (draw card)
+                                handArrowRightClicked(currentPlayer.getHand());
                             }
                         }
                         //TODO: get actual current player
@@ -547,6 +558,8 @@ public class GameScreen extends ScreenAdapter {
                                     //TODO izbira vec kart (isHighlighted) in posli vse v discard deck
                                     gameControl(card, currentPlayer.getHand());
                                     topCard = deckDiscard.getTopCard();
+                                    //move hand index left (removed card)
+                                    handArrowLeftClicked(currentPlayer.getHand());
                                     break;
                                 }
                             } else {
@@ -592,7 +605,6 @@ public class GameScreen extends ScreenAdapter {
         if(topCard.containsColor(card) || topCard.containsSymbol(card)){
             hand.setCard(card,deckDiscard);
             if(card.isSpecial()){
-                //TODO: accordingly spremeni renderHand ko computer odigra +n cardo
                 specialCardAction(card);
             }
             //player polozil karto na deck
