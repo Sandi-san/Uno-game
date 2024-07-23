@@ -10,6 +10,8 @@ import com.badlogic.gdx.utils.Array;
 import com.srebot.uno.assets.RegionNames;
 import com.srebot.uno.config.GameConfig;
 
+import java.util.Arrays;
+
 public class Hand {
     private Array<Card> cards;
     //index prve karte v cards array za izris
@@ -105,7 +107,7 @@ public class Hand {
     //set default (v tem classu)
     public void setIndexLast(){this.indexLast=this.cards.size-1;}
 
-    public int getIndexFirst(){return indexFirst;}
+    public int getIndexFirst(){ return indexFirst;}
     //set default (v tem classu)
     public void setIndexFirst(){
         this.indexFirst=0;
@@ -147,6 +149,53 @@ public class Hand {
 
     public Array<Card> getCards(){
         return cards;
+    }
+
+    public String getHighestUsedCardColor(){
+        //0-B, 1-R, 2-G, 3-Y
+        Integer[] nums = new Integer[4];
+        Arrays.fill(nums,0);
+        for(Card card : cards){
+            if(card.getColor().contains("B"))
+                ++nums[0];
+            if(card.getColor().contains("R"))
+                ++nums[1];
+            if(card.getColor().contains("G"))
+                ++nums[2];
+            if(card.getColor().contains("Y"))
+                ++nums[3];
+            /*
+            if(card.getColor().equals("-")) {
+                ++nums[0];
+                ++nums[1];
+                ++nums[2];
+                ++nums[3];
+            }*/
+        }
+        if(nums.length==0 || nums==null){
+            throw new IllegalArgumentException("Array is null or empty");
+        }
+        int max=nums[0];
+        int index=0;
+        for(int i=1; i<nums.length;++i){
+            if(nums[i]>max) {
+                max = nums[i];
+                index = i;
+            }
+        }
+        switch(index){
+            case 0:
+                return "B";
+            case 1:
+                return "R";
+            case 2:
+                return "G";
+            case 3:
+                return "Y";
+            default:
+                //TODO: random
+                return "-";
+        }
     }
 
     public void pickCard(Deck deck){

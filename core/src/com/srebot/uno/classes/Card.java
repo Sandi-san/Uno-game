@@ -23,6 +23,17 @@ public class Card {
         bounds = new Rectangle();
         isHighlighted = false;
     }
+    //copy
+    public Card(Card card){
+        position = new Vector2(card.position.x,card.position.y);
+        bounds = new Rectangle(card.bounds.x,card.bounds.y,
+                card.bounds.width,card.bounds.height);
+        isHighlighted = false;
+        priority = card.getPriority();
+        value = card.getValue();
+        color = card.getColor();
+        texture = card.getTexture();
+    }
 
     public int getPriority(){
         return priority;
@@ -146,6 +157,13 @@ public class Card {
         card.texture = value.getTexture();
 
         return card;
+    }
+    //dobi karto z isto vrednostjo ampak drugacno barvo
+    public static Card switchCard(Card oldCard, String color){
+        Card newCard = new Card(oldCard);
+        newCard.color = color;
+        newCard.texture = CardValues.switchTexture(oldCard, newCard);
+        return newCard;
     }
 
     //izpisi vrednosti karte kot string (debug only)

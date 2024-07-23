@@ -5,6 +5,8 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.srebot.uno.assets.AssetDescriptors;
 import com.srebot.uno.assets.RegionNames;
 
+import java.util.Objects;
+
 
 public enum CardValues {
     B1(1,1,"B", RegionNames.B1),
@@ -85,5 +87,154 @@ public enum CardValues {
     }
     public String getTexture(){
         return textureName;
+    }
+
+    public static String switchTexture(Card oldCard, Card newCard){
+        int oldValue = oldCard.getValue();
+        String newColor = newCard.getColor();
+        switch (oldValue){
+            case 1:
+                switch (newColor) {
+                    case "B":
+                        return B1.textureName;
+                    case "R":
+                        return R1.textureName;
+                    case "G":
+                        return G1.textureName;
+                    case "Y":
+                        return Y1.textureName;
+                }
+                break;
+            case 2:
+                switch (newColor) {
+                    case "B":
+                        return B2.textureName;
+                    case "R":
+                        return R2.textureName;
+                    case "G":
+                        return G2.textureName;
+                    case "Y":
+                        return Y2.textureName;
+                }
+                break;
+            case 3:
+                switch (newColor) {
+                    case "B":
+                        return B3.textureName;
+                    case "R":
+                        return R3.textureName;
+                    case "G":
+                        return G3.textureName;
+                    case "Y":
+                        return Y3.textureName;
+                }
+                break;
+            case 4:
+                switch (newColor) {
+                    case "B":
+                        return B4.textureName;
+                    case "R":
+                        return R4.textureName;
+                    case "G":
+                        return G4.textureName;
+                    case "Y":
+                        return Y4.textureName;
+                }
+                break;
+            case 5:
+                switch (newColor) {
+                    case "B":
+                        return B5.textureName;
+                    case "R":
+                        return R5.textureName;
+                    case "G":
+                        return G5.textureName;
+                    case "Y":
+                        return Y5.textureName;
+                }
+                break;
+            case 6:
+                switch (newColor) {
+                    case "B":
+                        return B6.textureName;
+                    case "R":
+                        return R6.textureName;
+                    case "G":
+                        return G6.textureName;
+                    case "Y":
+                        return Y6.textureName;
+                }
+                break;
+            case 7:
+                switch (newColor) {
+                    case "B":
+                        return B7.textureName;
+                    case "R":
+                        return R7.textureName;
+                    case "G":
+                        return G7.textureName;
+                    case "Y":
+                        return Y7.textureName;
+                }
+                break;
+            case 8:
+                switch (newColor) {
+                    case "B":
+                        return B8.textureName;
+                    case "R":
+                        return R8.textureName;
+                    case "G":
+                        return G8.textureName;
+                    case "Y":
+                        return Y8.textureName;
+                }
+                break;
+            case 9:
+                switch (newColor) {
+                    case "B":
+                        return B9.textureName;
+                    case "R":
+                        return R9.textureName;
+                    case "G":
+                        return G9.textureName;
+                    case "Y":
+                        return Y9.textureName;
+                }
+                break;
+            case 20:
+                int priority = oldCard.getPriority();
+                if(priority==2){
+                    switch (newColor) {
+                        case "B":
+                            return BS.textureName;
+                        case "R":
+                            return RS.textureName;
+                        case "G":
+                            return GS.textureName;
+                        case "Y":
+                            return YS.textureName;
+                    }
+                }
+                else if(priority==5){
+                    switch (newColor) {
+                        case "B":
+                            return P2B.textureName;
+                        case "R":
+                            return P2R.textureName;
+                        case "G":
+                            return P2G.textureName;
+                        case "Y":
+                            return P2Y.textureName;
+                    }
+                }
+                else{
+                    if(Objects.equals(oldCard.getColor(), "B-R"))
+                        return P2GY.textureName;
+                    else
+                        return P2BR.textureName;
+                }
+                break;
+         }
+        return oldCard.getTexture();
     }
 }

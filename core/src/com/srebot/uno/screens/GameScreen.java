@@ -308,29 +308,52 @@ public class GameScreen extends ScreenAdapter {
 
         //IZRISI CARDE
         Array<Integer> indexHover = new Array<Integer>();
-        for(int i=firstIndex;i<size;++i) {
-            //==i<=lastIndex razen ko settamo Card (izogni index izven array)
-            if(i>lastIndex)
-                break;
-            Card card = cards.get(i);
-            String texture;
-            TextureRegion region;
-            if (!card.getHighlight()) {
-                if (isPlayer || state==State.Over) {
+        if(isPlayer) {
+            for (int i = firstIndex; i < size; ++i) {
+                //==i<=lastIndex razen ko settamo Card (izogni index izven array)
+                if (i > lastIndex)
+                    break;
+                Card card = cards.get(i);
+                String texture;
+                TextureRegion region;
+                if (!card.getHighlight()) {
                     texture = card.getTexture();
                     region = gameplayAtlas.findRegion(texture);
+                    float posX = startX + (i - firstIndex) * spacing;
+                    float posY = startY;
+                    card.setPositionAndBounds(posX, posY, sizeX, sizeY);
+                    Card.render(batch, region, card);
                 } else {
-                    region = gameplayAtlas.findRegion(RegionNames.back);
+                    indexHover.add(i);
                 }
-                float posX = startX + (i-firstIndex) * spacing;
-                float posY = startY;
-                card.setPositionAndBounds(posX, posY, sizeX, sizeY);
-                Card.render(batch, region, card);
-            }
-            else{
-                indexHover.add(i);
             }
         }
+        //TODO: render computer cards posebej ker se first/last index ne spreminja pravilno
+        else{
+            for(int i=0;i<GameConfig.MAX_CARDS_SHOW;++i) {
+                if(i>=size)
+                    break;
+                Card card = cards.get(i);
+                String texture;
+                TextureRegion region;
+                if (!card.getHighlight()) {
+                    if (state==State.Over) {
+                        texture = card.getTexture();
+                        region = gameplayAtlas.findRegion(texture);
+                    } else {
+                        region = gameplayAtlas.findRegion(RegionNames.back);
+                    }
+                    float posX = startX + i * spacing;
+                    float posY = startY;
+                    card.setPositionAndBounds(posX, posY, sizeX, sizeY);
+                    Card.render(batch, region, card);
+                }
+                else{
+                    indexHover.add(i);
+                }
+            }
+        }
+        
         //IZRISI CARDE KI SO HOVERANE
         if(!indexHover.isEmpty()) {
             for(int j : indexHover) {
@@ -354,23 +377,30 @@ public class GameScreen extends ScreenAdapter {
         //float endX = GameConfig.MAX_CARDS_SHOW*sizeX-overlap;
         float endX = 0;
         if (!hand.getCards().isEmpty())
-            endX = (hand.getCards().get(lastIndex).getPosition().x+sizeX);
+            endX = (GameConfig.WORLD_WIDTH-(sizeX*0.7f));
+            //endX = (hand.getCards().get(lastIndex).getPosition().x+sizeX);
 
-        //Gdx.app.log("DRAW","size to see: "+(lastIndex+1)+" | actualSize: "+size);
+        //TODO: computer first/last index ni pravilen
+        if(isPlayer)
+            Gdx.app.log("PLAYER","size: "+size+" | indexes: "+firstIndex+" , "+lastIndex);
+        else
+            Gdx.app.log("COMPUTER","size: "+size+" | indexes: "+firstIndex+" , "+lastIndex);
 
         //LIMIT RENDER CARDS DESNO (plac vmes je 70% card width)
         if(endX>GameConfig.WORLD_WIDTH-(sizeX*0.7f))
             endX = (GameConfig.WORLD_WIDTH-(sizeX*0.7f));
 
         //preveri ce so arrowi prikazani
-        if(firstIndex!=0 && isPlayer)
-            showLeftArrow=true;
-        else if(isPlayer)
-            showLeftArrow=false;
-        if(lastIndex!=cards.size-1 && isPlayer)
-            showRightArrow=true;
-        else if(isPlayer)
-            showRightArrow=false;
+        if(isPlayer) {
+            if (firstIndex != 0)
+                showLeftArrow = true;
+            else
+                showLeftArrow = false;
+            if (lastIndex != cards.size - 1)
+                showRightArrow = true;
+            else
+                showRightArrow = false;
+        }
 
         //render button left
         if(size>=GameConfig.MAX_CARDS_SHOW && isPlayer && showLeftArrow) {
@@ -556,7 +586,7 @@ public class GameScreen extends ScreenAdapter {
                                         sfxCollect.play();
                                     }
                                     //TODO izbira vec kart (isHighlighted) in posli vse v discard deck
-                                    gameControl(card, currentPlayer.getHand());
+                                    gameControl(card, currentPlayer.getHand(), true);
                                     topCard = deckDiscard.getTopCard();
                                     //move hand index left (removed card)
                                     handArrowLeftClicked(currentPlayer.getHand());
@@ -599,13 +629,13 @@ public class GameScreen extends ScreenAdapter {
             */
     }
 
-    private void gameControl(Card card, Hand hand){
+    private void gameControl(Card card, Hand hand, boolean isPlayer){
         //Gdx.app.log("Card",card.asString());
         //iste barve ali simbola
         if(topCard.containsColor(card) || topCard.containsSymbol(card)){
             hand.setCard(card,deckDiscard);
             if(card.isSpecial()){
-                specialCardAction(card);
+                specialCardAction(card, hand, isPlayer);
             }
             //player polozil karto na deck
             playerPerformedAction=true;
@@ -613,7 +643,7 @@ public class GameScreen extends ScreenAdapter {
             handArrowLeftClicked(hand);
         }
     }
-    private void specialCardAction(Card card){
+    private void specialCardAction(Card card, Hand hand, boolean isPlayer){
         int index;
         String special = card.getSpecial();
         switch (special){
@@ -648,9 +678,14 @@ public class GameScreen extends ScreenAdapter {
             //Rainbow
             default:
                 //TODO select color screen da izberes nov color od topCard
-
+                if(isPlayer)
+                    Gdx.app.log("PLAYED CHANGE COLOR","player");
+                    //drawColorChoose();
+                else
+                    AIchooseColor(hand);
         }
     }
+    //TODO: computer card num v Hand ko hoveras
     //SPREMINJANJE INDEXOV CARD ELEMENTOV KI SE PRIKAZEJO V PLAYER HAND-U
     private void handArrowLeftClicked(Hand currentHand){
         currentHand.firstIndexDecrement();
@@ -670,7 +705,7 @@ public class GameScreen extends ScreenAdapter {
     //COMPUTER AI
     //AI difficulty 2:
     private void cardAIpriority(){
-        //kopija roke
+        //kopija roke (copy ker noces spreminjat original Hand v loopu)
         Hand phantomHand = new Hand(computer.getHand());
         Card card = null;
         while(true){
@@ -682,8 +717,10 @@ public class GameScreen extends ScreenAdapter {
                 computer.getHand().setCard(card,deckDiscard);
                 topCard = deckDiscard.getTopCard();
                 if(card.isSpecial()){
-                    specialCardAction(card);
+                    specialCardAction(card, computer.getHand(), false);
                 }
+                //move hand index left (removed card)
+                handArrowLeftClicked(computer.getHand());
                 playerPerformedAction=true;
                 break;
             }
@@ -694,6 +731,8 @@ public class GameScreen extends ScreenAdapter {
                 phantomHand = new Hand(computer.getHand().getLastCard());
                 //ce hocemo da vlece le eno karto, nato player poteza
                 playerPerformedAction=true;
+                //move hand index right (draw card)
+                handArrowRightClicked(computer.getHand());
                 break;
             }
         }
@@ -708,6 +747,36 @@ public class GameScreen extends ScreenAdapter {
         }
         if(playerPerformedAction)
             playerTurn = getNextTurn(playerTurn);
+    }
+
+    //AI funkcije
+    //AI spremeni karto glede diff
+    private void AIchooseColor(Hand hand){
+        if(difficultyAI==1){
+            //random
+        }
+        else{
+            String color = hand.getHighestUsedCardColor();
+            switch (color){
+                case "B":
+                    changeTopDeckCard("B");
+                    break;
+                case "R":
+                    changeTopDeckCard("R");
+                    break;
+                case "G":
+                    changeTopDeckCard("G");
+                    break;
+                case "Y":
+                    changeTopDeckCard("Y");
+                    break;
+            }
+        }
+    }
+
+    private void changeTopDeckCard(String color){
+        //TODO: ERROR, old card bo Rainbow katerega je user glihkar polozil
+        topCard = Card.switchCard(deckDiscard.getSecondTopCard(),color);
     }
 
     //METODE ZA LOGIKO CE JE MOUSE NAD CLICKABLE ELEMENTI IGRE

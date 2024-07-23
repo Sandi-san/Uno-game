@@ -52,6 +52,11 @@ public class Deck {
         return cards.peek();
     }
 
+    public Card getSecondTopCard(){
+        if (cards.size == 0) throw new IllegalStateException("Array is empty.");
+        return cards.get(cards.size - 2);
+    }
+
     //poglej ce je konec deka
     public boolean isEmpty(){
         if(cards.isEmpty())
