@@ -11,6 +11,7 @@ import com.srebot.uno.assets.RegionNames;
 import com.srebot.uno.config.GameConfig;
 
 import java.util.Arrays;
+import java.util.Random;
 
 public class Hand {
     private Array<Card> cards;
@@ -175,9 +176,9 @@ public class Hand {
         if(nums.length==0 || nums==null){
             throw new IllegalArgumentException("Array is null or empty");
         }
-        int max=nums[0];
-        int index=0;
-        for(int i=1; i<nums.length;++i){
+        int max=0;
+        int index=-1;
+        for(int i=0; i<nums.length;++i){
             if(nums[i]>max) {
                 max = nums[i];
                 index = i;
@@ -193,9 +194,19 @@ public class Hand {
             case 3:
                 return "Y";
             default:
-                //TODO: random
-                return "-";
+                return getRandomColor();
         }
+    }
+
+    public String getRandomColor(){
+        String[] colors = new String[4];
+        colors[0] = "B";
+        colors[1] = "R";
+        colors[2] = "G";
+        colors[3] = "Y";
+        Random rnd = new Random();
+        int rndIndex = rnd.nextInt(colors.length);
+        return colors[rndIndex];
     }
 
     public void pickCard(Deck deck){

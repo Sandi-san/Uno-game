@@ -68,6 +68,18 @@ public class Card {
         this.bounds.width = sizeX;
         this.bounds.height = sizeY;
     }
+    public void setDefault(String texture){
+        this.texture = texture;
+        if(texture.contains("blue")){
+            this.color="B";
+        }else if(texture.contains("red")){
+            this.color="R";
+        }else if(texture.contains("green")){
+            this.color="G";
+        }else if(texture.contains("yellow")){
+            this.color="Y";
+        }
+    }
 
     public static void render(SpriteBatch batch, TextureRegion texture,
                               Card card){
