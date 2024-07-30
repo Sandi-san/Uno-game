@@ -4,14 +4,12 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.audio.Music;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Container;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
@@ -136,11 +134,20 @@ public class MenuScreen extends ScreenAdapter {
         });
         */
 
-        TextButton playButton = new TextButton("Play", skin);
-        playButton.addListener(new ClickListener() {
+        TextButton playSPButton = new TextButton("Singleplayer", skin);
+        playSPButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                game.setScreen(new GameScreen(game));
+                game.setScreen(new GameSingleplayerScreen(game));
+            }
+        });
+
+
+        TextButton playMPButton = new TextButton("Multiplayer", skin);
+        playMPButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                game.setScreen(new GameMultiplayerScreen(game));
             }
         });
 
@@ -174,7 +181,8 @@ public class MenuScreen extends ScreenAdapter {
 
         //buttonTable.add(titleText).padBottom(15).row();
         //buttonTable.add(introButton).padBottom(15).expandX().fillX().row();
-        buttonTable.add(playButton).padBottom(15).expandX().fill().row();
+        buttonTable.add(playSPButton).padBottom(15).expandX().fill().row();
+        buttonTable.add(playMPButton).padBottom(15).expandX().fill().row();
         buttonTable.add(leaderboardButton).padBottom(15).fillX().row();
         buttonTable.add(settingsButton).padBottom(15).fillX().row();
         buttonTable.add(quitButton).fillX();

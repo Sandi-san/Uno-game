@@ -118,7 +118,7 @@ public class Hand {
     public void firstIndexIncrement(){
         //da ne bo inkrementiral firstIndex ko imamo manj kot MaxCards v roki
         if(indexDiffValid())
-        this.indexFirst++;
+            this.indexFirst++;
     }
     public void firstIndexDecrement(){
         if(this.indexFirst-1>=0)

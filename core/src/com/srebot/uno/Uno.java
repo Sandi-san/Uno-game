@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.srebot.uno.config.GameManager;
+import com.srebot.uno.config.GameService;
 import com.srebot.uno.screens.IntroScreen;
 import com.srebot.uno.screens.MenuScreen;
 
@@ -17,6 +18,7 @@ public class Uno extends Game {
 	private AssetManager assetManager;
 	private SpriteBatch batch;
 	private GameManager manager;
+	private GameService service;
 	private Music music;
 
 	@Override
@@ -24,6 +26,7 @@ public class Uno extends Game {
 		batch = new SpriteBatch();
 		assetManager = new AssetManager();
 		manager = new GameManager();
+		service = new GameService();
 		music = null;
 
 		setScreen(new IntroScreen(this));
@@ -35,15 +38,15 @@ public class Uno extends Game {
 		assetManager.dispose();
 	}
 
-	public AssetManager getAssetManager(){
-		return assetManager;
-	}
+	public AssetManager getAssetManager(){return assetManager;}
 	public SpriteBatch getBatch(){
 		return batch;
 	}
 	public GameManager getManager(){
 		return manager;
 	}
+	public GameService getService(){return service;}
+
 	public Music getMusic() {
 		return music;
 	}

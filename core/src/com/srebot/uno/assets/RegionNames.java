@@ -17,6 +17,7 @@ public class RegionNames {
     public static final String B9 = "blue9";
     public static final String Breverse = "blueReverse";
     public static final String Bstop = "stopBlue";
+    public static final String Bdefault = "blueDefault";
     //GREEN
     public static final String G1 = "green1";
     public static final String G2 = "green2";
@@ -29,6 +30,7 @@ public class RegionNames {
     public static final String G9 = "green9";
     public static final String Greverse = "greenReverse";
     public static final String Gstop = "stopGreen";
+    public static final String Gdefault = "greenDefault";
     //RED
     public static final String R1 = "red1";
     public static final String R2 = "red2";
@@ -41,6 +43,7 @@ public class RegionNames {
     public static final String R9 = "red9";
     public static final String Rreverse = "redReverse";
     public static final String Rstop = "stopRed";
+    public static final String Rdefault = "redDefault";
     //YELLOW
     public static final String Y1 = "yellow1";
     public static final String Y2 = "yellow2";
@@ -53,6 +56,7 @@ public class RegionNames {
     public static final String Y9 = "yellow9";
     public static final String Yreverse = "yellowReverse";
     public static final String Ystop = "stopYellow";
+    public static final String Ydefault = "yellowDefault";
 
     //SPECIAL
     public static final String plus4 = "plus4";

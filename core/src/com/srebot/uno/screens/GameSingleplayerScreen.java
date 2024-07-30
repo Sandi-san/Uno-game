@@ -37,7 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class GameScreen extends ScreenAdapter {
+public class GameSingleplayerScreen extends ScreenAdapter {
     //status igre
     public enum State {
         Running, Paused, Over, Choosing
@@ -98,7 +98,7 @@ public class GameScreen extends ScreenAdapter {
 
     private Array<Card> choosingCards = new Array<Card>();
 
-    public GameScreen(Uno game) {
+    public GameSingleplayerScreen(Uno game) {
         this.game = game;
         assetManager = game.getAssetManager();
         manager = game.getManager();
@@ -143,6 +143,7 @@ public class GameScreen extends ScreenAdapter {
 
         //USTVARI PLAYERJE
         //dobi iz jsona ce obstaja
+        //REPLACE Z DOBI IZ BACKEND
         player = manager.getPlayerByName(manager.loadFromJson(), manager.getNamePref());
         Hand playerHand = new Hand();
         if (player == null) {
@@ -254,7 +255,7 @@ public class GameScreen extends ScreenAdapter {
             deckDraw.setPositionAndBounds(drawX, drawY, sizeX, sizeY);
             Card.render(batch, drawDeckRegion, drawX, drawY, sizeX, sizeY);
         } else if (state == State.Choosing) {
-            drawColorChoose();
+            drawColorWheel();
         }
 
         //DRAW PLAYER in COMPUTER HANDS
@@ -838,8 +839,7 @@ public class GameScreen extends ScreenAdapter {
                 && mouseY >= position.y && mouseY <= position.y + bounds.height;
     }
 
-    //TODO: default color texture v atlas
-    private void drawColorChoose() {
+    private void drawColorWheel() {
         if(choosingCards.isEmpty()) {
             //B,R,G,Y
             float sizeX = GameConfig.CARD_HEIGHT;
@@ -854,7 +854,7 @@ public class GameScreen extends ScreenAdapter {
             float BX = startX;
             float BY = centerY;
             cardB.setPositionAndBounds(BX, BY, sizeX, sizeY);
-            cardB.setDefault(RegionNames.B1);
+            cardB.setDefault(RegionNames.Bdefault);
             choosingCards.add(cardB);
 
             Card cardR = new Card();
@@ -862,7 +862,7 @@ public class GameScreen extends ScreenAdapter {
             float RX = startX+sizeX;
             float RY = centerY;
             cardR.setPositionAndBounds(RX, RY, sizeX, sizeY);
-            cardR.setDefault(RegionNames.R1);
+            cardR.setDefault(RegionNames.Rdefault);
             choosingCards.add(cardR);
 
             Card cardG = new Card();
@@ -870,7 +870,7 @@ public class GameScreen extends ScreenAdapter {
             float GX = startX+sizeX*2;
             float GY = centerY;
             cardG.setPositionAndBounds(GX, GY, sizeX, sizeY);
-            cardG.setDefault(RegionNames.G1);
+            cardG.setDefault(RegionNames.Gdefault);
             choosingCards.add(cardG);
 
             Card cardY = new Card();
@@ -878,7 +878,7 @@ public class GameScreen extends ScreenAdapter {
             float YX = startX+sizeX*3;
             float YY = centerY;
             cardY.setPositionAndBounds(YX, YY, sizeX, sizeY);
-            cardY.setDefault(RegionNames.Y1);
+            cardY.setDefault(RegionNames.Ydefault);
             choosingCards.add(cardY);
         }
 

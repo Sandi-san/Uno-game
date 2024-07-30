@@ -141,7 +141,7 @@ blue9
   orig: 206, 293
   offset: 0, 0
   index: -1
-blueReverse
+blueDefault
   rotate: false
   xy: 626, 2
   size: 206, 293
@@ -161,28 +161,28 @@ backgroundPane1
   orig: 1000, 667
   offset: 0, 0
   index: -1
-green1
+blueReverse
   rotate: false
   xy: 2, 2
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-green2
+green1
   rotate: false
   xy: 210, 2
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-green3
+green2
   rotate: false
   xy: 418, 2
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-green4
+green3
   rotate: false
   xy: 626, 2
   size: 206, 293
@@ -195,77 +195,77 @@ size: 1024, 1024
 format: RGBA8888
 filter: Nearest, Nearest
 repeat: none
-green5
+green4
   rotate: false
   xy: 2, 592
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-green6
+green5
   rotate: false
   xy: 2, 297
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-green7
+green6
   rotate: false
   xy: 210, 592
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-green8
+green7
   rotate: false
   xy: 2, 2
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-green9
+green8
   rotate: false
   xy: 210, 297
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-greenReverse
+green9
   rotate: false
   xy: 418, 592
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-plus2blue
+greenDefault
+  rotate: false
+  xy: 210, 2
+  size: 206, 293
+  orig: 206, 293
+  offset: 0, 0
+  index: -1
+greenReverse
   rotate: false
   xy: 418, 297
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-plus2blueRed
-  rotate: false
-  xy: 626, 592
-  size: 206, 293
-  orig: 206, 293
-  offset: 0, 0
-  index: -1
-plus2green
+plus2blue
   rotate: false
   xy: 418, 2
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-plus2greenYellow
+plus2blueRed
   rotate: false
   xy: 626, 297
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-plus2red
+plus2green
   rotate: false
   xy: 626, 2
   size: 206, 293
@@ -274,7 +274,7 @@ plus2red
   index: -1
 plus4
   rotate: false
-  xy: 210, 2
+  xy: 626, 592
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
@@ -285,84 +285,84 @@ size: 1024, 1024
 format: RGBA8888
 filter: Nearest, Nearest
 repeat: none
-plus2yellow
+plus2greenYellow
   rotate: false
   xy: 2, 592
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-rainbow
+plus2red
   rotate: false
   xy: 2, 297
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-red1
+plus2yellow
   rotate: false
   xy: 210, 592
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-red2
+rainbow
   rotate: false
   xy: 2, 2
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-red3
+red1
   rotate: false
   xy: 210, 297
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-red4
+red2
   rotate: false
   xy: 418, 592
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-red5
+red3
   rotate: false
   xy: 210, 2
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-red6
+red4
   rotate: false
   xy: 418, 297
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-red7
+red5
   rotate: false
   xy: 626, 592
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-red8
+red6
   rotate: false
   xy: 418, 2
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-red9
+red7
   rotate: false
   xy: 626, 297
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-redReverse
+red8
   rotate: false
   xy: 626, 2
   size: 206, 293
@@ -375,84 +375,84 @@ size: 1024, 1024
 format: RGBA8888
 filter: Nearest, Nearest
 repeat: none
-stopBlue
+red9
   rotate: false
   xy: 2, 592
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-stopGreen
+redDefault
   rotate: false
   xy: 2, 297
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-stopRed
+redReverse
   rotate: false
   xy: 210, 592
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-stopYellow
+stopBlue
   rotate: false
   xy: 2, 2
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-yellow1
+stopGreen
   rotate: false
   xy: 210, 297
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-yellow2
+stopRed
   rotate: false
   xy: 418, 592
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-yellow3
+stopYellow
   rotate: false
   xy: 210, 2
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-yellow4
+yellow1
   rotate: false
   xy: 418, 297
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-yellow5
+yellow2
   rotate: false
   xy: 626, 592
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-yellow6
+yellow3
   rotate: false
   xy: 418, 2
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-yellow7
+yellow4
   rotate: false
   xy: 626, 297
   size: 206, 293
   orig: 206, 293
   offset: 0, 0
   index: -1
-yellow8
+yellow5
   rotate: false
   xy: 626, 2
   size: 206, 293
@@ -461,15 +461,36 @@ yellow8
   index: -1
 
 gameplay9.png
-size: 1024, 512
+size: 1024, 1024
 format: RGBA8888
 filter: Nearest, Nearest
 repeat: none
 backside
   rotate: false
-  xy: 418, 2
+  xy: 210, 2
   size: 205, 293
   orig: 205, 293
+  offset: 0, 0
+  index: -1
+yellow6
+  rotate: false
+  xy: 2, 592
+  size: 206, 293
+  orig: 206, 293
+  offset: 0, 0
+  index: -1
+yellow7
+  rotate: false
+  xy: 2, 297
+  size: 206, 293
+  orig: 206, 293
+  offset: 0, 0
+  index: -1
+yellow8
+  rotate: false
+  xy: 210, 592
+  size: 206, 293
+  orig: 206, 293
   offset: 0, 0
   index: -1
 yellow9
@@ -479,9 +500,16 @@ yellow9
   orig: 206, 293
   offset: 0, 0
   index: -1
+yellowDefault
+  rotate: false
+  xy: 210, 297
+  size: 206, 293
+  orig: 206, 293
+  offset: 0, 0
+  index: -1
 yellowReverse
   rotate: false
-  xy: 210, 2
+  xy: 418, 592
   size: 206, 293
   orig: 206, 293
   offset: 0, 0

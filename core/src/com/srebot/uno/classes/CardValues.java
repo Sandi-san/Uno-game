@@ -92,6 +92,19 @@ public enum CardValues {
     public static String switchTexture(Card oldCard, Card newCard){
         int oldValue = oldCard.getValue();
         String newColor = newCard.getColor();
+        //old color je all ("-"), ker nimajo 4 colorjev, vrni default new color card
+        if(oldCard.getColor().equals("-")){
+            switch (newColor) {
+                case "B":
+                    return RegionNames.Bdefault;
+                case "R":
+                    return RegionNames.Rdefault;
+                case "G":
+                    return RegionNames.Gdefault;
+                case "Y":
+                    return RegionNames.Ydefault;
+            }
+        }
         switch (oldValue){
             case 1:
                 switch (newColor) {
