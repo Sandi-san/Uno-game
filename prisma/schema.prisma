@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Game {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  decks     Deck[]
+  players   Player[]
+}
+
+model Deck {
+  id      String   @id @default(auto()) @map("_id") @db.ObjectId
+  gameId  String   @db.ObjectId
+  game    Game     @relation(fields: [gameId], references: [id])
+  size    Int
+  cards   Card[]
+}
+
+model Player {
+  id      String  @id @default(auto()) @map("_id") @db.ObjectId
+  gameId  String  @db.ObjectId
+  game    Game    @relation(fields: [gameId], references: [id])
+  name    String
+  score   Int
+  hand    Hand?
+}
+
+model Hand {
+  id                        String   @id @default(auto()) @map("_id") @db.ObjectId
+  playerId                  String   @unique @db.ObjectId
+  player                    Player   @relation(fields: [playerId], references: [id])
+  indexFirst                Int
+  indexLast                 Int
+  positionArrowRegionLeft   Json
+  boundsArrowRegionLeft     Json
+  positionArrowRegionRight  Json
+  boundsArrowRegionRight    Json
+  cards                     Card[]
+}
+
+model Card {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  handId        String   @db.ObjectId
+  hand          Hand     @relation(fields: [handId], references: [id])
+  deckId        String   @db.ObjectId
+  deck          Deck     @relation(fields: [deckId], references: [id])
+  priority      Int
+  value         Int
+  color         String
+  texture       String
+  position      Json
+  bounds        Json
+  isHighlighted Boolean
+}
