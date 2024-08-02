@@ -9,24 +9,22 @@ export class GameController {
 
     @Post()
     async createGame(@Body() data: CreateGameDto): Promise<Game> {
-      console.log("DATA:",data);
-      console.log("DECKS:",data.decks);
-      console.log("PLAYERS:",data.players);
+      console.log("GAME CREATE:",data);
       return this.gameService.create(data);
     }
   
     @Get(':id')
-    async getGame(@Param('id') id: string): Promise<Game> {
+    async getGame(@Param('id') id: number): Promise<Game> {
       return this.gameService.get(id);
     }
   
     @Put(':id')
-    async updateGame(@Param('id') id: string, @Body() data: Prisma.GameUpdateInput): Promise<Game> {
+    async updateGame(@Param('id') id: number, @Body() data: Prisma.GameUpdateInput): Promise<Game> {
       return this.gameService.update(id, data);
     }
   
     @Delete(':id')
-    async deleteGame(@Param('id') id: string): Promise<Game> {
+    async deleteGame(@Param('id') id: number): Promise<Game> {
       return this.gameService.delete(id);
     }
 }
