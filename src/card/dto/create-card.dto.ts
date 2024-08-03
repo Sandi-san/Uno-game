@@ -3,4 +3,5 @@ export class CardDto {
     value: number;
     color: string;
     texture: string;
+    handId?: number;
 }

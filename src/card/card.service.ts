@@ -3,13 +3,20 @@ import { Card, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CardDto } from './dto/create-card.dto';
 
+
 @Injectable()
 export class CardService {
     constructor(private prisma: PrismaService){}
 
     async create(data: CardDto): Promise<Card>{
         return this.prisma.card.create({
-            data
+            data: {
+              priority: data.priority,
+              value: data.value,
+              color: data.color,
+              texture: data.texture,
+              handId: data.handId,
+            }
         })
     }
 

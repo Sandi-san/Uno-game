@@ -14,9 +14,8 @@ export class HandService {
     ){}
 
     async create(data: HandDto, playerId: number): Promise<Hand> {
-      playerId=1 
-      const playerO = await this.playerService.get(playerId)
-        return this.prisma.hand.create({
+      //NEEDS playerID!!
+      return this.prisma.hand.create({
             data:{
               cards: {
                 create: data.cards
@@ -31,7 +30,6 @@ export class HandService {
               indexFirst: data.indexFirst,
               indexLast: data.indexLast,
               playerId: playerId,
-              //player: playerO,
             }
         })
     }
