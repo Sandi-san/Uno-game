@@ -29,7 +29,7 @@ import com.srebot.uno.assets.RegionNames;
 import com.srebot.uno.classes.Card;
 import com.srebot.uno.classes.Deck;
 import com.srebot.uno.classes.Hand;
-import com.srebot.uno.classes.PlayerData;
+import com.srebot.uno.classes.Player;
 import com.srebot.uno.config.GameConfig;
 import com.srebot.uno.config.GameManager;
 
@@ -88,9 +88,9 @@ public class GameSingleplayerScreen extends ScreenAdapter {
     private int difficultyAI;
 
     //playerji
-    private PlayerData player;
-    private PlayerData computer;
-    private List<PlayerData> playersData;
+    private Player player;
+    private Player computer;
+    private List<Player> playersData;
 
     //player hand arrow button display
     private boolean showLeftArrow;
@@ -147,7 +147,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
         player = manager.getPlayerByName(manager.loadFromJson(), manager.getNamePref());
         Hand playerHand = new Hand();
         if (player == null) {
-            player = new PlayerData(manager.getNamePref(), 0, playerHand);
+            player = new Player(manager.getNamePref(), 0, playerHand);
         } else {
             player.setHand(playerHand);
         }
@@ -156,7 +156,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
 
         //computer
         Hand computerHand = new Hand();
-        computer = new PlayerData("Computer", 0, computerHand);
+        computer = new Player("Computer", 0, computerHand);
         computer.getHand().pickCards(deckDraw, 5);
         //computerHand.initIndexes();
 
@@ -473,7 +473,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
         }
         for (int i = 0; i < playersData.size(); ++i) {
             if (state == State.Over) break;
-            PlayerData player = playersData.get(i);
+            Player player = playersData.get(i);
             if (player != null) {
                 if (player.getHand().getCards().isEmpty()) {
                     switch (i) {
@@ -507,10 +507,10 @@ public class GameSingleplayerScreen extends ScreenAdapter {
     }
 
     void calcPoints() {
-        for (PlayerData currentPlayer : playersData) {
+        for (Player currentPlayer : playersData) {
             int sumPoints = 0;
             if (currentPlayer != null) {
-                for (PlayerData otherPlayer : playersData) {
+                for (Player otherPlayer : playersData) {
                     if (otherPlayer != null) {
                         if (!Objects.equals(otherPlayer.getName(), currentPlayer.getName())) {
                             sumPoints += otherPlayer.getHand().getSumCardPoints();
@@ -546,7 +546,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
 
         if (state == State.Running) {
             //arrow button click cycle
-            PlayerData currentPlayer = playersData.get(playerTurn - 1);
+            Player currentPlayer = playersData.get(playerTurn - 1);
             //TODO: get actual player turn-a
             Hand currentHand = currentPlayer.getHand();
             if (isClickedOnArrowButtonLeft(worldCoords.x, worldCoords.y, currentHand)) {

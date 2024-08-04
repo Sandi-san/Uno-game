@@ -5,7 +5,7 @@ import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
-import com.srebot.uno.classes.PlayerData;
+import com.srebot.uno.classes.Player;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -35,7 +35,7 @@ public class GameManager {
     private float soundVPref;
     private float musicVPref;
 
-    private PlayerData playersData;
+    private Player playersData;
 
     public GameManager() {
         PREFS = Gdx.app.getPreferences("GameSettings");
@@ -114,8 +114,8 @@ public class GameManager {
         PREFS.flush();
     }
 
-    public List<PlayerData> loadFromJson() {
-        List<PlayerData> playerDataList = new ArrayList<>();
+    public List<Player> loadFromJson() {
+        List<Player> playerList = new ArrayList<>();
 
         try {
             String jsonData = Gdx.files.local("playerData.json").readString();
@@ -124,23 +124,23 @@ public class GameManager {
             for (JsonValue entry = root.child(); entry != null; entry = entry.next()) {
                 String playerName = entry.getString("name");
                 int playerScore = entry.getInt("score");
-                playerDataList.add(new PlayerData(playerName, playerScore));
+                playerList.add(new Player(playerName, playerScore));
             }
 
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        return playerDataList;
+        return playerList;
     }
 
     //zdruzi playerje iz json z playerje trenutne igre
-    public List<PlayerData>  mergeJson(List<PlayerData> playerDataList) {
-        List<PlayerData> playersFromJson = loadFromJson();
+    public List<Player>  mergeJson(List<Player> playerList) {
+        List<Player> playersFromJson = loadFromJson();
         //iteriraj skozi playersFromJson in zdruzi s playerDataList
-        for (PlayerData playerJson : playersFromJson) {
+        for (Player playerJson : playersFromJson) {
             boolean playerExists = false;
-            for (PlayerData existingPlayer : playerDataList) {
+            for (Player existingPlayer : playerList) {
                 if (existingPlayer != null) {
                     if (Objects.equals(playerJson.getName(), existingPlayer.getName())) {
                         //posodobi player rezultat le ce je visji
@@ -154,22 +154,22 @@ public class GameManager {
             }
             //ce player se ne obstaja v trenutni listi, dodaj
             if (!playerExists) {
-                playerDataList.add(playerJson);
+                playerList.add(playerJson);
             }
         }
-        return playerDataList;
+        return playerList;
     }
 
-    public void saveDataToJsonFile(List<PlayerData> playerDataList) {
+    public void saveDataToJsonFile(List<Player> playerList) {
         try {
             //zdruzi loadJson in playerDataList
-            playerDataList = mergeJson(playerDataList);
+            playerList = mergeJson(playerList);
 
             //ne shranjevat Hand in nastavi score na -1, ce je score 0
             //ker json ne zna shranit int=0
-            Iterator<PlayerData> iterator = playerDataList.iterator();
+            Iterator<Player> iterator = playerList.iterator();
             while (iterator.hasNext()) {
-                PlayerData player = iterator.next();
+                Player player = iterator.next();
                 if (player != null) {
                     // ne shranit playerja z imenom "Computer"
                     if (Objects.equals(player.getName(), "Computer")) {
@@ -188,7 +188,7 @@ public class GameManager {
                     iterator.remove();
             }
             // Serialize the list of PlayerData to JSON
-            String jsonData = json.toJson(playerDataList);
+            String jsonData = json.toJson(playerList);
 
             // Write the JSON data to the file
             Gdx.files.local("playerData.json").writeString(jsonData, false);
@@ -198,10 +198,10 @@ public class GameManager {
         }
     }
 
-    public PlayerData getPlayerByName(List<PlayerData> playerDataList, String name) {
-        for (PlayerData playerData : playerDataList) {
-            if (playerData.getName().equals(name)) {
-                return playerData;
+    public Player getPlayerByName(List<Player> playerList, String name) {
+        for (Player player : playerList) {
+            if (player.getName().equals(name)) {
+                return player;
             }
         }
         return null;

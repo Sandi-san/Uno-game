@@ -4,11 +4,11 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.NinePatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
-import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Container;
@@ -16,10 +16,8 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-import com.badlogic.gdx.scenes.scene2d.ui.Slider;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
-import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
@@ -30,11 +28,10 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 import com.srebot.uno.Uno;
 import com.srebot.uno.assets.AssetDescriptors;
 import com.srebot.uno.assets.RegionNames;
-import com.srebot.uno.classes.PlayerData;
+import com.srebot.uno.classes.Player;
 import com.srebot.uno.config.GameConfig;
 import com.srebot.uno.config.GameManager;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -48,9 +45,9 @@ public class LeaderboardScreen extends ScreenAdapter {
     private Stage stage;
 
     private Skin skin;
+    private BitmapFont font;
+    private Label.LabelStyle fontSkin;
     private TextureAtlas gameplayAtlas;
-
-    private Music music;
 
     public LeaderboardScreen(Uno game) {
         this.game = game;
@@ -71,6 +68,11 @@ public class LeaderboardScreen extends ScreenAdapter {
 
         skin = assetManager.get(AssetDescriptors.UI_SKIN);
         gameplayAtlas = assetManager.get(AssetDescriptors.GAMEPLAY);
+        font = assetManager.get(AssetDescriptors.UI_FONT);
+
+        //kombiniraj font in skin za font-e
+        fontSkin = new Label.LabelStyle(skin.get(Label.LabelStyle.class));
+        fontSkin.font = font;
 
         stage.addActor(createLeaderboard());
         Gdx.input.setInputProcessor(stage);
@@ -84,6 +86,7 @@ public class LeaderboardScreen extends ScreenAdapter {
     @Override
     public void render(float delta){
         //doloci barve ozadja
+        //TODO: fill z background image (on resize)
         float r=200/255f;
         float g=255/255f;
         float b=0/255f;
@@ -124,15 +127,15 @@ public class LeaderboardScreen extends ScreenAdapter {
         //doloci velikost
         float sizeX = GameConfig.TEXT_WIDTH*0.5f;
         float sizeY = GameConfig.TEXT_HEIGHT*0.5f;
+
         titleContainer.setSize(sizeX,sizeY);
         titleText.setScaling(Scaling.fill);
         titleText.setSize(sizeX,sizeY);
         titleTable.add(titleContainer).width(sizeX).height(sizeY)
                 .center().padBottom(15).row();
-
-        //kot tekst (slabo skaliranje)
         /*
-        Label titleText = new Label("LEADERBOARD",skin);
+        //kot tekst (slabo skaliranje)
+        Label titleText = new Label("LEADERBOARD",fontSkin);
         titleText.setFontScale(4f);
         titleTable.add(titleText).padBottom(15).row();
         */
@@ -141,15 +144,6 @@ public class LeaderboardScreen extends ScreenAdapter {
         //BACKGROUND
         TextureRegion backgroundRegion = gameplayAtlas.findRegion(RegionNames.background2);
         table.setBackground(new TextureRegionDrawable(backgroundRegion));
-
-        /*
-        introButton.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                game.setScreen(new IntroScreen(game));
-           }
-        });
-        */
 
         TextButton menuButton = new TextButton("Back", skin);
         menuButton.addListener(new ClickListener() {
@@ -165,22 +159,22 @@ public class LeaderboardScreen extends ScreenAdapter {
         Table listTable = new Table(skin);
 
         //SEZNAM PODATKOV
-        List<PlayerData> listData = manager.loadFromJson();
+        List<Player> listData = manager.loadFromJson();
 
         // Sort the list by score in descending order
         Collections.sort(listData, (player1, player2) -> Integer.compare(player2.getScore(), player1.getScore()));
 
-        listTable.add(new Label("Player",skin)).pad(5);
-        listTable.add(new Label("Score",skin)).pad(5);
+        listTable.add(new Label("Player",fontSkin)).pad(5).padLeft(10);
+        listTable.add(new Label("Score",fontSkin)).pad(5).padRight(10);
         listTable.row();
         if(listData.size()==0){
-            listTable.add(new Label("No data available", skin)).pad(5).colspan(2).center();
+            listTable.add(new Label("No data available", fontSkin)).pad(5).colspan(2).center();
             listTable.row();
         }
 
-        for(PlayerData playerData : listData) {
-            listTable.add(new Label(playerData.getName(), skin)).pad(5);
-            listTable.add(new Label(String.valueOf(playerData.getScore()), skin)).pad(5);
+        for(Player player : listData) {
+            listTable.add(new Label(player.getName(), fontSkin)).pad(5).padLeft(10);
+            listTable.add(new Label(String.valueOf(player.getScore()), fontSkin)).pad(5).padRight(10);
             listTable.row();
         }
         listTable.setWidth(GameConfig.WIDTH/3f);

@@ -79,8 +79,12 @@ project(":android") {
 project(":core") {
     apply plugin: "java-library"
 
-
     dependencies {
+        //google's json parser
+        implementation 'com.google.code.gson:gson:2.8.9'
+        // KryoNet library for networking (from JitPack)
+        //implementation 'com.github.crykn:kryonet:2.22.9' //2.22.8
+        //implementation "com.esotericsoftware:kryo:5.5.0" //5.2.1
         api "com.badlogicgames.gdx:gdx:$gdxVersion"
         api "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
         api "com.badlogicgames.ashley:ashley:$ashleyVersion"

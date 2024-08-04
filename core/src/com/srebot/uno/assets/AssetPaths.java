@@ -15,7 +15,6 @@ public class AssetPaths {
     public static final String GAME_MUSIC_1 = "music/music2.mp3";
     public static final String GAME_MUSIC_2 = "music/music3.mp3";
 
-
     private AssetPaths() {
     }
 }

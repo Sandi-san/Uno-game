@@ -28,4 +28,12 @@ public class GameConfig {
 
     //MAX CARDS TO SHOW IN PLAYER HANDS AT ONE TIME
     public static final int MAX_CARDS_SHOW = 7;
+
+    //MULTIPLAYER/SERVER
+    public static final String SERVER_URL = "http://localhost:3000/";
+    public static final String GAME_URL = "game";
+    public static final String PLAYER_URL = "player";
+    public static final String HAND_URL = "hand";
+    public static final String CARD_URL = "card";
+    public static final String DECK_URL = "deck";
 }

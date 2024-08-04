@@ -18,6 +18,14 @@ public class Deck {
     private Vector2 position;
     private Rectangle bounds;
 
+    //TEST ONLY
+    public Deck(){
+        this.size = 1;
+        this.cards = new Array<Card>(size);
+        position = new Vector2();
+        bounds = new Rectangle();
+    }
+
     public Deck(int size, Uno game){
         this.size = size;
         this.cards = new Array<Card>(size);
@@ -144,4 +152,7 @@ public class Deck {
         this.bounds.width = sizeX;
         this.bounds.height = sizeY;
     }
+
+    public int getSize() {return size;}
+    public Array<Card> getCards() {return cards;}
 }

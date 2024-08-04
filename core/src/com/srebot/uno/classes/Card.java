@@ -19,6 +19,8 @@ public class Card {
     private boolean isHighlighted;
 
     public Card(){
+        color = "";
+        texture = "";
         position = new Vector2();
         bounds = new Rectangle();
         isHighlighted = false;
