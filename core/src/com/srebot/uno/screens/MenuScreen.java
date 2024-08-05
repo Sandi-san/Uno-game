@@ -228,59 +228,67 @@ public class MenuScreen extends ScreenAdapter {
 
         Label titleLabel = new Label("Multiplayer Games", fontSkin);
         //titleLabel.setFontScale(1); // Increase the title font size
-        dialog.getTitleTable().add(titleLabel).padBottom(12).left();
+        dialog.getTitleTable().add(titleLabel).padTop(12).padRight(32).left();
+        //dialog.getTitleTable().add(titleLabel).left();
 
         // Add an exit icon to the top right of the dialog
         TextButton closeButton = new TextButton("x", skin);
         closeButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                //dialog.hide(); //poglej kaj se zgodi ce se DB posodobi ko s v menu
-                dialog.remove();
+                dialog.hide();
             }
         });
-        dialog.getTitleTable().add(closeButton).padBottom(12).right();
+        //dialog.getTitleTable().add(closeButton).right();
+        dialog.getTitleTable().add(closeButton).padTop(12).padLeft(12).right();
 
         // Create a Table to hold either the list of games or a "No games found." message
         Table contentTable = new Table(skin);
         List<GameData> gamesList = new List<>(skin);
 
-        // Create a List to display the games
-        GameData[] games = service.fetchGames();
-        Label fetchGamesStatus = new Label("", skin);
-        if(games!=null) {
-            java.util.List<GameData> gamesArray = Arrays.asList(service.fetchGames());
-            if (gamesArray.isEmpty()) {
-                // Display "No games found." if the list is null or empty
-                fetchGamesStatus.setText("No games found.");
-                contentTable.add(fetchGamesStatus).pad(10).colspan(2).center();
-            } else {
-                // Create a List to display the games
-                gamesList.setItems(gamesArray.toArray(new GameData[0]));
+        //contentTable.defaults().pad(10);
 
-                // Add the list to a ScrollPane
-                ScrollPane scrollPane = new ScrollPane(gamesList, skin);
-                scrollPane.setFadeScrollBars(false);
+        // Fetch games from backend
+        service.fetchGames(new GameService.GameFetchCallback() {
+            @Override
+            public void onSuccess(GameData[] games) {
+                Gdx.app.postRunnable(() -> {
+                    if (games.length == 0) {
+                        // Display "No games found." if the list is empty
+                        contentTable.add(new Label("No games found.", fontSkin)).pad(10).colspan(2).center();
+                        contentTable.row();
+                    } else {
+                        // Update the list with the fetched games
+                        gamesList.setItems(games);
 
-                // Add the ScrollPane to the contentTable
-                contentTable.add(scrollPane).width(500).height(300).padTop(10).row(); // Adjusted size
+                        // Add the list to a ScrollPane
+                        ScrollPane scrollPane = new ScrollPane(gamesList, skin);
+                        scrollPane.setFadeScrollBars(false);
+
+                        // Add the ScrollPane to the contentTable
+                        contentTable.add(scrollPane).width(480).height(280).padTop(30).row(); // Adjusted size
+                    }
+                });
             }
-        }
-        else{
-            // Display "No games found." if the list is null or empty
-            fetchGamesStatus.setText("Cannot connect to database.");
-            contentTable.add(fetchGamesStatus).pad(10).colspan(2).center();
-        }
 
-        // Add the contentTable to the dialog
-        dialog.getContentTable().add(contentTable).padTop(10).row();
+            @Override
+            public void onFailure(Throwable t) {
+                Gdx.app.postRunnable(() -> {
+                    contentTable.add(new Label("Cannot connect to database.", fontSkin)).pad(10).colspan(2).center();
+                    contentTable.row();
+                });
+            }
+        });
+
+        //med Title in ScrollPane
+        dialog.getContentTable().add(contentTable).row();
 
         // Create buttons
         TextButton createGameButton = new TextButton("Create Game", skin);
         createGameButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                Gdx.app.log("MP", "CREATING GAME");
+                Gdx.app.log("CREATING GAME", "CREATING GAME");
                 // Handle create game action
                 //createGame();
                 //game.setScreen(new GameMultiplayerScreen(game));
@@ -291,12 +299,12 @@ public class MenuScreen extends ScreenAdapter {
         joinGameButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                Gdx.app.log("MP", "JOINING GAME");
+                Gdx.app.log("JOINING GAME", "JOINING GAME");
                 // Handle join game action
                 if(!gamesList.getItems().isEmpty()) {
                     GameData selectedGame = gamesList.getSelected();
                     if (selectedGame != null) {
-                        Gdx.app.log("MP", "SUCCESS");
+                        Gdx.app.log("JOINING GAME", "JOINING GAME: "+selectedGame.getId());
                         //joinGame(selectedGame);
                         //game.setScreen(new GameMultiplayerScreen(game));
                     }
@@ -305,13 +313,13 @@ public class MenuScreen extends ScreenAdapter {
         });
 
         // Add buttons to the dialog
-        dialog.button(createGameButton).pad(10);
-        dialog.button(joinGameButton).pad(10);
+        dialog.button(createGameButton);
+        dialog.button(joinGameButton);
 
         NinePatch patch = new NinePatch(gameplayAtlas.findRegion(RegionNames.backgroundPane1));
         NinePatchDrawable dialogBackground = new NinePatchDrawable(patch);
         dialog.setBackground(dialogBackground);
-        dialog.getContentTable().setSize(600,400);
+        //dialog.getContentTable().setSize(600,400);
 
         // Show the dialog
         dialog.show(stage);

@@ -4,7 +4,9 @@ public class GameData {
     private int id;
     private Deck[] decks;
     private Player[] players;
+    private String timeCreated;
 
+    //PLACEHOLDER
     public GameData(){
         this.id=10;
         this.decks = new Deck[1];
@@ -38,5 +40,10 @@ public class GameData {
 
     public void setPlayers(Player[] players) {
         this.players = players;
+    }
+
+    @Override
+    public String toString() {
+        return "Game: "+id;
     }
 }

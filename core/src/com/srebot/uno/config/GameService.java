@@ -74,51 +74,52 @@ public class GameService {
         });
     }
 
-    public GameData[] fetchGames(){
+    //callback metoda, ker so http funkcije async in ne podpirajo regular return
+    public interface GameFetchCallback {
+        void onSuccess(GameData[] games);
+        void onFailure(Throwable t);
+    }
+
+    public void fetchGames(GameFetchCallback callback){
         HttpRequestBuilder requestBuilder = new HttpRequestBuilder();
         Net.HttpRequest request = requestBuilder.newRequest()
-                .method(Net.HttpMethods.POST)
+                .method(Net.HttpMethods.GET)
                 .url(GameConfig.SERVER_URL + GameConfig.GAME_URL)
                 .header("Content-Type", "application/json")
                 .build();
 
-        GameData[] gameData = null;
-        //String jsonData = gson.toJson(gameData.getPlayers()); // Serialize your game data here
-        String jsonData = gson.toJson(gameData); // Serialize your game data here
-        Gdx.app.log("DATA:",jsonData);
-        request.setContent(jsonData);
-
         Gdx.net.sendHttpRequest(request, new Net.HttpResponseListener() {
             @Override
             public void handleHttpResponse(Net.HttpResponse httpResponse) {
-                int statusCode = httpResponse.getStatus().getStatusCode();
-                if (statusCode == 200) {
-                    String responseJson = httpResponse.getResultAsString();
-                    try {
-                        GameData response = gson.fromJson(responseJson, GameData.class);
-                        // Handle the response
-                    } catch (GdxRuntimeException e) {
-                        // Handle the error (invalid JSON, etc.)
-                        e.printStackTrace();
+                String responseJson = httpResponse.getResultAsString();
+                Gdx.app.log("DATA:", responseJson);
+                GameData[] games = gson.fromJson(responseJson, GameData[].class);
+                // Handle the GameData array (e.g., update the UI)
+                Gdx.app.postRunnable(() -> {
+                    // Perform actions on the main thread
+                    if (games != null) {
+                        // Update the UI with the fetched games
+                        // e.g., gameList.setItems(games);
+                        callback.onSuccess(games);
+                    } else {
+                        // Handle the error
+                        Gdx.app.log("GameService", "Failed to parse game data");
+                        callback.onFailure(new Exception("Failed to parse game data"));
                     }
-                } else {
-                    // Handle error
-                }
+                });
             }
 
             @Override
             public void failed(Throwable t) {
-                // Handle error
-                t.printStackTrace();
                 Gdx.app.log("FAILED","CANNOT CONNECT TO SERVER");
+                Gdx.app.postRunnable(() -> callback.onFailure(t));
             }
 
             @Override
             public void cancelled() {
-                // Handle cancellation
+                Gdx.app.log("CANCELLED","REQUEST CANCELLED");
+                Gdx.app.postRunnable(() -> callback.onFailure(new Exception("Request cancelled")));
             }
         });
-
-        return gameData;
     }
 }
