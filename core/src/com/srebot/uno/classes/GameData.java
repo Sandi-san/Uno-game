@@ -1,10 +1,11 @@
 package com.srebot.uno.classes;
+import java.util.Date;
 
 public class GameData {
     private int id;
     private Deck[] decks;
     private Player[] players;
-    private String timeCreated;
+    private Date createdAt;
 
     //PLACEHOLDER
     public GameData(){
@@ -42,8 +43,17 @@ public class GameData {
         this.players = players;
     }
 
+
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
+    }
+
     @Override
     public String toString() {
-        return "Game: "+id;
+        return "Game: "+id+" | "+ createdAt.toLocaleString();
     }
 }

@@ -177,6 +177,7 @@ public class SettingsScreen extends ScreenAdapter {
         final Slider musicVolumeSlider = new Slider(0f,1f,0.01f, false,skin);
         musicVolumeSlider.setValue(musicVPref);
 
+        //TODO: PLAYER NAME NE SME BITI ISTI KOT IZ DB
         Label nameLabel = new Label("Player name: ",skin);
         Label presetLabel = new Label("Card preset: ",skin);
         Label starterLabel = new Label("AI difficulty: ",skin);
@@ -188,6 +189,7 @@ public class SettingsScreen extends ScreenAdapter {
         settingsTable.add(nameField).pad(10).row();
         settingsTable.add(presetLabel).pad(10);
         settingsTable.add(presetBox).pad(10).width(nameField.getWidth()).row();
+        Gdx.app.log("NAME WIDTH",""+nameField.getWidth());
         settingsTable.add(starterLabel).pad(10);
         settingsTable.add(difficultyBody).pad(10).width(nameField.getWidth()).row();
         settingsTable.add(orderLabel).pad(10);

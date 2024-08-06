@@ -12,18 +12,23 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.CheckBox;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Container;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.List;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
+import com.badlogic.gdx.scenes.scene2d.ui.SelectBox;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.Slider;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
@@ -121,7 +126,7 @@ public class MenuScreen extends ScreenAdapter {
 
     private Actor createMenu() {
         //TABELA
-        Table table = new Table();
+        Table table = new Table(skin);
         table.defaults().pad(20);
 
         //TITLE
@@ -197,7 +202,7 @@ public class MenuScreen extends ScreenAdapter {
             }
         });
 
-        Table buttonTable = new Table();
+        Table buttonTable = new Table(skin);
         buttonTable.defaults();
 
         //buttonTable.add(titleText).padBottom(15).row();
@@ -226,10 +231,14 @@ public class MenuScreen extends ScreenAdapter {
             }
         };
 
+        Table titleTable = new Table(skin);
+
         Label titleLabel = new Label("Multiplayer Games", fontSkin);
-        //titleLabel.setFontScale(1); // Increase the title font size
-        dialog.getTitleTable().add(titleLabel).padTop(12).padRight(32).left();
-        //dialog.getTitleTable().add(titleLabel).left();
+        //dialog.getTitleTable().add(titleLabel).padTop(12).padRight(32).left();
+        titleTable.add(titleLabel).padLeft(40).padTop(20).expandX().center();
+
+        //empty table za title/button pozicioniranje
+        titleTable.add();
 
         // Add an exit icon to the top right of the dialog
         TextButton closeButton = new TextButton("x", skin);
@@ -240,13 +249,15 @@ public class MenuScreen extends ScreenAdapter {
             }
         });
         //dialog.getTitleTable().add(closeButton).right();
-        dialog.getTitleTable().add(closeButton).padTop(12).padLeft(12).right();
+        titleTable.add(closeButton).padTop(20).right();
+
+        dialog.getContentTable().add(titleTable).expandX().fillX().row();
 
         // Create a Table to hold either the list of games or a "No games found." message
         Table contentTable = new Table(skin);
         List<GameData> gamesList = new List<>(skin);
-
-        //contentTable.defaults().pad(10);
+        contentTable.defaults();
+        //TODO: fetching text...?
 
         // Fetch games from backend
         service.fetchGames(new GameService.GameFetchCallback() {
@@ -256,7 +267,6 @@ public class MenuScreen extends ScreenAdapter {
                     if (games.length == 0) {
                         // Display "No games found." if the list is empty
                         contentTable.add(new Label("No games found.", fontSkin)).pad(10).colspan(2).center();
-                        contentTable.row();
                     } else {
                         // Update the list with the fetched games
                         gamesList.setItems(games);
@@ -266,7 +276,9 @@ public class MenuScreen extends ScreenAdapter {
                         scrollPane.setFadeScrollBars(false);
 
                         // Add the ScrollPane to the contentTable
-                        contentTable.add(scrollPane).width(480).height(280).padTop(30).row(); // Adjusted size
+                        //contentTable.add(scrollPane).width(dialog.getWidth()).height(GameConfig.HEIGHT*0.45f); // Adjusted size
+                        //contentTable.add(scrollPane).expand().fill().row(); // Adjusted size
+                        contentTable.add(scrollPane).width(dialog.getWidth()).height(dialog.getHeight()*0.7f); // Adjusted size
                     }
                 });
             }
@@ -275,12 +287,9 @@ public class MenuScreen extends ScreenAdapter {
             public void onFailure(Throwable t) {
                 Gdx.app.postRunnable(() -> {
                     contentTable.add(new Label("Cannot connect to database.", fontSkin)).pad(10).colspan(2).center();
-                    contentTable.row();
                 });
             }
         });
-
-        //med Title in ScrollPane
         dialog.getContentTable().add(contentTable).row();
 
         // Create buttons
@@ -292,6 +301,8 @@ public class MenuScreen extends ScreenAdapter {
                 // Handle create game action
                 //createGame();
                 //game.setScreen(new GameMultiplayerScreen(game));
+                showCreateGameDialog();
+                dialog.remove();
             }
         });
 
@@ -313,8 +324,106 @@ public class MenuScreen extends ScreenAdapter {
         });
 
         // Add buttons to the dialog
-        dialog.button(createGameButton);
-        dialog.button(joinGameButton);
+        Table buttonTable = new Table(skin);
+        buttonTable.add(createGameButton).left().padBottom(10);
+        buttonTable.add(joinGameButton).right().padBottom(10);
+        dialog.getContentTable().add(buttonTable);
+        //ti buttoni so vedno pritrjeni na bottom in cut-off ce paddamo bottom
+        //dialog.button(createGameButton);
+        //dialog.button(joinGameButton);
+
+        NinePatch patch = new NinePatch(gameplayAtlas.findRegion(RegionNames.backgroundPane1));
+        NinePatchDrawable dialogBackground = new NinePatchDrawable(patch);
+        dialog.setBackground(dialogBackground);
+        //dialog.getContentTable().setSize(600,400);
+
+        // Show the dialog
+        dialog.show(stage);
+        // Set the size of the dialog (changes when adding background image)
+        dialog.setSize(GameConfig.WIDTH*0.6f, GameConfig.HEIGHT*0.6f);
+        // Center the dialog
+        dialog.setPosition((stage.getWidth() - dialog.getWidth()) / 2, (stage.getHeight() - dialog.getHeight()) / 2);
+    }
+
+    private void showCreateGameDialog() {
+        // Create a dialog
+        Dialog dialog = new Dialog("", skin) {
+            @Override
+            protected void result(Object object) {
+                // Handle dialog result here if needed
+            }
+        };
+        Label titleLabel = new Label("Create game", fontSkin);
+        dialog.getContentTable().add(titleLabel).padTop(20).center().expand().row();
+
+        final Table settingsTable = new Table(skin);
+        settingsTable.defaults();
+
+        //PRIPRAVI SEZNAME ZA BOX
+        Integer[] numPlayerValues = new Integer[]{2,3,4};
+        Integer[] deckSizeValues = new Integer[]{52,104,208};
+        String[] presetValues = new String[]{"All", "Numbers only"};
+        String[] orderValues = new String[]{"Clockwise", "Counter Clockwise"};
+
+        //USTVARI WIDGETE
+        //NAPOLNI SEZNAM IN NASTAVI PRIKAZAN ELEMENT
+        final SelectBox<Integer> numPlayerBox = new SelectBox<Integer>(skin);
+        numPlayerBox.setItems(numPlayerValues);
+        numPlayerBox.setSelected(numPlayerValues[0]);
+        final SelectBox<Integer> deckSizeBox = new SelectBox<Integer>(skin);
+        deckSizeBox.setItems(deckSizeValues);
+        deckSizeBox.setSelected(deckSizeValues[1]);
+        final SelectBox<String> presetBox = new SelectBox<String>(skin);
+        presetBox.setItems(presetValues);
+        final SelectBox<String> orderBox = new SelectBox<String>(skin);
+        orderBox.setItems(orderValues);
+        orderBox.setSelected(orderValues[0]);
+
+        Label numPlayerLabel = new Label("Maximum players: ",skin);
+        Label deskSizeLabel = new Label("Deck size: ",skin);
+        Label presetLabel = new Label("Card preset: ",skin);
+        Label orderLabel = new Label("Turn order: ",skin);
+
+        //STYLING
+        float boxWidth = (float) Math.floor(GameConfig.WIDTH/5.3f);
+        settingsTable.add(numPlayerLabel).pad(10);
+        settingsTable.add(numPlayerBox).pad(10).width(boxWidth).row();
+        settingsTable.add(deskSizeLabel).pad(10);
+        settingsTable.add(deckSizeBox).pad(10).width(boxWidth).row();
+        settingsTable.add(presetLabel).pad(10);
+        settingsTable.add(presetBox).pad(10).width(boxWidth).row();
+        settingsTable.add(orderLabel).pad(10);
+        settingsTable.add(orderBox).pad(10).width(boxWidth).row();
+
+        dialog.getContentTable().add(settingsTable).row();
+
+        // Create buttons
+        TextButton createGameButton = new TextButton("Create Game", skin);
+        createGameButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                Gdx.app.log("CREATING GAME", "CREATING GAME");
+                game.setScreen(new GameMultiplayerScreen(game));
+                //TODO: sendi notri variable iz box-ov
+            }
+        });
+
+        TextButton closeButton = new TextButton("Close", skin);
+        closeButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                Gdx.app.log("CLOSING", "CLOSING");
+                // Handle join game action
+                showMultiplayerDialog();
+                dialog.remove();
+            }
+        });
+
+        // Add buttons to the dialog
+        Table buttonTable = new Table(skin);
+        buttonTable.add(createGameButton).left().padBottom(15);
+        buttonTable.add(closeButton).right().padBottom(15);
+        dialog.getContentTable().add(buttonTable);
 
         NinePatch patch = new NinePatch(gameplayAtlas.findRegion(RegionNames.backgroundPane1));
         NinePatchDrawable dialogBackground = new NinePatchDrawable(patch);
