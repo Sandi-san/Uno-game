@@ -4,7 +4,6 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.audio.Music;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.NinePatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
@@ -12,7 +11,6 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.CheckBox;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Container;
@@ -21,14 +19,12 @@ import com.badlogic.gdx.scenes.scene2d.ui.List;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.SelectBox;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-import com.badlogic.gdx.scenes.scene2d.ui.Slider;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
-import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
-import com.badlogic.gdx.utils.Align;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
@@ -41,7 +37,7 @@ import com.srebot.uno.config.GameConfig;
 import com.srebot.uno.config.GameManager;
 import com.srebot.uno.config.GameService;
 
-import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MenuScreen extends ScreenAdapter {
 
@@ -223,6 +219,8 @@ public class MenuScreen extends ScreenAdapter {
     }
 
     private void showMultiplayerDialog() {
+        AtomicBoolean serverConnected = new AtomicBoolean(false);
+
         // Create a dialog
         Dialog dialog = new Dialog("", skin) {
             @Override
@@ -234,75 +232,90 @@ public class MenuScreen extends ScreenAdapter {
         Table titleTable = new Table(skin);
 
         Label titleLabel = new Label("Multiplayer Games", fontSkin);
-        //dialog.getTitleTable().add(titleLabel).padTop(12).padRight(32).left();
         titleTable.add(titleLabel).padLeft(40).padTop(20).expandX().center();
 
-        //empty table za title/button pozicioniranje
-        titleTable.add();
-
         // Add an exit icon to the top right of the dialog
-        TextButton closeButton = new TextButton("x", skin);
+        TextButton closeButton = new TextButton("X", skin);
         closeButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 dialog.hide();
             }
         });
-        //dialog.getTitleTable().add(closeButton).right();
-        titleTable.add(closeButton).padTop(20).right();
+        titleTable.add(closeButton).padTop(20).padRight(5).right();
 
-        dialog.getContentTable().add(titleTable).expandX().fillX().row();
-
-        // Create a Table to hold either the list of games or a "No games found." message
+        // Create a Table to hold the list of games or messages
         Table contentTable = new Table(skin);
+        // Set the initial height
+        //contentTable.setHeight(dialog.getHeight() * 0.75f);
+        // Make the table expand and fill the available space
+        //contentTable.defaults().expand().fill();
+
         List<GameData> gamesList = new List<>(skin);
-        contentTable.defaults();
-        //TODO: fetching text...?
 
-        // Fetch games from backend
-        service.fetchGames(new GameService.GameFetchCallback() {
+        // Fetching status label
+        Label fetchingLabel = new Label("Fetching games...", fontSkin);
+        contentTable.add(fetchingLabel).pad(10).colspan(2).center().row();
+
+        // Function to fetch games
+        Runnable fetchGames = () -> {
+            contentTable.clearChildren(); // Clear the table
+            contentTable.add(fetchingLabel).pad(10).colspan(2).center().row(); // Add fetching label
+
+            service.fetchGames(new GameService.GameFetchCallback() {
+                @Override
+                public void onSuccess(GameData[] games) {
+                    Gdx.app.postRunnable(() -> {
+                        contentTable.clearChildren(); // Clear the table again
+
+                        if (games.length == 0) {
+                            contentTable.add(new Label("No games found.", fontSkin)).pad(10).colspan(2).center().expandY(); // Ensure the label expands vertically
+                        } else {
+                            gamesList.setItems(games);
+
+                            ScrollPane scrollPane = new ScrollPane(gamesList, skin);
+                            scrollPane.setFadeScrollBars(false);
+                            contentTable.add(scrollPane).width(dialog.getWidth()).height(dialog.getHeight() * 0.6f);
+                        }
+
+                        serverConnected.set(true);
+                    });
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    Gdx.app.postRunnable(() -> {
+                        contentTable.clearChildren(); // Clear the table
+                        contentTable.add(new Label("Cannot connect to database.", fontSkin)).pad(10).colspan(2).center().expandY();
+                        serverConnected.set(false);
+                    });
+                }
+            });
+        };
+
+        // Call fetchGames initially
+        fetchGames.run();
+
+        // Create Refresh button
+        TextButton refreshButton = new TextButton("Refresh", skin);
+        refreshButton.addListener(new ClickListener() {
             @Override
-            public void onSuccess(GameData[] games) {
-                Gdx.app.postRunnable(() -> {
-                    if (games.length == 0) {
-                        // Display "No games found." if the list is empty
-                        contentTable.add(new Label("No games found.", fontSkin)).pad(10).colspan(2).center();
-                    } else {
-                        // Update the list with the fetched games
-                        gamesList.setItems(games);
-
-                        // Add the list to a ScrollPane
-                        ScrollPane scrollPane = new ScrollPane(gamesList, skin);
-                        scrollPane.setFadeScrollBars(false);
-
-                        // Add the ScrollPane to the contentTable
-                        //contentTable.add(scrollPane).width(dialog.getWidth()).height(GameConfig.HEIGHT*0.45f); // Adjusted size
-                        //contentTable.add(scrollPane).expand().fill().row(); // Adjusted size
-                        contentTable.add(scrollPane).width(dialog.getWidth()).height(dialog.getHeight()*0.7f); // Adjusted size
-                    }
-                });
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                Gdx.app.postRunnable(() -> {
-                    contentTable.add(new Label("Cannot connect to database.", fontSkin)).pad(10).colspan(2).center();
-                });
+            public void clicked(InputEvent event, float x, float y) {
+                fetchGames.run(); // Refresh the games list
             }
         });
-        dialog.getContentTable().add(contentTable).row();
 
         // Create buttons
         TextButton createGameButton = new TextButton("Create Game", skin);
         createGameButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                Gdx.app.log("CREATING GAME", "CREATING GAME");
-                // Handle create game action
-                //createGame();
-                //game.setScreen(new GameMultiplayerScreen(game));
-                showCreateGameDialog();
-                dialog.remove();
+                if (serverConnected.get()) {
+                    showCreateGameDialog();
+                    dialog.remove();
+                } else {
+                    Gdx.app.log("CANNOT CONNECT TO SERVER", "CANNOT CREATE GAME");
+                }
             }
         });
 
@@ -310,38 +323,45 @@ public class MenuScreen extends ScreenAdapter {
         joinGameButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                Gdx.app.log("JOINING GAME", "JOINING GAME");
-                // Handle join game action
-                if(!gamesList.getItems().isEmpty()) {
+                if (!gamesList.getItems().isEmpty() && serverConnected.get()) {
                     GameData selectedGame = gamesList.getSelected();
                     if (selectedGame != null) {
-                        Gdx.app.log("JOINING GAME", "JOINING GAME: "+selectedGame.getId());
-                        //joinGame(selectedGame);
-                        //game.setScreen(new GameMultiplayerScreen(game));
+                        Gdx.app.log("JOINING GAME", "JOINING GAME: " + selectedGame.getId());
                     }
+                } else {
+                    Gdx.app.log("CANNOT CONNECT TO SERVER", "CANNOT JOIN GAME");
                 }
             }
         });
 
-        // Add buttons to the dialog
         Table buttonTable = new Table(skin);
-        buttonTable.add(createGameButton).left().padBottom(10);
-        buttonTable.add(joinGameButton).right().padBottom(10);
-        dialog.getContentTable().add(buttonTable);
-        //ti buttoni so vedno pritrjeni na bottom in cut-off ce paddamo bottom
-        //dialog.button(createGameButton);
-        //dialog.button(joinGameButton);
+
+        // Add the refresh button in a separate row and position it to the right
+        buttonTable.add(refreshButton).expandX().right().padRight(5).row();
+
+        // Create a new row and center the create and join buttons
+        Table centeredButtonTable = new Table(skin);
+        centeredButtonTable.add(createGameButton).padRight(20);
+        centeredButtonTable.add(joinGameButton);
+
+        // Add the centeredButtonTable to buttonTable and center it
+        buttonTable.add(centeredButtonTable).colspan(2).center().padBottom(10);
+
+        //add tabels to dialog box
+        //add title
+        dialog.getContentTable().add(titleTable).expandX().fillX().row();
+        //add content (scroll pane)
+        dialog.getContentTable().add(contentTable).row();
+        //add buttons
+        dialog.getContentTable().add(buttonTable).expandX().fillX();
 
         NinePatch patch = new NinePatch(gameplayAtlas.findRegion(RegionNames.backgroundPane1));
         NinePatchDrawable dialogBackground = new NinePatchDrawable(patch);
         dialog.setBackground(dialogBackground);
-        //dialog.getContentTable().setSize(600,400);
 
         // Show the dialog
         dialog.show(stage);
-        // Set the size of the dialog (changes when adding background image)
-        dialog.setSize(GameConfig.WIDTH*0.6f, GameConfig.HEIGHT*0.6f);
-        // Center the dialog
+        dialog.setSize(GameConfig.WIDTH * 0.6f, GameConfig.HEIGHT * 0.6f);
         dialog.setPosition((stage.getWidth() - dialog.getWidth()) / 2, (stage.getHeight() - dialog.getHeight()) / 2);
     }
 
@@ -403,7 +423,10 @@ public class MenuScreen extends ScreenAdapter {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 Gdx.app.log("CREATING GAME", "CREATING GAME");
-                game.setScreen(new GameMultiplayerScreen(game));
+                final Array<String> args = new Array<String>();
+                args.add(String.valueOf(numPlayerBox.getSelected()),String.valueOf(deckSizeBox.getSelected()),
+                        presetBox.getSelected(),orderBox.getSelected());
+                game.setScreen(new GameMultiplayerScreen(game,args));
                 //TODO: sendi notri variable iz box-ov
             }
         });

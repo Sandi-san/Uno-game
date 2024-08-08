@@ -1,12 +1,17 @@
 package com.srebot.uno.config.serializers;
 
+import com.badlogic.gdx.utils.Array;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
+import com.srebot.uno.classes.Card;
 import com.srebot.uno.classes.Deck;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DeckSerializer implements JsonSerializer<Deck> {
     @Override
@@ -14,10 +19,22 @@ public class DeckSerializer implements JsonSerializer<Deck> {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("size", deck.getSize());
 
+        //TODO: does not filter null
+        // Get the filtered list of cards
+        Array<Card> filteredCards = new Array<>();
+        for (Card card : deck.getCards()) {
+            if (card != null) {
+                filteredCards.add(card);
+            }
+        }
+
         // Serialize the cards list directly without "items", "size", and "ordered"
-        jsonObject.add("cards", context.serialize(deck.getCards().items));
+        jsonObject.add("cards", context.serialize(filteredCards.items));
+        //jsonObject.add("cards", context.serialize(deck.getCards().items));
 
         return jsonObject;
+
+
     }
 }
 

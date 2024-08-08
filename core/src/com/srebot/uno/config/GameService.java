@@ -6,10 +6,12 @@ import com.badlogic.gdx.net.HttpRequestBuilder;
 import com.badlogic.gdx.utils.GdxRuntimeException;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.srebot.uno.classes.Card;
 import com.srebot.uno.classes.Deck;
 import com.srebot.uno.classes.GameData;
 import com.srebot.uno.classes.Hand;
 import com.srebot.uno.classes.Player;
+import com.srebot.uno.config.serializers.CardSerializer;
 import com.srebot.uno.config.serializers.DateDeserializer;
 import com.srebot.uno.config.serializers.DeckSerializer;
 import com.srebot.uno.config.serializers.HandSerializer;
@@ -26,12 +28,13 @@ public class GameService {
         gsonBuilder.registerTypeAdapter(Deck.class, new DeckSerializer());
         gsonBuilder.registerTypeAdapter(Hand.class, new HandSerializer());
         gsonBuilder.registerTypeAdapter(Player.class, new PlayerSerializer());
+        gsonBuilder.registerTypeAdapter(Card.class, new CardSerializer());
         gsonBuilder.registerTypeAdapter(Date.class, new DateDeserializer());
         gsonBuilder.setPrettyPrinting();
         gson = gsonBuilder.create();
     }
 
-    public void createGame() {
+    public void createGame(GameData gameData) {
         HttpRequestBuilder requestBuilder = new HttpRequestBuilder();
         Net.HttpRequest request = requestBuilder.newRequest()
                 .method(Net.HttpMethods.POST)
@@ -39,8 +42,6 @@ public class GameService {
                 .header("Content-Type", "application/json")
                 .build();
 
-        GameData gameData = new GameData();
-        //String jsonData = gson.toJson(gameData.getPlayers()); // Serialize your game data here
         String jsonData = gson.toJson(gameData); // Serialize your game data here
         Gdx.app.log("DATA:",jsonData);
         request.setContent(jsonData);
@@ -169,6 +170,94 @@ public class GameService {
             public void cancelled() {
                 Gdx.app.log("CANCELLED","REQUEST CANCELLED");
                 Gdx.app.postRunnable(() -> callback.onFailure(new Exception("Request cancelled")));
+            }
+        });
+    }
+    public interface PlayerFetchCallback {
+        void onSuccess(Player player, Hand hand);
+        void onFailure(Throwable t);
+    }
+    public void fetchPlayerByName(PlayerFetchCallback callback, String name) {
+        HttpRequestBuilder requestBuilder = new HttpRequestBuilder();
+        Net.HttpRequest request = requestBuilder.newRequest()
+                .method(Net.HttpMethods.GET)
+                .url(GameConfig.SERVER_URL + GameConfig.PLAYER_URL + "/name/"+name)
+                .header("Content-Type", "application/json")
+                .build();
+
+        Gdx.net.sendHttpRequest(request, new Net.HttpResponseListener() {
+            @Override
+            public void handleHttpResponse(Net.HttpResponse httpResponse) {
+                String responseJson = httpResponse.getResultAsString();
+                Gdx.app.log("DATA:", responseJson);
+                Player player = gson.fromJson(responseJson, Player.class);
+                Hand hand = gson.fromJson(responseJson, Hand.class);
+                Gdx.app.postRunnable(() -> {
+                    if (player != null) {
+                        callback.onSuccess(player,hand);
+                    } else {
+                        callback.onFailure(new Exception("Failed to parse player data"));
+                    }
+                });
+            }
+
+            @Override
+            public void failed(Throwable t) {
+                Gdx.app.postRunnable(() -> {
+                    callback.onFailure(t);
+                });
+            }
+
+            @Override
+            public void cancelled() {
+                Gdx.app.postRunnable(() -> {
+                    callback.onFailure(new Exception("Request cancelled"));
+                });
+            }
+        });
+    }
+
+    public void createPlayer(Player player) {
+        HttpRequestBuilder requestBuilder = new HttpRequestBuilder();
+        Net.HttpRequest request = requestBuilder.newRequest()
+                .method(Net.HttpMethods.POST)
+                .url(GameConfig.SERVER_URL + GameConfig.PLAYER_URL)
+                .header("Content-Type", "application/json")
+                .build();
+
+        //String jsonData = gson.toJson(gameData.getPlayers()); // Serialize your game data here
+        String jsonData = gson.toJson(player); // Serialize your game data here
+        Gdx.app.log("DATA:",jsonData);
+        request.setContent(jsonData);
+
+        Gdx.net.sendHttpRequest(request, new Net.HttpResponseListener() {
+            @Override
+            public void handleHttpResponse(Net.HttpResponse httpResponse) {
+                int statusCode = httpResponse.getStatus().getStatusCode();
+                if (statusCode == 200) {
+                    String responseJson = httpResponse.getResultAsString();
+                    try {
+                        Player response = gson.fromJson(responseJson, Player.class);
+                        // Handle the response
+                    } catch (GdxRuntimeException e) {
+                        // Handle the error (invalid JSON, etc.)
+                        e.printStackTrace();
+                    }
+                } else {
+                    // Handle error
+                }
+            }
+
+            @Override
+            public void failed(Throwable t) {
+                // Handle error
+                t.printStackTrace();
+                Gdx.app.log("FAILED","CANNOT CONNECT TO SERVER");
+            }
+
+            @Override
+            public void cancelled() {
+                // Handle cancellation
             }
         });
     }

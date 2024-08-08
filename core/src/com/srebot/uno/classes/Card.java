@@ -7,16 +7,16 @@ import com.badlogic.gdx.math.Vector2;
 
 import java.util.Random;
 
-public class Card {
-    private int priority; //AI
-    private int value;
-    private String color;
-    private String texture;
+    public class Card {
+        private int priority; //AI
+        private int value;
+        private String color;
+        private String texture;
 
-    //za izbiranje na ekranu
-    private Vector2 position;
-    private Rectangle bounds;
-    private boolean isHighlighted;
+        //za izbiranje na ekranu
+        private Vector2 position;
+        private Rectangle bounds;
+        private boolean isHighlighted;
 
     public Card(){
         color = "";

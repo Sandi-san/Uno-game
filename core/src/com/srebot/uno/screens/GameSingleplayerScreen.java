@@ -67,8 +67,8 @@ public class GameSingleplayerScreen extends ScreenAdapter {
     private Sound sfxCollect;
     private BitmapFont font;
 
-    State state;
-    Winner winner;
+    private State state;
+    private Winner winner;
 
     //GLOBALE ZA IGRO
     //DECKI
@@ -143,7 +143,6 @@ public class GameSingleplayerScreen extends ScreenAdapter {
 
         //USTVARI PLAYERJE
         //dobi iz jsona ce obstaja
-        //REPLACE Z DOBI IZ BACKEND
         player = manager.getPlayerByName(manager.loadFromJson(), manager.getNamePref());
         Hand playerHand = new Hand();
         if (player == null) {

@@ -28,7 +28,7 @@ public class Deck {
 
     public Deck(int size, Uno game){
         this.size = size;
-        this.cards = new Array<Card>(size);
+        this.cards = new Array<Card>(true,size);
         manager = game.getManager();
         position = new Vector2();
         bounds = new Rectangle();
@@ -61,7 +61,7 @@ public class Deck {
     }
 
     public Card getSecondTopCard(){
-        if (cards.size == 0) throw new IllegalStateException("Array is empty.");
+        if (cards.size <= 1) throw new IllegalStateException("Array is empty.");
         return cards.get(cards.size - 2);
     }
 
@@ -127,6 +127,86 @@ public class Deck {
                 cards.add(Card.generateSpecific(CardValues.YR));
             }
             for (int i = 0; i < numWild; ++i) {
+                cards.add(Card.generateSpecific(CardValues.WC));
+                cards.add(Card.generateSpecific(CardValues.P4));
+                cards.add(Card.generateSpecific(CardValues.P2B));
+                cards.add(Card.generateSpecific(CardValues.P2R));
+                cards.add(Card.generateSpecific(CardValues.P2G));
+                cards.add(Card.generateSpecific(CardValues.P2Y));
+                cards.add(Card.generateSpecific(CardValues.P2GY));
+                cards.add(Card.generateSpecific(CardValues.P2BR));
+            }
+        }
+    }
+
+    //ustvari karte: 1-9, reverse in stop, plus in wildcard
+    public void generateBySize(int deckSize, String preset){
+        int size = 2;
+        switch (deckSize) {
+            case 52:
+                size=1;
+                break;
+            case 208:
+                size=4;
+                break;
+            default:
+                size=2;
+        }
+        //52: 1,1,1
+        //104: 2,2,2
+        //208: 4,4,4
+        //2 karti od 1-9 vseh barv
+        //2 +2, 2 reverse, 2 stop
+        //4 WC, 4 +4
+        for(int i=0;i<size;++i){
+            cards.add(Card.generateSpecific(CardValues.B1));
+            cards.add(Card.generateSpecific(CardValues.B2));
+            cards.add(Card.generateSpecific(CardValues.B3));
+            cards.add(Card.generateSpecific(CardValues.B4));
+            cards.add(Card.generateSpecific(CardValues.B5));
+            cards.add(Card.generateSpecific(CardValues.B6));
+            cards.add(Card.generateSpecific(CardValues.B7));
+            cards.add(Card.generateSpecific(CardValues.B8));
+            cards.add(Card.generateSpecific(CardValues.B9));
+            cards.add(Card.generateSpecific(CardValues.R1));
+            cards.add(Card.generateSpecific(CardValues.R2));
+            cards.add(Card.generateSpecific(CardValues.R3));
+            cards.add(Card.generateSpecific(CardValues.R4));
+            cards.add(Card.generateSpecific(CardValues.R5));
+            cards.add(Card.generateSpecific(CardValues.R6));
+            cards.add(Card.generateSpecific(CardValues.R7));
+            cards.add(Card.generateSpecific(CardValues.R8));
+            cards.add(Card.generateSpecific(CardValues.R9));
+            cards.add(Card.generateSpecific(CardValues.G1));
+            cards.add(Card.generateSpecific(CardValues.G2));
+            cards.add(Card.generateSpecific(CardValues.G3));
+            cards.add(Card.generateSpecific(CardValues.G4));
+            cards.add(Card.generateSpecific(CardValues.G5));
+            cards.add(Card.generateSpecific(CardValues.G6));
+            cards.add(Card.generateSpecific(CardValues.G7));
+            cards.add(Card.generateSpecific(CardValues.G8));
+            cards.add(Card.generateSpecific(CardValues.G9));
+            cards.add(Card.generateSpecific(CardValues.Y1));
+            cards.add(Card.generateSpecific(CardValues.Y2));
+            cards.add(Card.generateSpecific(CardValues.Y3));
+            cards.add(Card.generateSpecific(CardValues.Y4));
+            cards.add(Card.generateSpecific(CardValues.Y5));
+            cards.add(Card.generateSpecific(CardValues.Y6));
+            cards.add(Card.generateSpecific(CardValues.Y7));
+            cards.add(Card.generateSpecific(CardValues.Y8));
+            cards.add(Card.generateSpecific(CardValues.Y9));
+        }
+        if(Objects.equals(preset, "All")) {
+            for (int i = 0; i < size; ++i) {
+                cards.add(Card.generateSpecific(CardValues.BS));
+                cards.add(Card.generateSpecific(CardValues.GS));
+                cards.add(Card.generateSpecific(CardValues.RS));
+                cards.add(Card.generateSpecific(CardValues.YS));
+                cards.add(Card.generateSpecific(CardValues.BR));
+                cards.add(Card.generateSpecific(CardValues.GR));
+                cards.add(Card.generateSpecific(CardValues.RR));
+                cards.add(Card.generateSpecific(CardValues.YR));
+
                 cards.add(Card.generateSpecific(CardValues.WC));
                 cards.add(Card.generateSpecific(CardValues.P4));
                 cards.add(Card.generateSpecific(CardValues.P2B));

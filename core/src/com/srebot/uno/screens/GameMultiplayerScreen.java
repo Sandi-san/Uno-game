@@ -1,5 +1,6 @@
 package com.srebot.uno.screens;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.audio.Sound;
@@ -18,12 +19,15 @@ import com.srebot.uno.assets.AssetDescriptors;
 import com.srebot.uno.classes.Card;
 import com.srebot.uno.classes.Deck;
 import com.srebot.uno.classes.GameData;
+import com.srebot.uno.classes.Hand;
 import com.srebot.uno.classes.Player;
 import com.srebot.uno.config.GameConfig;
 import com.srebot.uno.config.GameManager;
 import com.srebot.uno.config.GameService;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class GameMultiplayerScreen extends ScreenAdapter {
     //status igre
@@ -56,12 +60,11 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     private Sound sfxCollect;
     private BitmapFont font;
 
-    GameSingleplayerScreen.State state;
-    GameSingleplayerScreen.Winner winner;
+    private State state;
+    private Winner winner;
 
     //GLOBALE ZA IGRO
     //DECKI
-    private int deckSize = 104; //MAX st. kart (daj v GameConfig?)
     private Deck deckDraw;
     private Deck deckDiscard;
     //karta, ki je na vrhu discard kupa
@@ -71,14 +74,18 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     private int playerTurn;
     //preglej ce trenutni player naredil akcijo
     private boolean playerPerformedAction;
+    //max players
+    private int maxPlayers=2;
+    //max st kart v decku
+    private int deckSize=104;
     //vrstni red
-    private boolean clockwiseOrder;
-    //AI difficulty
-    private int difficultyAI;
+    private boolean clockwiseOrder=true;
 
     //playerji
-    private Player player;
-    private Player computer;
+    private Player player1;
+    private Player player2;
+    private Player player3;
+    private Player player4;
     private List<Player> playersData;
 
     //player hand arrow button display
@@ -87,12 +94,17 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
     private Array<Card> choosingCards = new Array<Card>();
 
-    public GameMultiplayerScreen(Uno game) {
+    //check if fetching from backend before continuing
+    public interface PlayerFetchCallback {
+        void onPlayerFetched(Player player);
+    }
+
+    public GameMultiplayerScreen(Uno game, Array<String> args) {
         this.game = game;
         assetManager = game.getAssetManager();
         manager = game.getManager();
         service = game.getService();
-        //state = GameMultiplayerScreen.State.Running;
+        state = State.Running;
 
         //music on?
         if (manager.getMusicPref()) {
@@ -111,10 +123,153 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
         font = assetManager.get(AssetDescriptors.UI_FONT);
         batch = new SpriteBatch();
-        //initGame();
-
-        service.createGame();
+        initGame(args);
     }
+
+    //pripravi igro (init globals)
+    public void initGame(Array<String> args) {
+        //0-numPlayers,1-deckSize,2-presetBox,3-orderBox
+        maxPlayers = Integer.parseInt(args.get(0));
+        deckSize = Integer.parseInt(args.get(1));
+        String preset = args.get(2);
+        clockwiseOrder = Objects.equals(args.get(3), "Clockwise");
+
+        playersData = new ArrayList<>();
+        //USTVARI DECKE
+        //ustvari main deck
+        deckDraw = new Deck(deckSize, game);
+        deckDraw.generateBySize(deckSize,preset);
+        deckDraw.shuffleDeck();
+
+        //vzemi eno karto iz deka
+        topCard = deckDraw.pickCard();
+
+        //ustvari discard dek in polozi to karto nanj
+        deckDiscard = new Deck(deckSize, game);
+        deckDiscard.setCard(topCard);
+
+        //USTVARI PLAYERJE IN NAPOLNI ARRAY
+        for(int i=0;i<maxPlayers;++i){
+            playersData.add(null);
+        }
+        //PRIPRAVI FIRST PLAYER (HOST)
+        createPlayerFromBackend(manager.getNamePref(),player -> {
+            // Code that should run after the player is fetched/created
+
+            // Get first turn, set up game, etc.
+            getFirstTurn();
+            playerPerformedAction = false;
+
+            // Create and save game data
+            GameData gameData = new GameData(playersData, deckDraw, deckDiscard, maxPlayers, topCard);
+            service.createGame(gameData);
+        });
+
+        //for each player dodaj v playerData
+        //Pomembni order: bottom->left->top->right
+        /*
+        playersData.add(player); //bottom
+        playersData.add(null);  //left
+        playersData.add(computer); //top
+        playersData.add(null);  //right
+        */
+    }
+
+    private void createPlayerFromBackend(String playerName, PlayerFetchCallback callback){
+        service.fetchPlayerByName(new GameService.PlayerFetchCallback() {
+            @Override
+            public void onSuccess(Player player, Hand hand) {
+                // Handle the successful response
+                Gdx.app.log("PLAYER", "Player fetched: " + player.getName());
+                //GET PLAYER IN ADD V CURRENT GAME
+                Hand playerHand = new Hand();
+                Player thisPlayer = new Player(player.getName(), 0, playerHand);
+                thisPlayer.getHand().pickCards(deckDraw, 5);
+                addPlayerToArray(thisPlayer);
+
+                // Invoke the callback with the fetched player
+                callback.onPlayerFetched(thisPlayer);
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                // Handle the error response
+                Gdx.app.log("ERROR", "Failed to fetch player: " + t.getMessage());
+                //CREATE NEW PLAYER AND ADD TO DB
+                Hand playerHand = new Hand();
+                Player player = new Player(manager.getNamePref(), 0, playerHand);
+                player.getHand().pickCards(deckDraw, 5);
+                Gdx.app.log("PLAYER", "CREATING NEW PLAYER INSTEAD: " + player.getName());
+                service.createPlayer(player);
+                addPlayerToArray(player);
+
+                // Invoke the callback with the newly created player
+                callback.onPlayerFetched(player);
+            }
+        }, playerName);
+    }
+
+    private void addPlayerToArray(Player player){
+        //first player
+        if(playersData.get(0)==null){
+            playersData.set(0, player);
+            player1 = player;
+        }
+        else if(playersData.get(1)==null){
+            playersData.set(1, player);
+            player2 = player;
+        }
+        if(maxPlayers>2) {
+         if (playersData.get(2) == null) {
+                playersData.set(2, player);
+                player3 = player;
+            }
+        }
+        else if (maxPlayers>3) {
+            if (playersData.get(3) == null) {
+                playersData.set(3, player);
+                player4 = player;
+            }
+        }
+    }
+
+    //s cigavim turn se igra zacne
+    private void getFirstTurn() {
+        /*
+        1-bottom
+        2-left
+        3-top
+        4-right
+         */
+        playerTurn = 1;
+        /*
+        if(Objects.equals(manager.getStarterPref(), "Player"))
+            playerTurn=1;
+        else if(Objects.equals(manager.getStarterPref(), "Computer"))
+            playerTurn=3;
+         */
+    }
+
+    //vrni turn index naslednjega playerja, ce obstaja
+    private int getNextTurn(int index) {
+        do {
+            if (clockwiseOrder) {
+                if (index < 4)
+                    index += 1;
+                else
+                    index = 1;
+            } else {
+                if (index > 1)
+                    index -= 1;
+                else
+                    index = 4;
+            }
+        } while (playersData.get(index - 1) == null);
+        return index;
+    }
+
+
+    //TODO: render? -> check players od game, dodaj player-ja ce se je join-al
 
     @Override
     public void show() {
