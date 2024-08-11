@@ -17,7 +17,6 @@ import com.srebot.uno.config.serializers.DeckSerializer;
 import com.srebot.uno.config.serializers.HandSerializer;
 import com.srebot.uno.config.serializers.PlayerSerializer;
 
-import java.io.IOException;
 import java.util.Date;
 
 public class GameService {
@@ -34,7 +33,13 @@ public class GameService {
         gson = gsonBuilder.create();
     }
 
-    public void createGame(GameData gameData) {
+    //callback metoda, ker so http funkcije async in ne podpirajo regular return
+    public interface GameCreateCallback {
+        void onSuccess(int gameId);
+        void onFailure(Throwable t);
+    }
+
+    public void createGame(GameCreateCallback callback, GameData gameData) {
         HttpRequestBuilder requestBuilder = new HttpRequestBuilder();
         Net.HttpRequest request = requestBuilder.newRequest()
                 .method(Net.HttpMethods.POST)
@@ -50,17 +55,21 @@ public class GameService {
             @Override
             public void handleHttpResponse(Net.HttpResponse httpResponse) {
                 int statusCode = httpResponse.getStatus().getStatusCode();
-                if (statusCode == 200) {
+                if (statusCode == 201) {
                     String responseJson = httpResponse.getResultAsString();
                     try {
-                        GameData response = gson.fromJson(responseJson, GameData.class);
                         // Handle the response
+                        GameData response = gson.fromJson(responseJson, GameData.class);
+                        int gameId = response.getId();
+                        callback.onSuccess(gameId);
                     } catch (GdxRuntimeException e) {
                         // Handle the error (invalid JSON, etc.)
                         e.printStackTrace();
+                        callback.onFailure(e);
                     }
                 } else {
-                    // Handle error
+                    // Handle non-200 response codes
+                    callback.onFailure(new Exception("Failed to create player. Status code: " + statusCode));
                 }
             }
 
@@ -69,13 +78,55 @@ public class GameService {
                 // Handle error
                 t.printStackTrace();
                 Gdx.app.log("FAILED","CANNOT CONNECT TO SERVER");
+                callback.onFailure(t);
             }
 
             @Override
             public void cancelled() {
                 // Handle cancellation
+                callback.onFailure(new Exception("Request was cancelled"));
             }
         });
+        /*
+        //ERROR: ta code ni nikoli reached, odstrani asinhronost (player fetch) in pocakaj da je db free
+        Gdx.net.sendHttpRequest(request, new Net.HttpResponseListener() {
+            @Override
+            public void handleHttpResponse(Net.HttpResponse httpResponse) {
+                int statusCode = httpResponse.getStatus().getStatusCode();
+                Gdx.app.log("CREATE GAME","RESPONSE STATUS: "+statusCode);
+                if (statusCode == 201) {
+                    String responseJson = httpResponse.getResultAsString();
+                    try {
+                        // Handle the response
+                        GameData response = gson.fromJson(responseJson, GameData.class);
+                        int gameId = response.getId();
+                        callback.onSuccess(gameId);
+                    } catch (GdxRuntimeException e) {
+                        // Handle the error (invalid JSON, etc.)
+                        e.printStackTrace();
+                        callback.onFailure(e);
+                    }
+                } else {
+                    // Handle non-200 response codes
+                    callback.onFailure(new Exception("Failed to create game. Status code: " + statusCode));
+                }
+            }
+
+            @Override
+            public void failed(Throwable t) {
+                // Handle error
+                t.printStackTrace();
+                Gdx.app.log("FAILED","CANNOT CONNECT TO SERVER");
+                callback.onFailure(t);
+            }
+
+            @Override
+            public void cancelled() {
+                // Handle cancellation
+                callback.onFailure(new Exception("Request was cancelled"));
+            }
+        });
+         */
     }
 
     public void updateGame() {
@@ -96,7 +147,7 @@ public class GameService {
             @Override
             public void handleHttpResponse(Net.HttpResponse httpResponse) {
                 int statusCode = httpResponse.getStatus().getStatusCode();
-                if (statusCode == 200) {
+                if (statusCode == 201) {
                     String responseJson = httpResponse.getResultAsString();
                     try {
                         GameData response = gson.fromJson(responseJson, GameData.class);
@@ -124,14 +175,59 @@ public class GameService {
         });
     }
 
+    public interface FetchGamePlayersCallback {
+        void onSuccess(Player[] players);
+        void onFailure(Throwable t);
+    }
+    public void fetchGamePlayers(FetchGamePlayersCallback callback, int gameId){
+        HttpRequestBuilder requestBuilder = new HttpRequestBuilder();
+        Net.HttpRequest request = requestBuilder.newRequest()
+                .method(Net.HttpMethods.GET)
+                .url(GameConfig.SERVER_URL + GameConfig.GAME_URL + "/" +gameId+"/players")
+                .header("Content-Type", "application/json")
+                .build();
+
+        Gdx.net.sendHttpRequest(request, new Net.HttpResponseListener() {
+            @Override
+            public void handleHttpResponse(Net.HttpResponse httpResponse) {
+                String responseJson = httpResponse.getResultAsString();
+                Gdx.app.log("DATA:", responseJson);
+                Player[] players = gson.fromJson(responseJson, Player[].class);
+                // Handle the GameData array (e.g., update the UI)
+                Gdx.app.postRunnable(() -> {
+                    // Perform actions on the main thread
+                    if (players != null) {
+                        callback.onSuccess(players);
+                    } else {
+                        // Handle the error
+                        Gdx.app.log("GameService", "Failed to parse game data - players");
+                        callback.onFailure(new Exception("Failed to parse game data - players"));
+                    }
+                });
+            }
+
+            @Override
+            public void failed(Throwable t) {
+                Gdx.app.log("FAILED","CANNOT CONNECT TO SERVER");
+                Gdx.app.postRunnable(() -> callback.onFailure(t));
+            }
+
+            @Override
+            public void cancelled() {
+                Gdx.app.log("CANCELLED","REQUEST CANCELLED");
+                Gdx.app.postRunnable(() -> callback.onFailure(new Exception("Request cancelled")));
+            }
+        });
+    }
+
 
     //callback metoda, ker so http funkcije async in ne podpirajo regular return
-    public interface GameFetchCallback {
+    public interface FetchGamesCallback {
         void onSuccess(GameData[] games);
         void onFailure(Throwable t);
     }
 
-    public void fetchGames(GameFetchCallback callback){
+    public void fetchGames(FetchGamesCallback callback){
         HttpRequestBuilder requestBuilder = new HttpRequestBuilder();
         Net.HttpRequest request = requestBuilder.newRequest()
                 .method(Net.HttpMethods.GET)
@@ -173,6 +269,7 @@ public class GameService {
             }
         });
     }
+
     public interface PlayerFetchCallback {
         void onSuccess(Player player, Hand hand);
         void onFailure(Throwable t);
@@ -217,7 +314,11 @@ public class GameService {
         });
     }
 
-    public void createPlayer(Player player) {
+    public interface PlayerCreateCallback {
+        void onSuccess(int playerId);
+        void onFailure(Throwable t);
+    }
+    public void createPlayer(PlayerCreateCallback callback, Player player) {
         HttpRequestBuilder requestBuilder = new HttpRequestBuilder();
         Net.HttpRequest request = requestBuilder.newRequest()
                 .method(Net.HttpMethods.POST)
@@ -225,7 +326,6 @@ public class GameService {
                 .header("Content-Type", "application/json")
                 .build();
 
-        //String jsonData = gson.toJson(gameData.getPlayers()); // Serialize your game data here
         String jsonData = gson.toJson(player); // Serialize your game data here
         Gdx.app.log("DATA:",jsonData);
         request.setContent(jsonData);
@@ -234,17 +334,21 @@ public class GameService {
             @Override
             public void handleHttpResponse(Net.HttpResponse httpResponse) {
                 int statusCode = httpResponse.getStatus().getStatusCode();
-                if (statusCode == 200) {
+                if (statusCode == 201) {
                     String responseJson = httpResponse.getResultAsString();
                     try {
-                        Player response = gson.fromJson(responseJson, Player.class);
                         // Handle the response
+                        Player response = gson.fromJson(responseJson, Player.class);
+                        int playerId = response.getId();
+                        callback.onSuccess(playerId);
                     } catch (GdxRuntimeException e) {
                         // Handle the error (invalid JSON, etc.)
                         e.printStackTrace();
+                        callback.onFailure(e);
                     }
                 } else {
-                    // Handle error
+                    // Handle non-200 response codes
+                    callback.onFailure(new Exception("Failed to create player. Status code: " + statusCode));
                 }
             }
 
@@ -253,11 +357,13 @@ public class GameService {
                 // Handle error
                 t.printStackTrace();
                 Gdx.app.log("FAILED","CANNOT CONNECT TO SERVER");
+                callback.onFailure(t);
             }
 
             @Override
             public void cancelled() {
                 // Handle cancellation
+                callback.onFailure(new Exception("Request was cancelled"));
             }
         });
     }

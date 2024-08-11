@@ -774,7 +774,6 @@ public class GameSingleplayerScreen extends ScreenAdapter {
         topCard = Card.switchCard(deckDiscard.getSecondTopCard(), color);
     }
 
-
     //TODO: computer card num v Hand ko hoveras
     //SPREMINJANJE INDEXOV CARD ELEMENTOV KI SE PRIKAZEJO V PLAYER HAND-U
     private void handArrowLeftClicked(Hand currentHand) {

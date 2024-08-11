@@ -262,7 +262,7 @@ public class MenuScreen extends ScreenAdapter {
             contentTable.clearChildren(); // Clear the table
             contentTable.add(fetchingLabel).pad(10).colspan(2).center().row(); // Add fetching label
 
-            service.fetchGames(new GameService.GameFetchCallback() {
+            service.fetchGames(new GameService.FetchGamesCallback() {
                 @Override
                 public void onSuccess(GameData[] games) {
                     Gdx.app.postRunnable(() -> {

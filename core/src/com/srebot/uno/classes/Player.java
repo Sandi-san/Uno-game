@@ -1,25 +1,39 @@
 package com.srebot.uno.classes;
 
 public class Player {
+    private int id;
     private String name;
     private int score;
     private Hand playerHand;
 
+    //default constructor
     public Player(){
         this.name="A";
         this.score=0;
     }
-
+    //constructor iz json
     public Player(String name, int score){
         this.name = name;
         if(score==-1) this.score=0;
         else this.score = score;
     }
+    //singleplayer constructor
     public Player(String name, int score, Hand playerHand){
         this.name = name;
         this.score = score;
         this.playerHand = playerHand;
     }
+    //multiplayer constructor
+    public Player(int id, String name, int score, Hand playerHand){
+        this.id = id;
+        this.name = name;
+        this.score = score;
+        this.playerHand = playerHand;
+    }
+
+    public int getId() {return id;}
+    public void setId(int id) {this.id = id;}
+
     public String getName() {
         return name;
     }
@@ -36,5 +50,10 @@ public class Player {
     }
     public void setHand(Hand playerHand) {
         this.playerHand = playerHand;
+    }
+
+    @Override
+    public String toString(){
+        return "Id: "+id+" Name: "+name+" Score: "+score;
     }
 }
