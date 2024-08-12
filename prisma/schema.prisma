@@ -10,8 +10,15 @@ datasource db {
 //One instance of running Uno game for Multiplayer
 model Game {
   id        Int       @id @default(autoincrement())
+  createdAt DateTime  @default(now())
   decks     Deck[]
   players   Player[]
+  maxPlayers Int  @default(4)
+  topCard   Card? @relation(fields: [topCardId], references: [id])
+  topCardId Int?
+  //gameState @default("Paused")
+  //currentPlayer's turn @default(1)
+  //turnOrder @default("Clockwise")
 }
 
 model Deck {
@@ -26,6 +33,7 @@ model Player {
   id      Int     @id @default(autoincrement())
   gameId  Int?
   game    Game?    @relation(fields: [gameId], references: [id])
+  createdAt DateTime  @default(now())
   name    String
   score   Int
   hand    Hand?
@@ -50,4 +58,5 @@ model Card {
   texture       String
   
   Deck Deck[]
+  Game Game[]
 }

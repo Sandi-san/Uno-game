@@ -18,6 +18,12 @@ export class PlayerController {
       return this.playerService.get(id);
     }
   
+    @Get('name/:name')
+    async getPlayerByName(@Param('name') name: string): Promise<Player> {
+      console.log("PLAYER FETCH:",name)
+      return this.playerService.getByName(name);
+    }
+
     @Patch(':id')
     async updatePlayer(@Param('id') id: number, @Body() data: Prisma.PlayerUpdateInput): Promise<Player> {
       return this.playerService.update(id, data);

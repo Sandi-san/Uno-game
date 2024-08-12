@@ -1,6 +1,6 @@
-import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, ParseIntPipe } from '@nestjs/common';
 import { GameService } from './game.service';
-import { Game, Prisma } from '@prisma/client';
+import { Game, Player, Prisma } from '@prisma/client';
 import { CreateGameDto } from './dto/create-game.dto';
 
 @Controller('game')
@@ -10,12 +10,25 @@ export class GameController {
     @Post()
     async createGame(@Body() data: CreateGameDto): Promise<Game> {
       console.log("GAME CREATE:",data);
+      //console.log("DECK 1:",data.decks[0].cards);
+      //console.log("DECK 2:",data.decks[1].cards);
       return this.gameService.create(data);
     }
   
+    @Get()
+    async getGames(): Promise<Game[]> {
+      return this.gameService.getAll();
+    }
+
     @Get(':id')
     async getGame(@Param('id') id: number): Promise<Game> {
       return this.gameService.get(id);
+    }
+    
+    @Get(':id/players')
+    async getGamePlayers(@Param('id', ParseIntPipe) id: number): Promise<Player[]> {
+      console.log("FETCH PLAYERS OF GAME:",id);
+      return this.gameService.getPlayers(id);
     }
   
     @Put(':id')
