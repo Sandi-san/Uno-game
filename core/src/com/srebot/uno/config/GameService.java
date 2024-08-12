@@ -48,7 +48,7 @@ public class GameService {
                 .build();
 
         String jsonData = gson.toJson(gameData); // Serialize your game data here
-        Gdx.app.log("DATA:",jsonData);
+        //Gdx.app.log("CREATE GAME:",jsonData);
         request.setContent(jsonData);
 
         Gdx.net.sendHttpRequest(request, new Net.HttpResponseListener() {
@@ -87,46 +87,6 @@ public class GameService {
                 callback.onFailure(new Exception("Request was cancelled"));
             }
         });
-        /*
-        //ERROR: ta code ni nikoli reached, odstrani asinhronost (player fetch) in pocakaj da je db free
-        Gdx.net.sendHttpRequest(request, new Net.HttpResponseListener() {
-            @Override
-            public void handleHttpResponse(Net.HttpResponse httpResponse) {
-                int statusCode = httpResponse.getStatus().getStatusCode();
-                Gdx.app.log("CREATE GAME","RESPONSE STATUS: "+statusCode);
-                if (statusCode == 201) {
-                    String responseJson = httpResponse.getResultAsString();
-                    try {
-                        // Handle the response
-                        GameData response = gson.fromJson(responseJson, GameData.class);
-                        int gameId = response.getId();
-                        callback.onSuccess(gameId);
-                    } catch (GdxRuntimeException e) {
-                        // Handle the error (invalid JSON, etc.)
-                        e.printStackTrace();
-                        callback.onFailure(e);
-                    }
-                } else {
-                    // Handle non-200 response codes
-                    callback.onFailure(new Exception("Failed to create game. Status code: " + statusCode));
-                }
-            }
-
-            @Override
-            public void failed(Throwable t) {
-                // Handle error
-                t.printStackTrace();
-                Gdx.app.log("FAILED","CANNOT CONNECT TO SERVER");
-                callback.onFailure(t);
-            }
-
-            @Override
-            public void cancelled() {
-                // Handle cancellation
-                callback.onFailure(new Exception("Request was cancelled"));
-            }
-        });
-         */
     }
 
     public void updateGame() {
@@ -193,7 +153,6 @@ public class GameService {
                 String responseJson = httpResponse.getResultAsString();
                 Gdx.app.log("DATA:", responseJson);
                 Player[] players = gson.fromJson(responseJson, Player[].class);
-                // Handle the GameData array (e.g., update the UI)
                 Gdx.app.postRunnable(() -> {
                     // Perform actions on the main thread
                     if (players != null) {
@@ -327,7 +286,7 @@ public class GameService {
                 .build();
 
         String jsonData = gson.toJson(player); // Serialize your game data here
-        Gdx.app.log("DATA:",jsonData);
+        //Gdx.app.log("CREATE PLAYER:",jsonData);
         request.setContent(jsonData);
 
         Gdx.net.sendHttpRequest(request, new Net.HttpResponseListener() {
