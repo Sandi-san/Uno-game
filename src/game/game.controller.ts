@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, ParseIntPipe, Patch } from '@nestjs/common';
 import { GameService } from './game.service';
 import { Game, Player, Prisma } from '@prisma/client';
 import { CreateGameDto } from './dto/create-game.dto';
@@ -21,7 +21,7 @@ export class GameController {
     }
 
     @Get(':id')
-    async getGame(@Param('id') id: number): Promise<Game> {
+    async getGame(@Param('id', ParseIntPipe) id: number): Promise<Game> {
       return this.gameService.get(id);
     }
     
@@ -31,9 +31,11 @@ export class GameController {
       return this.gameService.getPlayers(id);
     }
   
-    @Put(':id')
-    async updateGame(@Param('id') id: number, @Body() data: Prisma.GameUpdateInput): Promise<Game> {
-      return this.gameService.update(id, data);
+    @Patch(':id')
+    async updateGame(@Param('id', ParseIntPipe) id: number, @Body() data: Prisma.GameUpdateInput): Promise<Game> {
+      console.log(data)
+      return undefined
+      //return this.gameService.update(id, data);
     }
   
     @Delete(':id')

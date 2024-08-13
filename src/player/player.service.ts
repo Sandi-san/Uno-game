@@ -30,7 +30,7 @@ export class PlayerService {
             },  
           },
         } : undefined,
-        //add gameId if exists
+        //add gameId if
         ...(data.gameId !== undefined && {gameId: data.gameId})
       }
     })
@@ -50,6 +50,9 @@ export class PlayerService {
   async getByName(name: string): Promise<Player | null> {
     const player = await this.prisma.player.findFirst({
       where: { name },
+      include: {
+        hand: true
+      }
     })
     console.log(player)
     return player

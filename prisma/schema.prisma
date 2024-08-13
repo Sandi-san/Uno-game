@@ -9,54 +9,54 @@ datasource db {
 
 //One instance of running Uno game for Multiplayer
 model Game {
-  id        Int       @id @default(autoincrement())
-  createdAt DateTime  @default(now())
-  decks     Deck[]
-  players   Player[]
-  maxPlayers Int  @default(4)
-  topCard   Card? @relation(fields: [topCardId], references: [id])
-  topCardId Int?
-  //gameState @default("Paused")
-  //currentPlayer's turn @default(1)
-  //turnOrder @default("Clockwise")
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  decks       Deck[]
+  players     Player[]
+  maxPlayers  Int      @default(4)
+  topCard     Card?    @relation(fields: [topCardId], references: [id])
+  topCardId   Int?
+  gameState   String   @default("Paused")
+  currentTurn Int      @default(1) //currentPlayer's turn
+  turnOrder   String   @default("Clockwise")
 }
 
 model Deck {
-  id      Int     @id @default(autoincrement())
-  gameId  Int?
-  game    Game?    @relation(fields: [gameId], references: [id])
-  size    Int
-  cards   Card[]
+  id     Int    @id @default(autoincrement())
+  gameId Int?
+  game   Game?  @relation(fields: [gameId], references: [id])
+  size   Int
+  cards  Card[]
 }
 
 model Player {
-  id      Int     @id @default(autoincrement())
-  gameId  Int?
-  game    Game?    @relation(fields: [gameId], references: [id])
-  createdAt DateTime  @default(now())
-  name    String
-  score   Int
-  hand    Hand?
+  id        Int      @id @default(autoincrement())
+  gameId    Int?
+  game      Game?    @relation(fields: [gameId], references: [id])
+  createdAt DateTime @default(now())
+  name      String
+  score     Int
+  hand      Hand?
 }
 
 model Hand {
-  id                        Int      @id @default(autoincrement())
-  playerId                  Int @unique
-  player                    Player   @relation(fields: [playerId], references: [id])
-  indexFirst                Int
-  indexLast                 Int
-  cards                     Card[]
+  id         Int    @id @default(autoincrement())
+  playerId   Int    @unique
+  player     Player @relation(fields: [playerId], references: [id])
+  indexFirst Int
+  indexLast  Int
+  cards      Card[]
 }
 
 model Card {
-  id            Int      @id @default(autoincrement())
-  handId        Int?
-  hand          Hand?     @relation(fields: [handId], references: [id])
-  priority      Int
-  value         Int
-  color         String
-  texture       String
-  
+  id       Int    @id @default(autoincrement())
+  handId   Int?
+  hand     Hand?  @relation(fields: [handId], references: [id])
+  priority Int
+  value    Int
+  color    String
+  texture  String
+
   Deck Deck[]
   Game Game[]
 }

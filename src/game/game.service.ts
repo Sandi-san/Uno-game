@@ -7,6 +7,7 @@ import { PlayerService } from 'src/player/player.service';
 import { DeckDto } from 'src/deck/dto/create-deck.dto';
 import { CardDto } from 'src/card/dto/create-card.dto';
 import { PlayerDto } from 'src/player/dto/create-player.dto';
+import { HandService } from 'src/hand/hand.service';
 
 @Injectable()
 export class GameService {
@@ -14,6 +15,7 @@ export class GameService {
     private prisma: PrismaService,
     private deckService: DeckService,
     private playerService: PlayerService,
+    private handService: HandService,
   ) { }
 
   async create(data: CreateGameDto): Promise<Game> {
@@ -24,54 +26,93 @@ export class GameService {
             size: deck.size,
             cards: {
               create: deck.cards
-                .filter((card: CardDto | null) => card !== null) // Filter out null values
+                .filter((card: CardDto | null) => card !== null)
                 .map((card: CardDto) => ({
                   priority: card.priority,
                   value: card.value,
                   color: card.color,
                   texture: card.texture,
-                }))
+                })),
             },
-          }))
+          })),
         },
         players: {
-          create: data.players
-            .filter((player: PlayerDto | null) => player !== null) // Filter out null values
+          connectOrCreate: data.players
+            .filter((player: PlayerDto | null) => player !== null)
             .map((player: PlayerDto) => ({
-              name: player.name,
-              score: player.score,
-              hand: player.hand ? {
-                create: {
-                  indexFirst: player.hand.indexFirst,
-                  indexLast: player.hand.indexLast,
-                  cards: {
-                    create: player.hand.cards
-                      .filter((card: CardDto | null) => card !== null) // Filter out null values
-                      .map((card: CardDto) => ({
-                        priority: card.priority,
-                        value: card.value,
-                        color: card.color,
-                        texture: card.texture,
-                      }))
-                  },
-                },
-              } : undefined,
-            }))
+              where: { id: player.id || 0 }, // Ensure player.id is valid
+              create: {
+                name: player.name,
+                score: player.score,
+              },
+            })),
         },
         maxPlayers: data.maxPlayers,
-        topCard: data.topCard ? {
-          create: {
-            priority: data.topCard.priority,
-            value: data.topCard.value,
-            color: data.topCard.color,
-            texture: data.topCard.texture,
-          },
-        } : null,
-      }
+        topCard: data.topCard
+          ? {
+            create: {
+              priority: data.topCard.priority,
+              value: data.topCard.value,
+              color: data.topCard.color,
+              texture: data.topCard.texture,
+            },
+          }
+          : null,
+        gameState: data.gameState,
+        currentTurn: data.currentTurn,
+        turnOrder: data.turnOrder,
+      },
     });
-    console.log("GAME CREATED:",game)
-    return game
+
+    // After creating the game, update the gameId and hand for each player
+    for (const player of data.players) {
+      if (player && player.id) {
+        // Update gameId
+        await this.prisma.player.update({
+          where: { id: player.id },
+          data: { gameId: game.id },
+        });
+
+        // If hand data is provided, handle the hand creation or update
+        if (player.hand) {
+          const existingHand = await this.prisma.hand.findUnique({
+            where: { playerId: player.id },
+          });
+
+          if (existingHand) {
+            // Update the existing hand
+            //TODO: klic handService update()
+            await this.prisma.hand.update({
+              where: { playerId: player.id },
+              data: {
+                indexFirst: player.hand.indexFirst,
+                indexLast: player.hand.indexLast,
+                cards: {
+                  deleteMany: {}, // Optionally delete old cards
+                  create: player.hand.cards
+                    .filter((card: CardDto | null) => card !== null)
+                    .map((card: CardDto) => ({
+                      priority: card.priority,
+                      value: card.value,
+                      color: card.color,
+                      texture: card.texture,
+                    })),
+                },
+              },
+            });
+          } else {
+            //create new hand
+            await this.handService.create(player.hand, player.id);
+          }
+        }
+      }
+    }
+
+    console.log('GAME CREATED:', game);
+    return game;
   }
+
+
 
   async createNew(): Promise<Game> {
     return await this.prisma.game.create({})
@@ -91,16 +132,25 @@ export class GameService {
           },
         },
       },
+      orderBy: {
+        createdAt: 'desc',
+      }
     })
     console.log(games)
+    console.log(games.at(0).decks)
+    //console.log(`games}\n${games.at(0).decks}`)
     return games
   }
 
   async get(id: number): Promise<Game | null> {
-    return this.prisma.game.findUnique({
+    const game = await this.prisma.game.findUnique({
       where: { id },
       include: {
-        decks: true,
+        decks: {
+          include:{
+            cards: true
+          }
+        },
         players: {
           include: {
             hand: {
@@ -110,8 +160,16 @@ export class GameService {
             },
           },
         },
+        topCard: true,
+        /*
+        gameState: true,
+        currentTurn: true,
+        turnOrder: true,
+        */
       },
     })
+    console.log(game)
+    return game
   }
 
   async getPlayers(id: number): Promise<Player[] | null> {
@@ -130,11 +188,11 @@ export class GameService {
       },
     })
 
-    if(!game)
+    if (!game)
       return null
 
     const players = (await game).players
-    console.log("PLAYERS:",players)
+    console.log("PLAYERS:", players)
     return players
   }
 

@@ -9,4 +9,7 @@ export class CreateGameDto {
   players: PlayerDto[];
   maxPlayers?: number;
   topCard?: Card;
+  gameState: string;
+  currentTurn: number;
+  turnOrder: string;
 }

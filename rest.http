@@ -50,14 +50,20 @@ Content-Type: application/json
   ],
   "players": [
     {
-      "id": 18,
+      "id": 28,
       "name": "Nick2",
       "score": 0,
       "hand": {
         "indexFirst": 0,
         "indexLast": -1,
         "cards": [
-          null
+			{
+				"priority": 1,
+				"value": 6,
+				"color": "B",
+				"texture": "blue6"
+			},
+			null
         ]
       }
     },
@@ -71,6 +77,14 @@ Content-Type: application/json
     "texture": "blue6"
   }
 }
+
+### POST /auth/register
+GET http://localhost:3000/game HTTP/1.1
+Content-Type: application/json
+
+### POST /auth/register
+GET http://localhost:3000/game/46 HTTP/1.1
+Content-Type: application/json
 
 ### POST /auth/register
 GET http://localhost:3000/game/19/players HTTP/1.1
