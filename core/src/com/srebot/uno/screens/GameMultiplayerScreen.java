@@ -36,6 +36,7 @@ import com.srebot.uno.config.GameManager;
 import com.srebot.uno.config.GameService;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -94,7 +95,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     //trenutni turn
     private int playerTurn;
     //preglej ce trenutni player naredil akcijo
-    private boolean playerPerformedAction;
+    private boolean playerPerformedAction = false;
     //max players
     private int maxPlayers=2;
     //max st kart v decku
@@ -123,9 +124,17 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     public interface PlayerFetchCallback {
         void onPlayerFetched(Player player);
     }
+    //create one Game
+    public interface GameCreateCallback {
+        void onGameIdFetched(int gameId); //get id of newly created game
+    }
     //get one Game
     public interface GameFetchCallback {
-        void onGameIdFetched(int gameId);
+        void onGameFetched(GameData game);
+    }
+    //get one Game
+    public interface GameUpdateCallback {
+        void onGameFetched(GameData game);
     }
     //get multiple Players
     public interface PlayersFetchCallback {
@@ -168,6 +177,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         }, 0, 10, TimeUnit.SECONDS); // Check every 5 seconds
     }
 
+    //CREATE GAME
     public GameMultiplayerScreen(Uno game, Array<String> args) {
         this.game = game;
         assetManager = game.getAssetManager();
@@ -194,6 +204,94 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         font = assetManager.get(AssetDescriptors.UI_FONT);
         batch = new SpriteBatch();
         initGame(args);
+    }
+
+    //JOIN GAME
+    public GameMultiplayerScreen(Uno game, int gameId, String playerName) {
+        this.game = game;
+        assetManager = game.getAssetManager();
+        manager = game.getManager();
+        service = game.getService();
+        //Paused dokler ni 2 playerju
+        state = State.Initializing;
+
+        //music on?
+        if (manager.getMusicPref()) {
+            game.stopMusic();
+            game.setMusic(assetManager.get(AssetDescriptors.GAME_MUSIC_1));
+            game.playMusic();
+            game.setMusicVolume(manager.getMusicVolumePref());
+        } else {
+            game.stopMusic();
+        }
+        //sounds on?
+        if (manager.getSoundPref()) {
+            sfxPickup = assetManager.get(AssetDescriptors.PICK_SOUND);
+            sfxCollect = assetManager.get(AssetDescriptors.SET_SOUND);
+        }
+
+        font = assetManager.get(AssetDescriptors.UI_FONT);
+        batch = new SpriteBatch();
+
+        //Player joined successfully, join game in DB
+        // Step 1: Fetch the game from the backend
+        fetchGameFromBackend(gameId, fetchedGame -> {
+            if (fetchedGame != null) {
+                Gdx.app.log("GAME", "Game fetched: " + fetchedGame.getId());
+
+                //VSE TO V SVOJO UPDATELOCALGAME FUNKCIJO
+                //create game variables
+                //set decks & managers
+                maxPlayers = fetchedGame.getMaxPlayers();
+                clockwiseOrder = Objects.equals(fetchedGame.getTurnOrder(), "Clockwise");
+
+                //playersData = new ArrayList<>();
+                playersData = Arrays.asList(fetchedGame.getPlayers());
+                //USTVARI DECKE
+                //ustvari main deck
+                deckDraw = fetchedGame.getDecks()[0];
+                deckDraw.setManager(game);
+
+                //vzemi eno karto iz deka
+                topCard = fetchedGame.getTopCard();
+
+                //ustvari discard dek in polozi to karto nanj
+                deckDiscard = fetchedGame.getDecks()[1];
+                deckDiscard.setManager(game);
+
+                state = State.valueOf(fetchedGame.getGameState());
+                playerTurn = fetchedGame.getCurrentTurn();
+                //localPlayerId=//TODO
+                currentGameId = fetchedGame.getId();
+
+                //USTVARI PLAYERJE IN NAPOLNI ARRAY
+                Player[] fetchedPlayers = fetchedGame.getPlayers();
+                for(int i=0;i<fetchedGame.getMaxPlayers();++i){
+                    playersData.add(null);
+                }
+                for (Player fetchedPlayer : fetchedPlayers) {
+                    addPlayerToArray(fetchedPlayer);
+                }
+
+
+                // Step 2: Create the player and update the game
+                createPlayerFromBackend(playerName, player -> {
+                    // Step 3: Add the player to the fetched game's player list and update the game in the backend
+                    updateGameWithPlayer(player, fetchedGame.getId(), updatedGame -> {
+                        if (updatedGame != null) {
+                            Gdx.app.log("GAME", "Game updated with player: " + player.getId());
+                            // Proceed with initializing the game screen with the updated game data
+
+                        } else {
+                            Gdx.app.log("ERROR", "Failed to update game with player.");
+                        }
+                    });
+                });
+
+            } else {
+                Gdx.app.log("ERROR", "Failed to fetch game from backend.");
+            }
+        });
     }
 
     //pripravi igro (init globals)
@@ -228,10 +326,11 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
             // Get first turn, set up game, etc.
             getFirstTurn();
-            playerPerformedAction = false;
 
             // Create and save game data
-            GameData gameData = new GameData(playersData, deckDraw, deckDiscard, maxPlayers, topCard);
+            GameData gameData = new GameData(
+                    playersData, deckDraw, deckDiscard, maxPlayers, topCard,
+                    state.toString(),playerTurn,getOrderAsString());
 
             //create game in DB and fetch id of newly created game
             createGame(gameData, gameId -> {
@@ -254,7 +353,41 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         */
     }
 
-    private void createGame(GameData gameData, GameFetchCallback callback){
+    private void fetchGameFromBackend(int gameId, GameFetchCallback callback){
+        service.fetchGame(gameId, new GameService.FetchGameCallback() {
+            @Override
+            public void onSuccess(GameData game) {
+                Gdx.app.log("SUCCESS", "Player added to backend");
+                //get array of players from current Game from DB
+                callback.onGameFetched(game);
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                Gdx.app.log("GAME", "FAILED: " + t);
+                callback.onGameFetched(null);
+            }
+        });
+    }
+
+    private void updateGameWithPlayer(Player player, int gameId, GameUpdateCallback callback){
+        service.updateGameWithPlayer(new GameService.GameUpdateCallback() {
+            @Override
+            public void onSuccess(GameData game) {
+                Gdx.app.log("SUCCESS", "Player added to backend");
+                //get array of players from current Game from DB
+                callback.onGameFetched(game);
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                Gdx.app.log("GAME", "FAILED: " + t);
+                callback.onGameFetched(null);
+            }
+        }, gameId, player);
+    }
+
+    private void createGame(GameData gameData, GameCreateCallback callback){
         service.createGame(new GameService.GameCreateCallback() {
             @Override
             public void onSuccess(int gameId) {
@@ -308,6 +441,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             Player localPlayer = playersData.get(i);
             if (localPlayer != null && !fetchedPlayerIds.contains(localPlayer.getId())) {
                 playersData.set(i, null); // Remove the player by setting the slot to null
+                removePlayerBasedIndex(i);
             }
         }
 
@@ -323,7 +457,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
             // If player does not exist in playersData, add them to the first null slot
             if (!playerExists) {
-                createPlayerAndDraw(fetchedPlayer);
+                fetchedPlayer = createPlayerAndDraw(fetchedPlayer);
                 addPlayerToArray(fetchedPlayer);
             }
         }
@@ -350,7 +484,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 // Handle the error response
                 Gdx.app.log("ERROR", "Failed to fetch player: " + t.getMessage());
                 //CREATE NEW PLAYER AND ADD TO DB
-                Player player = new Player(manager.getNamePref(), 0, new Hand());
+                Player player = new Player(playerName, 0, new Hand());
                 player.getHand().pickCards(deckDraw, 5);
                 Gdx.app.log("PLAYER", "CREATING NEW PLAYER INSTEAD: " + player.toString());
 
@@ -380,8 +514,26 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     //TODO: DON'T CREATE PLAYER IF DRAWDECK SIZE IS LESS THAN 5
     private Player createPlayerAndDraw(Player player){
         Player thisPlayer = new Player(player.getId(), player.getName(), 0, new Hand());
-        player.getHand().pickCards(deckDraw, 5);
+        thisPlayer.getHand().pickCards(deckDraw, 5);
         return thisPlayer;
+    }
+
+    //set null Player object based on index in playersData
+    private void removePlayerBasedIndex(int i){
+        switch (i){
+            case 0:
+                player1=null;
+                break;
+            case 1:
+                player2=null;
+                break;
+            case 2:
+                player3=null;
+                break;
+            case 3:
+                player4=null;
+                break;
+        }
     }
 
     private void addPlayerToArray(Player player){
@@ -396,13 +548,15 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             player2 = player;
         }
         if(maxPlayers>2) {
-         if (playersData.get(2) == null) {
+         if (playersData.get(0)!=null && playersData.get(1)!=null &&
+            playersData.get(2) == null) {
                 playersData.set(2, player);
                 player3 = player;
             }
         }
         if (maxPlayers>3) {
-            if (playersData.get(3) == null) {
+            if (playersData.get(0)!=null && playersData.get(1)!=null &&
+                playersData.get(2) != null && playersData.get(3) == null) {
                 playersData.set(3, player);
                 player4 = player;
             }
@@ -442,6 +596,12 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             }
         } while (playersData.get(index - 1) == null);
         return index;
+    }
+
+    private String getOrderAsString(){
+        if(clockwiseOrder)
+            return "Clockwise";
+        return "Counter Clockwise";
     }
 
     @Override
@@ -724,7 +884,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                     }
                     //TODO: get actual current player
                     //kliknil na card - kateri card v roki
-                    for (Card card : player1.getHand().getCards()) {
+                    for (Card card : currentPlayer.getHand().getCards()) {
                         if (isClickedOnCard(worldCoords.x, worldCoords.y, card)) {
                             //izbran card ima highlight
                             card.setHighlight(true);
@@ -944,12 +1104,12 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     private void checkGamestate() {
         int count = getPlayersSize();
         //2 or more players: game can start
-        if(count>=2) {
+        if(count>=2 && state != State.Running) {
             state = State.Running;
             stopScheduler();
         }
         //1 or less players: game cannot start
-        else {
+        else if(state != State.Paused) {
             state = State.Paused;
             startScheduler();
         }

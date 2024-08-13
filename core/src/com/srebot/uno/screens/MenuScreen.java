@@ -275,7 +275,7 @@ public class MenuScreen extends ScreenAdapter {
 
                             ScrollPane scrollPane = new ScrollPane(gamesList, skin);
                             scrollPane.setFadeScrollBars(false);
-                            contentTable.add(scrollPane).width(dialog.getWidth()).height(dialog.getHeight() * 0.6f);
+                            contentTable.add(scrollPane).width(dialog.getWidth()).height(dialog.getHeight() * 0.6f);//60% of dialog height
                         }
 
                         serverConnected.set(true);
@@ -326,7 +326,13 @@ public class MenuScreen extends ScreenAdapter {
                 if (!gamesList.getItems().isEmpty() && serverConnected.get()) {
                     GameData selectedGame = gamesList.getSelected();
                     if (selectedGame != null) {
+                        if(selectedGame.getPlayers().length>=4){
+                            Gdx.app.log("ERROR", "CANNOT JOIN GAME: " + selectedGame.getId()
+                            +". PLAYER SLOTS ARE FULL.");
+                            return;
+                        }
                         Gdx.app.log("JOINING GAME", "JOINING GAME: " + selectedGame.getId());
+                        game.setScreen(new GameMultiplayerScreen(game,selectedGame.getId(),manager.getNamePref()));
                     }
                 } else {
                     Gdx.app.log("CANNOT CONNECT TO SERVER", "CANNOT JOIN GAME");
@@ -427,7 +433,6 @@ public class MenuScreen extends ScreenAdapter {
                 args.add(String.valueOf(numPlayerBox.getSelected()),String.valueOf(deckSizeBox.getSelected()),
                         presetBox.getSelected(),orderBox.getSelected());
                 game.setScreen(new GameMultiplayerScreen(game,args));
-                //TODO: sendi notri variable iz box-ov
             }
         });
 
