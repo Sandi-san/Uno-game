@@ -34,6 +34,15 @@ public class Deck {
         bounds = new Rectangle();
     }
 
+    //deserializer iz gameService
+    public Deck(int size, Array<Card> cards) {
+        this.size = size;
+        this.cards = cards;
+        //manager = game.getManager();
+        position = new Vector2();
+        bounds = new Rectangle();
+    }
+
     public void generateRandom(){
         for(int i=0;i<size;++i){
             Card card = Card.generateRandom();
@@ -235,4 +244,7 @@ public class Deck {
 
     public int getSize() {return size;}
     public Array<Card> getCards() {return cards;}
+
+    //needed when fetching decks from DB and set the manager in the context of the game
+    public void setManager(Uno game) {manager=game.getManager();}
 }

@@ -2,22 +2,24 @@ package com.srebot.uno.config.serializers;
 
 import com.badlogic.gdx.utils.Array;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import com.srebot.uno.classes.Card;
 import com.srebot.uno.classes.Deck;
 
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.List;
 
 public class DeckSerializer implements JsonSerializer<Deck> {
     @Override
     public JsonElement serialize(Deck deck, Type typeOfSrc, JsonSerializationContext context) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("size", deck.getSize());
+
 
         //TODO: does not filter null
         // Get the filtered list of cards
@@ -33,9 +35,8 @@ public class DeckSerializer implements JsonSerializer<Deck> {
         //jsonObject.add("cards", context.serialize(deck.getCards().items));
 
         return jsonObject;
-
-
     }
+
 }
 
 

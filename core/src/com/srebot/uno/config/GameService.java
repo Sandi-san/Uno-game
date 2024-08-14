@@ -11,9 +11,11 @@ import com.srebot.uno.classes.Deck;
 import com.srebot.uno.classes.GameData;
 import com.srebot.uno.classes.Hand;
 import com.srebot.uno.classes.Player;
+import com.srebot.uno.config.deserializers.HandDeserializer;
+import com.srebot.uno.config.deserializers.PlayerDeserializer;
 import com.srebot.uno.config.serializers.CardSerializer;
-import com.srebot.uno.config.serializers.DateDeserializer;
-import com.srebot.uno.config.serializers.DeckDeserializer;
+import com.srebot.uno.config.deserializers.DateDeserializer;
+import com.srebot.uno.config.deserializers.DeckDeserializer;
 import com.srebot.uno.config.serializers.DeckSerializer;
 import com.srebot.uno.config.serializers.HandSerializer;
 import com.srebot.uno.config.serializers.PlayerSerializer;
@@ -23,12 +25,14 @@ import java.util.Date;
 public class GameService {
     private final Gson gson;
     public GameService() {
-        //INIT GSON z serializer
+        //INIT GSON w/ de/serializers
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.registerTypeAdapter(Deck.class, new DeckSerializer());
         gsonBuilder.registerTypeAdapter(Deck.class, new DeckDeserializer());
         gsonBuilder.registerTypeAdapter(Hand.class, new HandSerializer());
+        gsonBuilder.registerTypeAdapter(Hand.class, new HandDeserializer());
         gsonBuilder.registerTypeAdapter(Player.class, new PlayerSerializer());
+        gsonBuilder.registerTypeAdapter(Player.class, new PlayerDeserializer());
         gsonBuilder.registerTypeAdapter(Card.class, new CardSerializer());
         gsonBuilder.registerTypeAdapter(Date.class, new DateDeserializer());
         gsonBuilder.setPrettyPrinting();
@@ -71,7 +75,7 @@ public class GameService {
                     }
                 } else {
                     // Handle non-201 response codes
-                    Gdx.app.log("GameService", "Invalid status code response: "+statusCode);
+                    Gdx.app.log("createGame", "Invalid status code response: "+statusCode);
                     callback.onFailure(new Exception("Failed to create player. Status code: " + statusCode));
                 }
             }
@@ -100,14 +104,14 @@ public class GameService {
     public void updateGameWithPlayer(GameUpdateCallback callback, int gameId, Player player) {
         HttpRequestBuilder requestBuilder = new HttpRequestBuilder();
         Net.HttpRequest request = requestBuilder.newRequest()
-                .method(Net.HttpMethods.PATCH)
+                .method(Net.HttpMethods.PUT)
                 .url(GameConfig.SERVER_URL + GameConfig.GAME_URL + "/" + gameId)
                 .header("Content-Type", "application/json")
                 .build();
 
         //String jsonData = gson.toJson(gameData.getPlayers()); // Serialize your game data here
         String jsonData = gson.toJson(player); // Serialize your game data here
-        Gdx.app.log("PLAYER:", jsonData);
+        Gdx.app.log("GAME:", jsonData);
         request.setContent(jsonData);
 
         Gdx.net.sendHttpRequest(request, new Net.HttpResponseListener() {
@@ -124,14 +128,14 @@ public class GameService {
                             callback.onSuccess(game);
                         } else {
                             // Handle the error
-                            Gdx.app.log("GameService", "Failed to parse game data");
+                            Gdx.app.log("updateGameWithPlayer", "Failed to parse game data");
                             callback.onFailure(new Exception("Failed to parse game data"));
                         }
                     });
                 }
                 else{
                     // Handle non-200 response codes
-                    Gdx.app.log("GameService", "Invalid status code response: "+statusCode);
+                    Gdx.app.log("updateGameWithPlayer", "Invalid status code response: "+statusCode);
                     callback.onFailure(new Exception("Failed to update game. Status code: " + statusCode));
                 }
             }
@@ -178,7 +182,7 @@ public class GameService {
                     }
                 } else {
                     // Handle non-200 response codes
-                    Gdx.app.log("GameService", "Invalid status code response: "+statusCode);
+                    Gdx.app.log("updateGame", "Invalid status code response: "+statusCode);
                     callback.onFailure(new Exception("Failed to update game. Status code: " + statusCode));
                 }
             }
@@ -223,14 +227,14 @@ public class GameService {
                             callback.onSuccess(players);
                         } else {
                             // Handle the error
-                            Gdx.app.log("GameService", "Failed to parse game data - players");
+                            Gdx.app.log("fetchGamePlayers", "Failed to parse game data - players");
                             callback.onFailure(new Exception("Failed to parse game data - players"));
                         }
                     });
                 }
                 else{
                     // Handle non-200 response codes
-                    Gdx.app.log("GameService", "Invalid status code response: "+statusCode);
+                    Gdx.app.log("fetchGamePlayers", "Invalid status code response: "+statusCode);
                     callback.onFailure(new Exception("Failed to fetch players. Status code: " + statusCode));
                 }
             }
@@ -282,19 +286,19 @@ public class GameService {
                                 callback.onSuccess(games);
                             } else {
                                 // Handle the error
-                                Gdx.app.log("GameService", "Failed to parse game data");
+                                Gdx.app.log("fetchGames", "Failed to parse game data");
                                 callback.onFailure(new Exception("Failed to parse game data"));
                             }
                         });
                     }
                     catch (Exception e){
-                        Gdx.app.log("GameService", "Failed to parse json: "+e);
+                        Gdx.app.log("fetchGames", "Failed to parse json: "+e);
                         callback.onFailure(new Exception("Failed to parse json: "+e));
                     }
                 }
                 else{
                     // Handle non-200 response codes
-                    Gdx.app.log("GameService", "Invalid status code response: "+statusCode);
+                    Gdx.app.log("fetchGames", "Invalid status code response: "+statusCode);
                     callback.onFailure(new Exception("Failed to fetch games. Status code: " + statusCode));
                 }
             }
@@ -342,14 +346,14 @@ public class GameService {
                             callback.onSuccess(game);
                         } else {
                             // Handle the error
-                            Gdx.app.log("GameService", "Failed to parse game data");
+                            Gdx.app.log("fetchGame", "Failed to parse game data");
                             callback.onFailure(new Exception("Failed to parse game data"));
                         }
                     });
                 }
                 else{
                     // Handle non-200 response codes
-                    Gdx.app.log("GameService", "Invalid status code response: "+statusCode);
+                    Gdx.app.log("fetchGame", "Invalid status code response: "+statusCode);
                     callback.onFailure(new Exception("Failed to fetch game. Status code: " + statusCode));
                 }
             }
@@ -388,18 +392,24 @@ public class GameService {
                     String responseJson = httpResponse.getResultAsString();
                     Gdx.app.log("PLAYER:", responseJson);
                     Player player = gson.fromJson(responseJson, Player.class);
-                    Hand hand = gson.fromJson(responseJson, Hand.class);
-                    Gdx.app.postRunnable(() -> {
-                        if (player != null) {
-                            callback.onSuccess(player, hand);
-                        } else {
-                            callback.onFailure(new Exception("Failed to parse player data"));
+                    if(player!=null) {
+                        Hand hand = null;
+                        if (player.getHand() != null) {
+                            hand = gson.fromJson(responseJson, Hand.class);
                         }
-                    });
+                        Hand finalHand = hand;
+                        Gdx.app.postRunnable(() -> {
+                            callback.onSuccess(player, finalHand);
+                        });
+                    } else {
+                        Gdx.app.postRunnable(() ->{
+                            callback.onFailure(new Exception("Failed to parse player data"));
+                        });
+                    }
                 }
                 else{
                     // Handle non-200 response codes
-                    Gdx.app.log("GameService", "Invalid status code response: "+statusCode);
+                    Gdx.app.log("fetchPlayerByName", "Invalid status code response: "+statusCode);
                     callback.onFailure(new Exception("Failed to fetch player. Status code: " + statusCode));
                 }
             }
@@ -454,7 +464,7 @@ public class GameService {
                     }
                 } else {
                     // Handle non-201 response codes
-                    Gdx.app.log("GameService", "Invalid status code response: "+statusCode);
+                    Gdx.app.log("createPlayer", "Invalid status code response: "+statusCode);
                     callback.onFailure(new Exception("Failed to create player. Status code: " + statusCode));
 
                 }

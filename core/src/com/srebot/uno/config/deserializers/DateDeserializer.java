@@ -1,4 +1,4 @@
-package com.srebot.uno.config.serializers;
+package com.srebot.uno.config.deserializers;
 
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;

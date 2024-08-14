@@ -10,7 +10,12 @@ public class GameData {
     private int maxPlayers;
     private Card topCard;
 
+    private String gameState;
+    private int currentTurn; //(player 1-4)
+    private String turnOrder;
+
     //PLACEHOLDER
+    /*
     public GameData(){
         this.id=10;
         this.decks = new Deck[1];
@@ -21,7 +26,10 @@ public class GameData {
         this.players[0].setHand(new Hand());
         this.players[0].getHand().pickCard(decks[0]);
     }
-    public GameData(List<Player> playersList, Deck deckDraw, Deck deckDiscard, int maxPlayers, Card topCard){
+    */
+    public GameData(
+            List<Player> playersList, Deck deckDraw, Deck deckDiscard, int maxPlayers, Card topCard,
+            String gameState, int currentTurn, String turnOrder){
         this.players = new Player[playersList.size()];
         for(int i=0; i<this.players.length;++i){
             this.players[i]=playersList.get(i);
@@ -31,6 +39,9 @@ public class GameData {
         this.decks[1]=deckDiscard;
         this.maxPlayers=maxPlayers;
         this.topCard=topCard;
+        this.gameState=gameState;
+        this.currentTurn=currentTurn;
+        this.turnOrder=turnOrder;
     }
 
     public int getId() {
@@ -57,7 +68,6 @@ public class GameData {
         this.players = players;
     }
 
-
     public Date getCreatedAt() {
         return createdAt;
     }
@@ -82,8 +92,41 @@ public class GameData {
         this.topCard = topCard;
     }
 
+    public String getGameState() {
+        return gameState;
+    }
+
+    public void setGameState(String gameState) {
+        this.gameState = gameState;
+    }
+
+    public int getCurrentTurn() {
+        return currentTurn;
+    }
+
+    public void setCurrentTurn(int currentTurn) {
+        this.currentTurn = currentTurn;
+    }
+
+    public String getTurnOrder() {
+        return turnOrder;
+    }
+
+    public void setTurnOrder(String turnOrder) {
+        this.turnOrder = turnOrder;
+    }
+
+    public int getActualPlayersSize(){
+        int count = 0;
+        for(Player player : players){
+            if(player != null)
+                count++;
+        }
+        return count;
+    }
+
     @Override
     public String toString() {
-        return "Game: "+id+" | Max Players: "+maxPlayers+" | Date: "+ createdAt.toLocaleString();
+        return "Game: "+id+" | Players: "+getActualPlayersSize()+"/"+maxPlayers+" | Date: "+ createdAt.toLocaleString();
     }
 }

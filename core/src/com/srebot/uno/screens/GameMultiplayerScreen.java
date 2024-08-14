@@ -214,6 +214,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         service = game.getService();
         //Paused dokler ni 2 playerju
         state = State.Initializing;
+        //winner=none?
 
         //music on?
         if (manager.getMusicPref()) {
@@ -232,6 +233,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
         font = assetManager.get(AssetDescriptors.UI_FONT);
         batch = new SpriteBatch();
+        playersData = new ArrayList<>();
 
         //Player joined successfully, join game in DB
         // Step 1: Fetch the game from the backend
@@ -239,40 +241,10 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             if (fetchedGame != null) {
                 Gdx.app.log("GAME", "Game fetched: " + fetchedGame.getId());
 
-                //VSE TO V SVOJO UPDATELOCALGAME FUNKCIJO
-                //create game variables
-                //set decks & managers
-                maxPlayers = fetchedGame.getMaxPlayers();
-                clockwiseOrder = Objects.equals(fetchedGame.getTurnOrder(), "Clockwise");
+                //create game variables, set decks & managers
+                updateGameData(fetchedGame);
 
-                //playersData = new ArrayList<>();
-                playersData = Arrays.asList(fetchedGame.getPlayers());
-                //USTVARI DECKE
-                //ustvari main deck
-                deckDraw = fetchedGame.getDecks()[0];
-                deckDraw.setManager(game);
-
-                //vzemi eno karto iz deka
-                topCard = fetchedGame.getTopCard();
-
-                //ustvari discard dek in polozi to karto nanj
-                deckDiscard = fetchedGame.getDecks()[1];
-                deckDiscard.setManager(game);
-
-                state = State.valueOf(fetchedGame.getGameState());
-                playerTurn = fetchedGame.getCurrentTurn();
                 //localPlayerId=//TODO
-                currentGameId = fetchedGame.getId();
-
-                //USTVARI PLAYERJE IN NAPOLNI ARRAY
-                Player[] fetchedPlayers = fetchedGame.getPlayers();
-                for(int i=0;i<fetchedGame.getMaxPlayers();++i){
-                    playersData.add(null);
-                }
-                for (Player fetchedPlayer : fetchedPlayers) {
-                    addPlayerToArray(fetchedPlayer);
-                }
-
 
                 // Step 2: Create the player and update the game
                 createPlayerFromBackend(playerName, player -> {
@@ -292,6 +264,45 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 Gdx.app.log("ERROR", "Failed to fetch game from backend.");
             }
         });
+    }
+
+    public void updateGameData(GameData fetchedGame){
+        currentGameId = fetchedGame.getId();
+
+        //USTVARI DECKE in settaj game manager
+        //ustvari main deck
+        deckDraw = fetchedGame.getDecks()[0];
+        deckDraw.setManager(game);
+        //ustvari discard deck
+        deckDiscard = fetchedGame.getDecks()[1];
+        deckDiscard.setManager(game);
+
+        //ustvari current top card
+        topCard = fetchedGame.getTopCard();
+
+        maxPlayers = fetchedGame.getMaxPlayers();
+
+        //USTVARI PLAYERJE IN NAPOLNI ARRAY
+        if(playersData.isEmpty()) {
+            for (int i = 0; i < fetchedGame.getMaxPlayers(); ++i) {
+                playersData.add(null);
+            }
+        }
+        //if no players changed (between local & DB) copy player data from DB
+        if(!checkPlayersChanged(fetchedGame.getPlayers())){
+            //get players from DB
+            Player[] fetchedPlayers = fetchedGame.getPlayers();
+            for (Player fetchedPlayer : fetchedPlayers) {
+                addPlayerToArray(fetchedPlayer);
+            }
+        }
+        //else, players already changed in checkPlayersChanged function
+
+        //playersData = Arrays.asList(fetchedGame.getPlayers());
+
+        state = State.valueOf(fetchedGame.getGameState());
+        playerTurn = fetchedGame.getCurrentTurn();
+        clockwiseOrder = Objects.equals(fetchedGame.getTurnOrder(), "Clockwise");
     }
 
     //pripravi igro (init globals)
@@ -429,7 +440,13 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         return count;
     }
 
-    private void checkPlayersChanged(Player[] fetchedPlayers) {
+    //any players changed?
+    private boolean checkPlayersChanged(Player[] fetchedPlayers) {
+        boolean changed=false;
+        //playerData is uninitialized (no non-null elements)
+        if(getPlayersSize()==0)
+            return false;
+
         // Step 1: Create a set of IDs from fetchedPlayers for quick lookup
         Set<Integer> fetchedPlayerIds = new HashSet<>();
         for (Player fetchedPlayer : fetchedPlayers) {
@@ -442,6 +459,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             if (localPlayer != null && !fetchedPlayerIds.contains(localPlayer.getId())) {
                 playersData.set(i, null); // Remove the player by setting the slot to null
                 removePlayerBasedIndex(i);
+                changed=true;
             }
         }
 
@@ -459,8 +477,10 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             if (!playerExists) {
                 fetchedPlayer = createPlayerAndDraw(fetchedPlayer);
                 addPlayerToArray(fetchedPlayer);
+                changed=true;
             }
         }
+        return changed;
     }
 
     //create player when starting game (host)
@@ -547,15 +567,20 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             playersData.set(1, player);
             player2 = player;
         }
-        if(maxPlayers>2) {
+        else if(maxPlayers==3) {
          if (playersData.get(0)!=null && playersData.get(1)!=null &&
             playersData.get(2) == null) {
                 playersData.set(2, player);
                 player3 = player;
             }
         }
-        if (maxPlayers>3) {
+        else if (maxPlayers==4) {
             if (playersData.get(0)!=null && playersData.get(1)!=null &&
+                    playersData.get(2) == null) {
+                playersData.set(2, player);
+                player3 = player;
+            }
+            else if (playersData.get(0)!=null && playersData.get(1)!=null &&
                 playersData.get(2) != null && playersData.get(3) == null) {
                 playersData.set(3, player);
                 player4 = player;

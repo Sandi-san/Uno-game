@@ -47,6 +47,12 @@ public class Hand {
         initIndexes();
     }
 
+    public Hand(int indexFirst, int indexLast, Array<Card> cards) {
+        this.indexFirst=indexFirst;
+        this.indexLast=indexLast;
+        this.cards=cards;
+    }
+
     private void initIndexes(){
         this.indexFirst=0;
         this.indexLast=this.cards.size-1;
