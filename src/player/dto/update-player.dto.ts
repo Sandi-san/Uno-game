@@ -1,20 +1,22 @@
 import { IsNumber, IsObject, IsOptional, IsString } from 'class-validator';
-import { CreateHandDto } from 'src/hand/dto/create-hand.dto'
+import { UpdateHandDto } from 'src/hand/dto/update-hand.dto';
 
-export class CreatePlayerDto {
+export class UpdatePlayerDto {
   @IsNumber()
   @IsOptional()
   id?: number;
 
   @IsString()
+  @IsOptional()
   name: string;
   
   @IsNumber()
+  @IsOptional()
   score: number;
   
   @IsObject()
   @IsOptional()
-  hand?: CreateHandDto;
+  hand?: UpdateHandDto;
   
   @IsNumber()
   @IsOptional()

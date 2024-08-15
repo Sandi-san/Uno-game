@@ -1,13 +1,14 @@
-import { Prisma, Game, Player } from '@prisma/client';
-import { Injectable } from '@nestjs/common';
+import { Deck, Game, Hand, Player } from '@prisma/client';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateGameDto } from './dto/create-game.dto';
 import { DeckService } from 'src/deck/deck.service';
 import { PlayerService } from 'src/player/player.service';
-import { DeckDto } from 'src/deck/dto/create-deck.dto';
-import { CardDto } from 'src/card/dto/create-card.dto';
-import { PlayerDto } from 'src/player/dto/create-player.dto';
+import { CreateDeckDto } from 'src/deck/dto/create-deck.dto';
+import { CreateCardDto } from 'src/card/dto/create-card.dto';
 import { HandService } from 'src/hand/hand.service';
+import { UpdateGameDto } from './dto/update-game.dto';
+import { CreatePlayerDto } from 'src/player/dto/create-player.dto';
 
 @Injectable()
 export class GameService {
@@ -22,12 +23,12 @@ export class GameService {
     const game = await this.prisma.game.create({
       data: {
         decks: {
-          create: data.decks.map((deck: DeckDto) => ({
+          create: data.decks.map((deck: CreateDeckDto) => ({
             size: deck.size,
             cards: {
               create: deck.cards
-                .filter((card: CardDto | null) => card !== null)
-                .map((card: CardDto) => ({
+                .filter((card: CreateCardDto | null) => card !== null)
+                .map((card: CreateCardDto) => ({
                   priority: card.priority,
                   value: card.value,
                   color: card.color,
@@ -38,8 +39,8 @@ export class GameService {
         },
         players: {
           connectOrCreate: data.players
-            .filter((player: PlayerDto | null) => player !== null)
-            .map((player: PlayerDto) => ({
+            .filter((player: CreatePlayerDto | null) => player !== null)
+            .map((player: CreatePlayerDto) => ({
               where: { id: player.id || 0 }, // Ensure player.id is valid
               create: {
                 name: player.name,
@@ -90,8 +91,8 @@ export class GameService {
                 cards: {
                   deleteMany: {}, // Optionally delete old cards
                   create: player.hand.cards
-                    .filter((card: CardDto | null) => card !== null)
-                    .map((card: CardDto) => ({
+                    .filter((card: CreateCardDto | null) => card !== null)
+                    .map((card: CreateCardDto) => ({
                       priority: card.priority,
                       value: card.value,
                       color: card.color,
@@ -118,6 +119,7 @@ export class GameService {
     return await this.prisma.game.create({})
   }
 
+  //TODO: can remove decks, hand
   async getAll(): Promise<Game[] | null> {
     const games = await this.prisma.game.findMany({
       include: {
@@ -137,8 +139,6 @@ export class GameService {
       }
     })
     console.log(games)
-    console.log(games.at(0).decks)
-    //console.log(`games}\n${games.at(0).decks}`)
     return games
   }
 
@@ -147,7 +147,7 @@ export class GameService {
       where: { id },
       include: {
         decks: {
-          include:{
+          include: {
             cards: true
           }
         },
@@ -196,10 +196,94 @@ export class GameService {
     return players
   }
 
-  async update(id: number, data: Prisma.GameUpdateInput): Promise<Game> {
-    return this.prisma.game.update({
+  //GET function, return only deck and hand ids
+  async getIds(id: number): Promise<Game & 
+  { decks: Deck[], players: (Player & 
+    { hand: Hand })[] } | null> {
+    const game = await this.prisma.game.findUnique({
       where: { id },
-      data,
+      include: {
+        decks: true,  // Include decks
+        players: {
+          include: {
+            hand: true,
+          },
+        },
+      },
+    })
+    console.log(game)
+    return game
+  }
+
+  //UPDATE GAME RAZEN PLAYERJEV
+  async update(id: number, dto: UpdateGameDto): Promise<Game> {
+    const gameToUpdate = await this.getIds(id)
+
+    if (!gameToUpdate) {
+      throw new BadRequestException(`Id ${id} is invalid!`);
+    }
+
+    const updateData: any = {}
+
+    // Step 2: Update decks if provided in dto
+    if (dto.decks) {
+      updateData.decks = {
+        update: gameToUpdate.decks.map((existingDeck, index) => {
+          const deckDto = dto.decks[index];
+          return {
+            where: { id: existingDeck.id },  // Use the existing deck ID
+            data: {
+              size: deckDto.size,  // Update the size if needed
+              cards: {
+                set: deckDto.cards
+                  .filter(card => card && card.id !== undefined)
+                  .map(card => ({ id: card.id })),
+              },
+            },
+          };
+        }),
+      };
+    }
+
+    // Update players if provided in dto
+    if (dto.players) {
+      updateData.players = {
+        update: dto.players.map((player) => {
+          const existingPlayer = gameToUpdate.players.find(p => p.id === player.id);
+          if (!existingPlayer) {
+            throw new Error(`Player with id ${player.id} not found in game`);
+          }
+          return {
+            where: { id: player.id },  // Use the existing player ID
+            data: {
+              score: player.score,
+              hand: {
+                update: {
+                  cards: {
+                    set: player.hand.cards
+                      .filter(card => card && card.id !== undefined)
+                      .map(card => ({ id: card.id })),
+                  },
+                },
+              },
+            }
+          }
+        })
+      }
+    }
+
+    if (dto.topCard && dto.topCard.id !== undefined) {
+      updateData.topCard = { connect: { id: dto.topCard.id } };
+    }
+
+    if (dto.maxPlayers !== undefined) updateData.maxPlayers = dto.maxPlayers;
+    if (dto.gameState !== undefined) updateData.gameState = dto.gameState;
+    if (dto.currentTurn !== undefined) updateData.currentTurn = dto.currentTurn;
+    if (dto.turnOrder !== undefined) updateData.turnOrder = dto.turnOrder;
+
+    const game = await this.prisma.game.update({
+      where: { id },
+      data: updateData,
       include: {
         decks: true,
         players: {
@@ -211,8 +295,12 @@ export class GameService {
             },
           },
         },
+        topCard: true,
       },
-    })
+    });
+
+    console.log(game)
+    return game
   }
 
   async delete(id: number): Promise<Game> {

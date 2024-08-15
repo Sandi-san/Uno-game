@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common'
 import { Player, Prisma } from '@prisma/client'
 import { PrismaService } from 'src/prisma/prisma.service'
-import { PlayerDto } from './dto/create-player.dto';
-import { CardDto } from 'src/card/dto/create-card.dto';
+import { CreatePlayerDto } from './dto/create-player.dto';
+import { CreateCardDto } from 'src/card/dto/create-card.dto';
 
 @Injectable()
 export class PlayerService {
   constructor(private prisma: PrismaService) { }
 
-  async create(data: PlayerDto): Promise<Player> {
+  async create(data: CreatePlayerDto): Promise<Player> {
     const player = await this.prisma.player.create({
       data: {
         name: data.name,
@@ -20,8 +20,8 @@ export class PlayerService {
             indexLast: data.hand.indexLast,
             cards: {
               create: data.hand.cards
-              .filter((card: CardDto | null) => card !== null) // Filter out null values
-              .map((card: CardDto) => ({
+              .filter((card: CreateCardDto | null) => card !== null) // Filter out null values
+              .map((card: CreateCardDto) => ({
                 priority: card.priority,
                 value: card.value,
                 color: card.color,

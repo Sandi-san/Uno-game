@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { Hand, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { HandDto } from './dto/create-hand.dto';
-import { CardDto } from 'src/card/dto/create-card.dto';
+import { CreateHandDto } from './dto/create-hand.dto';
+import { CreateCardDto } from 'src/card/dto/create-card.dto';
 import { PlayerService } from 'src/player/player.service';
-import { PlayerDto } from 'src/player/dto/create-player.dto';
+import { CreatePlayerDto } from 'src/player/dto/create-player.dto';
 
 @Injectable()
 export class HandService {
@@ -13,14 +13,14 @@ export class HandService {
       private playerService: PlayerService,
     ){}
 
-    async create(data: HandDto, playerId: number): Promise<Hand> {
+    async create(data: CreateHandDto, playerId: number): Promise<Hand> {
       //NEEDS playerID!!
       return this.prisma.hand.create({
             data:{
               cards: {
                 create: data.cards
-                .filter((card: CardDto | null) => card !== null) // Filter out null values
-                .map((card: CardDto) => ({
+                .filter((card: CreateCardDto | null) => card !== null) // Filter out null values
+                .map((card: CreateCardDto) => ({
                   priority: card.priority,
                   value: card.value,
                   color: card.color,

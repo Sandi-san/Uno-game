@@ -1,14 +1,14 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { HandService } from './hand.service';
 import { Hand, Prisma } from '@prisma/client';
-import { HandDto } from './dto/create-hand.dto';
+import { CreateHandDto } from './dto/create-hand.dto';
 
 @Controller('hand')
 export class HandController {
     constructor(private readonly handService: HandService) {}
 
     @Post()
-    async createHand(@Body() data: HandDto, id: number): Promise<Hand> {
+    async createHand(@Body() data: CreateHandDto, id: number): Promise<Hand> {
       console.log("HAND CREATE:",data)
       return this.handService.create(data, id);
     }

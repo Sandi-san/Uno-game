@@ -1,7 +1,11 @@
-import { CardDto } from 'src/card/dto/create-card.dto';
+import { IsArray, IsNumber } from 'class-validator';
+import { CreateCardDto } from 'src/card/dto/create-card.dto';
 
-export class HandDto {
+export class CreateHandDto {
+  @IsNumber()
   indexFirst: number;
+  @IsNumber()
   indexLast: number;
-  cards: CardDto[];
+  @IsArray()
+  cards: CreateCardDto[];
 }

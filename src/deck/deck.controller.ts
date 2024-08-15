@@ -1,14 +1,14 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { DeckService } from './deck.service';
 import { Deck, Prisma } from '@prisma/client';
-import { DeckDto } from './dto/create-deck.dto';
+import { CreateDeckDto } from './dto/create-deck.dto';
 
 @Controller('deck')
 export class DeckController {
     constructor(private readonly deckService: DeckService) {}
 
     @Post()
-    async createDeck(@Body() data: DeckDto): Promise<Deck> {
+    async createDeck(@Body() data: CreateDeckDto): Promise<Deck> {
       console.log("DECK CREATE:",data)
       return this.deckService.create(data);
     }

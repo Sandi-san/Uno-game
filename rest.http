@@ -27,6 +27,75 @@ Content-Type: application/json
 	"this_field_should_not_be_passed": "filtered_variable"
 }
 
+## GET
+### POST /auth/register
+GET http://localhost:3000/game/46 HTTP/1.1
+Content-Type: application/json
+
+{
+  "id": 0,
+  "decks": [
+    {
+      "size": 52,
+      "cards": [
+        null
+      ]
+    },
+    {
+      "size": 52,
+      "cards": [
+        null
+      ]
+    }
+  ],
+  "players": [
+    {
+      "id": 28,
+      "name": "Nick1",
+      "score": 0,
+      "hand": {
+        "indexFirst": 0,
+        "indexLast": -1,
+        "cards": [
+			{
+				"priority": 1,
+				"value": 6,
+				"color": "B",
+				"texture": "blue6"
+			},
+			null
+        ]
+      }
+    },
+	{
+      "id": 37,
+      "name": "Nick2",
+      "score": 0,
+      "hand": {
+        "indexFirst": 0,
+        "indexLast": -1,
+        "cards": [
+			{
+				"priority": 1,
+				"value": 6,
+				"color": "B",
+				"texture": "blue6"
+			},
+			null
+        ]
+      }
+    },
+    null
+  ],
+  "maxPlayers": 3,
+  "topCard": {
+    "priority": 1,
+    "value": 6,
+    "color": "B",
+    "texture": "blue6"
+  }
+}
+
 ## REGISTER USER
 ### POST /auth/register
 POST http://localhost:3000/game HTTP/1.1
@@ -76,6 +145,78 @@ Content-Type: application/json
     "color": "B",
     "texture": "blue6"
   }
+}
+
+## REGISTER USER
+### POST /auth/register
+PUT http://localhost:3000/game/46 HTTP/1.1
+Content-Type: application/json
+
+{
+  "id": 0,
+  "decks": [
+    {
+      "size": 52,
+      "cards": [
+        null
+      ]
+    },
+    {
+      "size": 52,
+      "cards": [
+        null
+      ]
+    }
+  ],
+  "players": [
+    {
+      "id": 28,
+      "name": "Nick1",
+      "score": 0,
+      "hand": {
+        "indexFirst": 0,
+        "indexLast": -1,
+        "cards": [
+			{
+				"priority": 1,
+				"value": 6,
+				"color": "B",
+				"texture": "blue6"
+			},
+			null
+        ]
+      }
+    },
+	{
+      "id": 37,
+      "name": "Nick2",
+      "score": 0,
+      "hand": {
+        "indexFirst": 0,
+        "indexLast": -1,
+        "cards": [
+			{
+				"priority": 1,
+				"value": 6,
+				"color": "B",
+				"texture": "blue6"
+			},
+			null
+        ]
+      }
+    },
+    null
+  ],
+  "maxPlayers": 3,
+  "topCard": {
+    "priority": 1,
+    "value": 6,
+    "color": "B",
+    "texture": "blue6"
+  },
+  "gameState": "Paused",
+  "currentTurn": 1,
+  "turnOrder": "Clockwise"
 }
 
 ### POST /auth/register

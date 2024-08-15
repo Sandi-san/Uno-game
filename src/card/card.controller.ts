@@ -1,14 +1,14 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { CardService } from './card.service';
 import { Card, Prisma } from '@prisma/client';
-import { CardDto } from './dto/create-card.dto';
+import { CreateCardDto } from './dto/create-card.dto';
 
 @Controller('card')
 export class CardController {
     constructor(private readonly cardService: CardService) {}
 
     @Post()
-    async createCard(@Body() data: CardDto): Promise<Card> {
+    async createCard(@Body() data: CreateCardDto): Promise<Card> {
       console.log("CARD CREATE:",data)
       return this.cardService.create(data);
     }

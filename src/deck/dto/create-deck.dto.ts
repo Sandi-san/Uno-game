@@ -1,7 +1,7 @@
-import { CardDto } from 'src/card/dto/create-card.dto';
+import { CreateCardDto } from 'src/card/dto/create-card.dto';
 
-export class DeckDto {
+export class CreateDeckDto {
   size: number;
-  cards: CardDto[];
+  cards: CreateCardDto[];
   gameId: number;
 }
