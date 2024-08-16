@@ -15,6 +15,7 @@ public class CardSerializer implements JsonSerializer<Card> {
         JsonObject jsonObject = new JsonObject();
 
         // Only include the fields that you want to serialize
+        jsonObject.addProperty("id", card.getId());
         jsonObject.addProperty("priority", card.getPriority());
         jsonObject.addProperty("value", card.getValue());
         jsonObject.addProperty("color", card.getColor());

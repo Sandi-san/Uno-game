@@ -14,6 +14,9 @@ public class HandSerializer implements JsonSerializer<Hand> {
     @Override
     public JsonElement serialize(Hand hand, Type typeOfSrc, JsonSerializationContext context) {
         JsonObject jsonObject = new JsonObject();
+
+
+        jsonObject.addProperty("id", hand.getId());
         jsonObject.addProperty("indexFirst", hand.getIndexFirst());
         jsonObject.addProperty("indexLast", hand.getIndexLast());
 

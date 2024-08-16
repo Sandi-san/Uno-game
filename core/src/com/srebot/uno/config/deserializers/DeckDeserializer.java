@@ -17,6 +17,7 @@ public class DeckDeserializer implements JsonDeserializer<Deck> {
     public Deck deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
         JsonObject jsonObject = json.getAsJsonObject();
 
+        int id = jsonObject.get("id").getAsInt();
         int size = jsonObject.get("size").getAsInt();
         JsonArray cardsArray = jsonObject.getAsJsonArray("cards");
 
@@ -28,6 +29,6 @@ public class DeckDeserializer implements JsonDeserializer<Deck> {
             }
         }
 
-        return new Deck(size, cards);
+        return new Deck(id, size, cards);
     }
 }

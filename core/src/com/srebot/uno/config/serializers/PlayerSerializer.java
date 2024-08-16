@@ -12,6 +12,7 @@ public class PlayerSerializer implements JsonSerializer<Player> {
     @Override
     public JsonElement serialize(Player player, Type typeOfSrc, JsonSerializationContext context) {
         JsonObject jsonObject = new JsonObject();
+
         jsonObject.addProperty("id", player.getId());
         jsonObject.addProperty("name", player.getName());
         jsonObject.addProperty("score", player.getScore());

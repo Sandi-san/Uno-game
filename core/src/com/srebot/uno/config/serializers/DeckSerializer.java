@@ -18,8 +18,9 @@ public class DeckSerializer implements JsonSerializer<Deck> {
     @Override
     public JsonElement serialize(Deck deck, Type typeOfSrc, JsonSerializationContext context) {
         JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("size", deck.getSize());
 
+        jsonObject.addProperty("id", deck.getId());
+        jsonObject.addProperty("size", deck.getSize());
 
         //TODO: does not filter null
         // Get the filtered list of cards

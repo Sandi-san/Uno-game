@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.Random;
 
 public class Hand {
+    private int id;
     private Array<Card> cards;
     //index prve karte v cards array za izris
     private int indexFirst;
@@ -30,6 +31,7 @@ public class Hand {
     private Rectangle boundsArrowRegionRight;
 
     public Hand(){
+        this.id=0;
         this.cards = new Array<Card>();
         initIndexes();
         initRegions();
@@ -47,11 +49,15 @@ public class Hand {
         initIndexes();
     }
 
-    public Hand(int indexFirst, int indexLast, Array<Card> cards) {
+    public Hand(int id, int indexFirst, int indexLast, Array<Card> cards) {
+        this.id = id;
         this.indexFirst=indexFirst;
         this.indexLast=indexLast;
         this.cards=cards;
     }
+
+    public int getId() {return id;}
+    public void setId(int id) {this.id = id;}
 
     private void initIndexes(){
         this.indexFirst=0;

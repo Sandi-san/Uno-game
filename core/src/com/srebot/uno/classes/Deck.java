@@ -11,6 +11,7 @@ import java.util.Objects;
 public class Deck {
     private GameManager manager;
 
+    private int id;
     private int size;
     private Array<Card> cards;
 
@@ -35,7 +36,8 @@ public class Deck {
     }
 
     //deserializer iz gameService
-    public Deck(int size, Array<Card> cards) {
+    public Deck(int id, int size, Array<Card> cards) {
+        this.id = id;
         this.size = size;
         this.cards = cards;
         //manager = game.getManager();
@@ -247,4 +249,7 @@ public class Deck {
 
     //needed when fetching decks from DB and set the manager in the context of the game
     public void setManager(Uno game) {manager=game.getManager();}
+
+    public int getId() {return id;}
+    public void setId(int id) {this.id = id;}
 }

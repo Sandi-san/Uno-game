@@ -244,8 +244,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 //create game variables, set decks & managers
                 updateGameData(fetchedGame);
 
-                //localPlayerId=//TODO
-
                 // Step 2: Create the player and update the game
                 createPlayerFromBackend(playerName, player -> {
                     // Step 3: Add the player to the fetched game's player list and update the game in the backend
@@ -253,6 +251,8 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                         if (updatedGame != null) {
                             Gdx.app.log("GAME", "Game updated with player: " + player.getId());
                             // Proceed with initializing the game screen with the updated game data
+
+                            //localPlayerId=//TODO
 
                         } else {
                             Gdx.app.log("ERROR", "Failed to update game with player.");

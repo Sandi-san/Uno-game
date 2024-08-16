@@ -17,19 +17,20 @@ public class HandDeserializer implements JsonDeserializer<Hand> {
     public Hand deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
         JsonObject jsonObject = json.getAsJsonObject();
 
+        int id = jsonObject.get("id").getAsInt();
         int indexFirst = jsonObject.get("indexFirst").getAsInt();
         int indexLast = jsonObject.get("indexLast").getAsInt();
 
-        JsonArray cardsArray = jsonObject.getAsJsonArray("cards");
+        JsonArray cardsArray = jsonObject.has("cards") ? jsonObject.getAsJsonArray("cards") : new JsonArray();
         Array<Card> cards = new Array<>();
 
-        if (cardsArray != null) {
-            for (JsonElement cardElement : cardsArray) {
+        for (JsonElement cardElement : cardsArray) {
+            if (cardElement != null && !cardElement.isJsonNull()) {
                 Card card = context.deserialize(cardElement, Card.class);
                 cards.add(card);
             }
         }
 
-        return new Hand(indexFirst, indexLast, cards);
+        return new Hand(id, indexFirst, indexLast, cards);
     }
 }

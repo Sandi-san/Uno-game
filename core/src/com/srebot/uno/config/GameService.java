@@ -54,7 +54,7 @@ public class GameService {
                 .build();
 
         String jsonData = gson.toJson(gameData); // Serialize your game data here
-        //Gdx.app.log("CREATE GAME:",jsonData);
+        Gdx.app.log("CREATE GAME:",jsonData);
         request.setContent(jsonData);
 
         Gdx.net.sendHttpRequest(request, new Net.HttpResponseListener() {
@@ -105,13 +105,13 @@ public class GameService {
         HttpRequestBuilder requestBuilder = new HttpRequestBuilder();
         Net.HttpRequest request = requestBuilder.newRequest()
                 .method(Net.HttpMethods.PUT)
-                .url(GameConfig.SERVER_URL + GameConfig.GAME_URL + "/" + gameId)
+                .url(GameConfig.SERVER_URL + GameConfig.GAME_URL + "/" + gameId+"/players")
                 .header("Content-Type", "application/json")
                 .build();
 
         //String jsonData = gson.toJson(gameData.getPlayers()); // Serialize your game data here
         String jsonData = gson.toJson(player); // Serialize your game data here
-        Gdx.app.log("GAME:", jsonData);
+        Gdx.app.log("UPDATE PLAYER ON GAME:", jsonData);
         request.setContent(jsonData);
 
         Gdx.net.sendHttpRequest(request, new Net.HttpResponseListener() {
@@ -392,14 +392,10 @@ public class GameService {
                     String responseJson = httpResponse.getResultAsString();
                     Gdx.app.log("PLAYER:", responseJson);
                     Player player = gson.fromJson(responseJson, Player.class);
+                    //TODO: remove hand razen ce ga kje uporablas? (pri fetch player se vedno usvari nov hand)
                     if(player!=null) {
-                        Hand hand = null;
-                        if (player.getHand() != null) {
-                            hand = gson.fromJson(responseJson, Hand.class);
-                        }
-                        Hand finalHand = hand;
                         Gdx.app.postRunnable(() -> {
-                            callback.onSuccess(player, finalHand);
+                            callback.onSuccess(player, player.getHand());
                         });
                     } else {
                         Gdx.app.postRunnable(() ->{
