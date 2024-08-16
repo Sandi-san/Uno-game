@@ -3,6 +3,7 @@ import { GameService } from './game.service';
 import { Game, Player, Prisma } from '@prisma/client';
 import { CreateGameDto } from './dto/create-game.dto';
 import { UpdateGameDto } from './dto/update-game.dto';
+import { UpdatePlayerDto } from 'src/player/dto/update-player.dto';
 
 @Controller('game')
 export class GameController {
@@ -39,6 +40,13 @@ export class GameController {
     async updateGame(@Param('id', ParseIntPipe) id: number, @Body() data: UpdateGameDto): Promise<Game> {
       console.log("UPDATE DATA:",data)
       return this.gameService.update(id, data);
+    }
+    
+    //UPDATE PLAYER W/ GAMEID & RETURN UPDATED GAME
+    @Put(':id/players')
+    async updateGamePlayer(@Param('id', ParseIntPipe) id: number, @Body() data: UpdatePlayerDto): Promise<Game> {
+      console.log("UPDATE DATA:",data)
+      return this.gameService.updatePlayer(id, data);
     }
   
     @Delete(':id')

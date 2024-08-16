@@ -9,6 +9,7 @@ import { CreateCardDto } from 'src/card/dto/create-card.dto';
 import { HandService } from 'src/hand/hand.service';
 import { UpdateGameDto } from './dto/update-game.dto';
 import { CreatePlayerDto } from 'src/player/dto/create-player.dto';
+import { UpdatePlayerDto } from 'src/player/dto/update-player.dto';
 
 @Injectable()
 export class GameService {
@@ -119,7 +120,7 @@ export class GameService {
     return await this.prisma.game.create({})
   }
 
-  //TODO: can remove decks, hand
+  //TODO: can not include decks, hand
   async getAll(): Promise<Game[] | null> {
     const games = await this.prisma.game.findMany({
       include: {
@@ -173,7 +174,7 @@ export class GameService {
   }
 
   async getPlayers(id: number): Promise<Player[] | null> {
-    const game = this.prisma.game.findUnique({
+    const game = await this.prisma.game.findUnique({
       where: { id },
       include: {
         players: {
@@ -189,17 +190,19 @@ export class GameService {
     })
 
     if (!game)
-      return null
+      throw new BadRequestException(`Id ${id} is invalid!`);
 
-    const players = (await game).players
+    const players = game.players
     console.log("PLAYERS:", players)
     return players
   }
 
   //GET function, return only deck and hand ids
-  async getIds(id: number): Promise<Game & 
-  { decks: Deck[], players: (Player & 
-    { hand: Hand })[] } | null> {
+  async getIds(id: number): Promise<Game &
+  {
+    decks: Deck[],
+    players: (Player & { hand: Hand })[]
+  } | null> {
     const game = await this.prisma.game.findUnique({
       where: { id },
       include: {
@@ -215,13 +218,13 @@ export class GameService {
     return game
   }
 
-  //UPDATE GAME RAZEN PLAYERJEV
+  //TODO?: UPDATE GAME RAZEN PLAYERJEV
   async update(id: number, dto: UpdateGameDto): Promise<Game> {
     const gameToUpdate = await this.getIds(id)
 
-    if (!gameToUpdate) {
+    if (!gameToUpdate) 
       throw new BadRequestException(`Id ${id} is invalid!`);
-    }
+  
 
     const updateData: any = {}
 
@@ -251,7 +254,7 @@ export class GameService {
         update: dto.players.map((player) => {
           const existingPlayer = gameToUpdate.players.find(p => p.id === player.id);
           if (!existingPlayer) {
-            throw new Error(`Player with id ${player.id} not found in game`);
+            throw new BadRequestException(`Player with id ${player.id} not found in game`);
           }
           return {
             where: { id: player.id },  // Use the existing player ID
@@ -301,6 +304,16 @@ export class GameService {
 
     console.log(game)
     return game
+  }
+
+  //ADD PLAYER TO GAME
+  async updatePlayer(id: number, dto: UpdatePlayerDto): Promise<Game> {
+    //check if player data sent: update player's gameId
+    if (dto)
+      await this.playerService.update(dto, id)
+
+    //return the game
+    return this.get(id)
   }
 
   async delete(id: number): Promise<Game> {

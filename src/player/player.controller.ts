@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/commo
 import { PlayerService } from './player.service';
 import { Player, Prisma } from '@prisma/client';
 import { CreatePlayerDto } from './dto/create-player.dto';
+import { UpdatePlayerDto } from './dto/update-player.dto';
 
 @Controller('player')
 export class PlayerController {
@@ -24,10 +25,12 @@ export class PlayerController {
       return this.playerService.getByName(name);
     }
 
+    /*
     @Patch(':id')
-    async updatePlayer(@Param('id') id: number, @Body() data: Prisma.PlayerUpdateInput): Promise<Player> {
+    async updatePlayer(@Param('id') id: number, @Body() data: UpdatePlayerDto): Promise<Player> {
       return this.playerService.update(id, data);
     }
+    */
   
     @Delete(':id')
     async deletePlayer(@Param('id') id: number): Promise<Player> {
