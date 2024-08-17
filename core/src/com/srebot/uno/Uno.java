@@ -1,20 +1,19 @@
 package com.srebot.uno;
 
-import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Game;
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.LifecycleListener;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.audio.Music;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.utils.ScreenUtils;
 import com.srebot.uno.config.GameManager;
 import com.srebot.uno.config.GameService;
+import com.srebot.uno.screens.GameMultiplayerScreen;
+import com.srebot.uno.screens.GameSingleplayerScreen;
 import com.srebot.uno.screens.IntroScreen;
-import com.srebot.uno.screens.MenuScreen;
 
 //PRVI CLASS KI SE ZAŽENE
 public class Uno extends Game {
-
 	private AssetManager assetManager;
 	private SpriteBatch batch;
 	private GameManager manager;
@@ -30,6 +29,36 @@ public class Uno extends Game {
 		music = null;
 
 		setScreen(new IntroScreen(this));
+
+		// Adding the LifecycleListener here
+		Gdx.app.addLifecycleListener(new LifecycleListener() {
+			@Override
+			public void pause() {
+				// Handle pause
+			}
+
+			@Override
+			public void resume() {
+				// Handle resume
+			}
+
+			@Override
+			public void dispose() {
+				if(screen instanceof GameMultiplayerScreen){
+					Gdx.app.log("DISPOSE", "Calling from GameMultiplayerScreen");
+					GameMultiplayerScreen mpScreen = (GameMultiplayerScreen) screen;
+					int playerId = mpScreen.getPlayerId();
+					int gameId = mpScreen.getGameId();
+					if(playerId != 0){
+						Gdx.app.log("DISPOSE", "MultiplayerScreen closed with localPlayerId: ");
+						//TODO: CALL DELETE GAME IN BACKEND
+						//BE: delete player's GameId from Game, if Game then has no players, delete game
+					}
+				}
+				Gdx.app.log("DISPOSE", "CLOSING APPLICATION FROM LIFECYCLE LISTENER");
+				// Clean up resources
+			}
+		});
 	}
 	
 	@Override

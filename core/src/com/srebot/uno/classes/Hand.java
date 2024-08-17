@@ -49,11 +49,13 @@ public class Hand {
         initIndexes();
     }
 
+    //deserializer constructor
     public Hand(int id, int indexFirst, int indexLast, Array<Card> cards) {
         this.id = id;
         this.indexFirst=indexFirst;
         this.indexLast=indexLast;
         this.cards=cards;
+        initRegions();
     }
 
     public int getId() {return id;}

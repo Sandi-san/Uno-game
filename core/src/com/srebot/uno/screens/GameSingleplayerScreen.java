@@ -933,9 +933,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
 
     //PREKRITE (STATIC) METODE
     @Override
-    public void hide() {
-        dispose();
-    }
+    public void hide() {dispose();}
 
     @Override
     public void dispose() {

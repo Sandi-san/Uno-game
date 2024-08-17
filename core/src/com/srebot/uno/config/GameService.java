@@ -373,7 +373,7 @@ public class GameService {
     }
 
     public interface PlayerFetchCallback {
-        void onSuccess(Player player, Hand hand);
+        void onSuccess(Player player);
         void onFailure(Throwable t);
     }
     public void fetchPlayerByName(PlayerFetchCallback callback, String name) {
@@ -392,10 +392,9 @@ public class GameService {
                     String responseJson = httpResponse.getResultAsString();
                     Gdx.app.log("PLAYER:", responseJson);
                     Player player = gson.fromJson(responseJson, Player.class);
-                    //TODO: remove hand razen ce ga kje uporablas? (pri fetch player se vedno usvari nov hand)
                     if(player!=null) {
                         Gdx.app.postRunnable(() -> {
-                            callback.onSuccess(player, player.getHand());
+                            callback.onSuccess(player);
                         });
                     } else {
                         Gdx.app.postRunnable(() ->{

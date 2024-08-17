@@ -97,11 +97,11 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     //preglej ce trenutni player naredil akcijo
     private boolean playerPerformedAction = false;
     //max players
-    private int maxPlayers=2;
+    private int maxPlayers = 2;
     //max st kart v decku
-    private int deckSize=104;
+    private int deckSize = 104;
     //vrstni red
-    private boolean clockwiseOrder=true;
+    private boolean clockwiseOrder = true;
 
     //playerji
     private Player player1;
@@ -119,23 +119,36 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
     private Array<Card> choosingCards = new Array<Card>();
 
+    //get playerId of current player for dispose function
+    public int getPlayerId() {
+        return localPlayerId;
+    }
+    //get gameId of current game for dispose function
+    public int getGameId() {
+        return currentGameId;
+    }
+
     //Callback functions: get backend response before continuing executing code
     //get one Player
     public interface PlayerFetchCallback {
         void onPlayerFetched(Player player);
     }
+
     //create one Game
     public interface GameCreateCallback {
         void onGameIdFetched(int gameId); //get id of newly created game
     }
+
     //get one Game
     public interface GameFetchCallback {
         void onGameFetched(GameData game);
     }
+
     //get one Game
     public interface GameUpdateCallback {
         void onGameFetched(GameData game);
     }
+
     //get multiple Players
     public interface PlayersFetchCallback {
         void onPlayersFetched(Player[] players);
@@ -153,6 +166,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
         playerChecker();
     }
+
     private void stopScheduler() {
         if (scheduler != null && !scheduler.isShutdown()) {
             scheduler.shutdown();
@@ -250,10 +264,9 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                     updateGameWithPlayer(player, fetchedGame.getId(), updatedGame -> {
                         if (updatedGame != null) {
                             Gdx.app.log("GAME", "Game updated with player: " + player.getId());
-                            // Proceed with initializing the game screen with the updated game data
 
-                            //localPlayerId=//TODO
-
+                            //game is initialized, change state to Paused
+                            state = State.Paused;
                         } else {
                             Gdx.app.log("ERROR", "Failed to update game with player.");
                         }
@@ -266,7 +279,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         });
     }
 
-    public void updateGameData(GameData fetchedGame){
+    public void updateGameData(GameData fetchedGame) {
         currentGameId = fetchedGame.getId();
 
         //USTVARI DECKE in settaj game manager
@@ -283,13 +296,13 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         maxPlayers = fetchedGame.getMaxPlayers();
 
         //USTVARI PLAYERJE IN NAPOLNI ARRAY
-        if(playersData.isEmpty()) {
+        if (playersData.isEmpty()) {
             for (int i = 0; i < fetchedGame.getMaxPlayers(); ++i) {
                 playersData.add(null);
             }
         }
         //if no players changed (between local & DB) copy player data from DB
-        if(!checkPlayersChanged(fetchedGame.getPlayers())){
+        if (!checkPlayersChanged(fetchedGame.getPlayers())) {
             //get players from DB
             Player[] fetchedPlayers = fetchedGame.getPlayers();
             for (Player fetchedPlayer : fetchedPlayers) {
@@ -317,7 +330,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         //USTVARI DECKE
         //ustvari main deck
         deckDraw = new Deck(deckSize, game);
-        deckDraw.generateBySize(deckSize,preset);
+        deckDraw.generateBySize(deckSize, preset);
         deckDraw.shuffleDeck();
 
         //vzemi eno karto iz deka
@@ -328,11 +341,11 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         deckDiscard.setCard(topCard);
 
         //USTVARI PLAYERJE IN NAPOLNI ARRAY
-        for(int i=0;i<maxPlayers;++i){
+        for (int i = 0; i < maxPlayers; ++i) {
             playersData.add(null);
         }
         //PRIPRAVI FIRST PLAYER (HOST)
-        createPlayerFromBackend(manager.getNamePref(),player -> {
+        createPlayerFromBackend(manager.getNamePref(), player -> {
             // Code that should run after the player is fetched/created
 
             // Get first turn, set up game, etc.
@@ -341,7 +354,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             // Create and save game data
             GameData gameData = new GameData(
                     playersData, deckDraw, deckDiscard, maxPlayers, topCard,
-                    state.toString(),playerTurn,getOrderAsString());
+                    state.toString(), playerTurn, getOrderAsString());
 
             //create game in DB and fetch id of newly created game
             createGame(gameData, gameId -> {
@@ -364,7 +377,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         */
     }
 
-    private void fetchGameFromBackend(int gameId, GameFetchCallback callback){
+    private void fetchGameFromBackend(int gameId, GameFetchCallback callback) {
         service.fetchGame(gameId, new GameService.FetchGameCallback() {
             @Override
             public void onSuccess(GameData game) {
@@ -381,7 +394,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         });
     }
 
-    private void updateGameWithPlayer(Player player, int gameId, GameUpdateCallback callback){
+    private void updateGameWithPlayer(Player player, int gameId, GameUpdateCallback callback) {
         service.updateGameWithPlayer(new GameService.GameUpdateCallback() {
             @Override
             public void onSuccess(GameData game) {
@@ -398,7 +411,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         }, gameId, player);
     }
 
-    private void createGame(GameData gameData, GameCreateCallback callback){
+    private void createGame(GameData gameData, GameCreateCallback callback) {
         service.createGame(new GameService.GameCreateCallback() {
             @Override
             public void onSuccess(int gameId) {
@@ -413,7 +426,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         }, gameData);
     }
 
-    private void checkForNewPlayers(PlayersFetchCallback callback){
+    private void checkForNewPlayers(PlayersFetchCallback callback) {
         service.fetchGamePlayers(new GameService.FetchGamePlayersCallback() {
             @Override
             public void onSuccess(Player[] players) {
@@ -431,20 +444,37 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     }
 
     //Get local playersData size (without null elements)
-    private int getPlayersSize(){
+    private int getPlayersSize() {
         int count = 0;
-        for(Player player : playersData){
-            if(player != null)
+        for (Player player : playersData) {
+            if (player != null)
                 count++;
         }
         return count;
     }
 
+    //Get index in playersData of current player (localPlayerId)
+    private int getIndexOfCurrentPlayer(){
+        int index=-1;
+        for(int i=0; i<playersData.size(); ++i){
+            Player player = playersData.get(i);
+            if(player!=null) {
+                if (player.getId() == localPlayerId) {
+                    index = i;
+                    break;
+                }
+            }
+        }
+        if(index==-1)
+            Gdx.app.log("ERROR","Player with id "+localPlayerId+" not found in playersData");
+        return index;
+    }
+
     //any players changed?
     private boolean checkPlayersChanged(Player[] fetchedPlayers) {
-        boolean changed=false;
+        boolean changed = false;
         //playerData is uninitialized (no non-null elements)
-        if(getPlayersSize()==0)
+        if (getPlayersSize() == 0)
             return false;
 
         // Step 1: Create a set of IDs from fetchedPlayers for quick lookup
@@ -459,7 +489,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             if (localPlayer != null && !fetchedPlayerIds.contains(localPlayer.getId())) {
                 playersData.set(i, null); // Remove the player by setting the slot to null
                 removePlayerBasedIndex(i);
-                changed=true;
+                changed = true;
             }
         }
 
@@ -477,17 +507,17 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             if (!playerExists) {
                 fetchedPlayer = createPlayerAndDraw(fetchedPlayer);
                 addPlayerToArray(fetchedPlayer);
-                changed=true;
+                changed = true;
             }
         }
         return changed;
     }
 
     //create player when starting game (host)
-    private void createPlayerFromBackend(String playerName, PlayerFetchCallback callback){
+    private void createPlayerFromBackend(String playerName, PlayerFetchCallback callback) {
         service.fetchPlayerByName(new GameService.PlayerFetchCallback() {
             @Override
-            public void onSuccess(Player player, Hand hand) {
+            public void onSuccess(Player player) {
                 // Handle the successful response
                 Gdx.app.log("PLAYER", "Player fetched: " + player.getName());
                 //GET PLAYER IN ADD V CURRENT GAME
@@ -532,56 +562,52 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
     //fetch player form DB and create new local player object and draw from deck
     //TODO: DON'T CREATE PLAYER IF DRAWDECK SIZE IS LESS THAN 5
-    private Player createPlayerAndDraw(Player player){
+    private Player createPlayerAndDraw(Player player) {
         Player thisPlayer = new Player(player.getId(), player.getName(), 0, new Hand());
         thisPlayer.getHand().pickCards(deckDraw, 5);
         return thisPlayer;
     }
 
     //set null Player object based on index in playersData
-    private void removePlayerBasedIndex(int i){
-        switch (i){
+    private void removePlayerBasedIndex(int i) {
+        switch (i) {
             case 0:
-                player1=null;
+                player1 = null;
                 break;
             case 1:
-                player2=null;
+                player2 = null;
                 break;
             case 2:
-                player3=null;
+                player3 = null;
                 break;
             case 3:
-                player4=null;
+                player4 = null;
                 break;
         }
     }
 
-    private void addPlayerToArray(Player player){
-        Gdx.app.log("PLAYER ADD", "ADDED PLAYER: "+player.getName());
+    private void addPlayerToArray(Player player) {
+        Gdx.app.log("PLAYER ADD", "ADDED PLAYER: " + player.getName());
         //first player
-        if(playersData.get(0)==null){
+        if (playersData.get(0) == null) {
             playersData.set(0, player);
             player1 = player;
-        }
-        else if(playersData.get(1)==null){
+        } else if (playersData.get(1) == null) {
             playersData.set(1, player);
             player2 = player;
-        }
-        else if(maxPlayers==3) {
-         if (playersData.get(0)!=null && playersData.get(1)!=null &&
-            playersData.get(2) == null) {
-                playersData.set(2, player);
-                player3 = player;
-            }
-        }
-        else if (maxPlayers==4) {
-            if (playersData.get(0)!=null && playersData.get(1)!=null &&
+        } else if (maxPlayers == 3) {
+            if (playersData.get(0) != null && playersData.get(1) != null &&
                     playersData.get(2) == null) {
                 playersData.set(2, player);
                 player3 = player;
             }
-            else if (playersData.get(0)!=null && playersData.get(1)!=null &&
-                playersData.get(2) != null && playersData.get(3) == null) {
+        } else if (maxPlayers == 4) {
+            if (playersData.get(0) != null && playersData.get(1) != null &&
+                    playersData.get(2) == null) {
+                playersData.set(2, player);
+                player3 = player;
+            } else if (playersData.get(0) != null && playersData.get(1) != null &&
+                    playersData.get(2) != null && playersData.get(3) == null) {
                 playersData.set(3, player);
                 player4 = player;
             }
@@ -623,8 +649,8 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         return index;
     }
 
-    private String getOrderAsString(){
-        if(clockwiseOrder)
+    private String getOrderAsString() {
+        if (clockwiseOrder)
             return "Clockwise";
         return "Counter Clockwise";
     }
@@ -667,17 +693,19 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         ScreenUtils.clear(r, g, b, a);
 
         //Game not yet finished creating in DB
-        if(state == State.Initializing)
+        if (state == State.Initializing)
             return;
 
-        else if(state==State.Paused){
+        else if (state == State.Paused) {
             //TODO: draw still waiting for players text
             Gdx.app.log("PAUSED", "Still waiting for players");
         }
 
         if (state != State.Over) {
             checkGamestate();
-            handleInput();
+            //handle input only if it is current player's turn
+            if(playerTurn==getIndexOfCurrentPlayer()+1)
+                handleInput();
         }
 
         viewport.apply();
@@ -719,17 +747,21 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             float drawY = (GameConfig.WORLD_HEIGHT - sizeY) / 2f;
             deckDraw.setPositionAndBounds(drawX, drawY, sizeX, sizeY);
             Card.render(batch, drawDeckRegion, drawX, drawY, sizeX, sizeY);
+
+            //DRAW PLAYER HANDS
+            for(Player player : playersData) {
+                if(player!=null) {
+                    Hand playerHand = player.getHand();
+                    playerHand.setArrowRegions(gameplayAtlas.findRegion(RegionNames.arrow));
+                    drawHand(playerHand, 0,
+                            sizeX, sizeY, true);
+                }
+            }
+
         } else if (state == State.Choosing) {
             drawColorWheel();
         }
-        //pocakaj da se izvede backend fetch, sele nato dostopaj do objecta
-        if(state != State.Initializing) {
-            //DRAW PLAYER in COMPUTER HANDS
-            Hand playerHand = player1.getHand();
-            playerHand.setArrowRegions(gameplayAtlas.findRegion(RegionNames.arrow));
-            drawHand(playerHand, 0,
-                    sizeX, sizeY, true);
-        }
+
         //DRAW EXIT BUTTON
         //drawExitButton();
     }
@@ -864,6 +896,46 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         }
     }
 
+    //set positions of playersData players' hands (different for each player)
+    private void setPositions() {
+        Player currentPlayer = getCurrentPlayer();
+        if (currentPlayer == null) {
+            //TODO: throw exception
+            Gdx.app.log("ERROR", "There is no local player with id: " + localPlayerId);
+            return;
+        }
+        /*
+        1-bottom
+        2-left
+        3-top
+        4-right
+         */
+        switch (getPlayersSize()) {
+            case 2:
+                //positions for 2 players
+                break;
+            case 3:
+                //positions for 3 players
+                break;
+            case 4:
+                //positions for 4 players
+                break;
+        }
+    }
+
+    private void setHandPositions() {
+
+    }
+
+    //get current player in playerData from localPlayerId
+    private Player getCurrentPlayer() {
+        for (Player player : playersData) {
+            if (player.getId() == localPlayerId)
+                return player;
+        }
+        return null;
+    }
+
     private void handleInput() {
         //za mouse
         float touchX = Gdx.input.getX();
@@ -875,7 +947,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         if (state == State.Running) {
             //arrow button click cycle
             Player currentPlayer = playersData.get(playerTurn - 1);
-            //TODO: get actual player turn-a
+            //TODO?: get actual player turn-a
             Hand currentHand = currentPlayer.getHand();
             if (isClickedOnArrowButtonLeft(worldCoords.x, worldCoords.y, currentHand)) {
                 if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT) && showLeftArrow) {
@@ -890,45 +962,42 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             //PlayerTurn: player se ni imel poteze ta turn
             if (!playerPerformedAction) {
                 //player trenutnega turna
-                //Gdx.app.log("Current player",currentPlayer.getName());
-                //current player je human
-                if (!Objects.equals(currentPlayer.getName(), "Computer")) {
-                    //kliknil na deck
-                    if (isClickedOnDeck(worldCoords.x, worldCoords.y, deckDraw)) {
-                        if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
-                            if (sfxPickup != null) {
-                                sfxPickup.play();
-                            }
-                            currentPlayer.getHand().pickCard(deckDraw);
-                            //ce hocemo da konec tren player turna, ko vlece karto iz decka
-                            playerTurn = getNextTurn(playerTurn);
-                            playerPerformedAction = true;
-                            //move hand index right (draw card)
-                            handArrowRightClicked(currentPlayer.getHand());
+                Gdx.app.log("Current player", currentPlayer.getName());
+                //kliknil na deck
+                if (isClickedOnDeck(worldCoords.x, worldCoords.y, deckDraw)) {
+                    if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+                        if (sfxPickup != null) {
+                            sfxPickup.play();
                         }
-                    }
-                    //TODO: get actual current player
-                    //kliknil na card - kateri card v roki
-                    for (Card card : currentPlayer.getHand().getCards()) {
-                        if (isClickedOnCard(worldCoords.x, worldCoords.y, card)) {
-                            //izbran card ima highlight
-                            card.setHighlight(true);
-                            if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
-                                if (sfxCollect != null) {
-                                    sfxCollect.play();
-                                }
-                                gameControl(card, currentPlayer.getHand());
-                                topCard = deckDiscard.getTopCard();
-
-                                //move hand index left (removed card)
-                                //handArrowLeftClicked(currentPlayer.getHand());
-                                break;
-                            }
-                        } else {
-                            card.setHighlight(false);
-                        }
+                        currentPlayer.getHand().pickCard(deckDraw);
+                        //ce hocemo da konec tren player turna, ko vlece karto iz decka
+                        playerTurn = getNextTurn(playerTurn);
+                        playerPerformedAction = true;
+                        //move hand index right (draw card)
+                        handArrowRightClicked(currentPlayer.getHand());
                     }
                 }
+                //kliknil na card - kateri card v roki
+                for (Card card : currentPlayer.getHand().getCards()) {
+                    if (isClickedOnCard(worldCoords.x, worldCoords.y, card)) {
+                        //izbran card ima highlight
+                        card.setHighlight(true);
+                        if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+                            if (sfxCollect != null) {
+                                sfxCollect.play();
+                            }
+                            gameControl(card, currentPlayer.getHand());
+                            topCard = deckDiscard.getTopCard();
+
+                            //move hand index left (removed card)
+                            //handArrowLeftClicked(currentPlayer.getHand());
+                            break;
+                        }
+                    } else {
+                        card.setHighlight(false);
+                    }
+                }
+
                 playerPerformedAction = false;
             }
         } else if (state == State.Choosing) {
@@ -956,7 +1025,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 specialCardAction(card, hand, true);
             }
             //player odpravil turn (if - ne increment turna ce se caka da bo izbral new color)
-            if(state == State.Running) {
+            if (state == State.Running) {
                 playerPerformedAction = true;
                 playerTurn = getNextTurn(playerTurn);
             }
@@ -1052,7 +1121,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         for (Card card : choosingCards) {
             Vector2 position = card.getPosition();
             Rectangle bounds = card.getBounds();
-            if(mouseX >= position.x && mouseX <= position.x + bounds.width
+            if (mouseX >= position.x && mouseX <= position.x + bounds.width
                     && mouseY >= position.y && mouseY <= position.y + bounds.height)
                 return card;
         }
@@ -1076,7 +1145,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     }
 
     private void drawColorWheel() {
-        if(choosingCards.isEmpty()) {
+        if (choosingCards.isEmpty()) {
             //B,R,G,Y
             float sizeX = GameConfig.CARD_HEIGHT;
             float sizeY = GameConfig.CARD_WIDTH;
@@ -1095,7 +1164,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
             Card cardR = new Card();
             //float RX = centerX - sizeX;
-            float RX = startX+sizeX;
+            float RX = startX + sizeX;
             float RY = centerY;
             cardR.setPositionAndBounds(RX, RY, sizeX, sizeY);
             cardR.setDefault(RegionNames.Rdefault);
@@ -1103,7 +1172,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
             Card cardG = new Card();
             //float GX = centerX;
-            float GX = startX+sizeX*2;
+            float GX = startX + sizeX * 2;
             float GY = centerY;
             cardG.setPositionAndBounds(GX, GY, sizeX, sizeY);
             cardG.setDefault(RegionNames.Gdefault);
@@ -1111,7 +1180,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
             Card cardY = new Card();
             //float YX = centerX + sizeX;
-            float YX = startX+sizeX*3;
+            float YX = startX + sizeX * 3;
             float YY = centerY;
             cardY.setPositionAndBounds(YX, YY, sizeX, sizeY);
             cardY.setDefault(RegionNames.Ydefault);
@@ -1129,12 +1198,12 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     private void checkGamestate() {
         int count = getPlayersSize();
         //2 or more players: game can start
-        if(count>=2 && state != State.Running) {
+        if (count >= 2 && state != State.Running) {
             state = State.Running;
             stopScheduler();
         }
         //1 or less players: game cannot start
-        else if(state != State.Paused) {
+        else if (count <= 1 && state != State.Paused) {
             state = State.Paused;
             startScheduler();
         }

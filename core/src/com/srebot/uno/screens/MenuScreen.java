@@ -112,13 +112,9 @@ public class MenuScreen extends ScreenAdapter {
     }
 
     @Override
-    public void hide(){
-        dispose();
-    }
+    public void hide(){dispose();}
     @Override
-    public void dispose(){
-        stage.dispose();
-    }
+    public void dispose(){stage.dispose();}
 
     private Actor createMenu() {
         //TABELA
