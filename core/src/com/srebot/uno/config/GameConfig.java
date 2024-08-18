@@ -17,6 +17,9 @@ public class GameConfig {
     //CARD SIZE IN WORLD UNITS
     public static final float CARD_WIDTH = 16f;
     public static final float CARD_HEIGHT = 11.2f;
+    //CARD SIZE SMALL
+    public static final float CARD_WIDTH_SM = 12f;
+    public static final float CARD_HEIGHT_SM = 8.4f;
 
     //TEXT SIZE RATIO
     public static final float TEXT_WIDTH = WIDTH*0.25f;
@@ -27,7 +30,8 @@ public class GameConfig {
     public static final float BUTTON_HEIGHT = 14f;
 
     //MAX CARDS TO SHOW IN PLAYER HANDS AT ONE TIME
-    public static final int MAX_CARDS_SHOW = 7;
+    public static final int MAX_CARDS_SHOW = 7; //7
+    public static final int MAX_CARDS_SHOW_SM = 9;
 
     //MULTIPLAYER/SERVER
     public static final String SERVER_URL = "http://localhost:3000/";

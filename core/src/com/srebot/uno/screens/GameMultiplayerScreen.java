@@ -123,6 +123,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     public int getPlayerId() {
         return localPlayerId;
     }
+
     //get gameId of current game for dispose function
     public int getGameId() {
         return currentGameId;
@@ -258,13 +259,17 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 //create game variables, set decks & managers
                 updateGameData(fetchedGame);
 
+                //TODO: TESTING: uncomment in final version
+                state = State.Paused; //
+                localPlayerId = player2.getId();
+                /*
                 // Step 2: Create the player and update the game
                 createPlayerFromBackend(playerName, player -> {
+                    state=State.Paused; //TEST IF UPDATE IN DB
                     // Step 3: Add the player to the fetched game's player list and update the game in the backend
                     updateGameWithPlayer(player, fetchedGame.getId(), updatedGame -> {
                         if (updatedGame != null) {
                             Gdx.app.log("GAME", "Game updated with player: " + player.getId());
-
                             //game is initialized, change state to Paused
                             state = State.Paused;
                         } else {
@@ -272,6 +277,8 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                         }
                     });
                 });
+
+                 */
 
             } else {
                 Gdx.app.log("ERROR", "Failed to fetch game from backend.");
@@ -454,19 +461,19 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     }
 
     //Get index in playersData of current player (localPlayerId)
-    private int getIndexOfCurrentPlayer(){
-        int index=-1;
-        for(int i=0; i<playersData.size(); ++i){
+    private int getIndexOfCurrentPlayer() {
+        int index = -1;
+        for (int i = 0; i < playersData.size(); ++i) {
             Player player = playersData.get(i);
-            if(player!=null) {
+            if (player != null) {
                 if (player.getId() == localPlayerId) {
                     index = i;
                     break;
                 }
             }
         }
-        if(index==-1)
-            Gdx.app.log("ERROR","Player with id "+localPlayerId+" not found in playersData");
+        if (index == -1)
+            Gdx.app.log("ERROR", "Player with id " + localPlayerId + " not found in playersData");
         return index;
     }
 
@@ -704,7 +711,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         if (state != State.Over) {
             checkGamestate();
             //handle input only if it is current player's turn
-            if(playerTurn==getIndexOfCurrentPlayer()+1)
+            if (playerTurn == getIndexOfCurrentPlayer() + 1)
                 handleInput();
         }
 
@@ -728,14 +735,14 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         //TODO HUD
 
         //VELIKOST kart (v WORLD UNITS)
-        float sizeX = GameConfig.CARD_HEIGHT;
-        float sizeY = GameConfig.CARD_WIDTH;
+        float sizeX = GameConfig.CARD_HEIGHT_SM;
+        float sizeY = GameConfig.CARD_WIDTH_SM;
 
         if (state == State.Running) {
             //MIDDLE DECK
             String topCardTexture = topCard.getTexture();
             TextureRegion topCardRegion = gameplayAtlas.findRegion(topCardTexture);
-            //POZICIJA
+            //POZICIJA - MIDDLE
             float topX = (GameConfig.WORLD_WIDTH - sizeX) / 2f;
             float topY = (GameConfig.WORLD_HEIGHT - sizeY) / 2f;
             topCard.setPositionAndBounds(topX, topY, sizeX, sizeY);
@@ -743,18 +750,26 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
             //DRAW DECK
             TextureRegion drawDeckRegion = gameplayAtlas.findRegion(RegionNames.back);
-            float drawX = (GameConfig.WORLD_WIDTH - sizeX);
+            float drawX = (GameConfig.WORLD_WIDTH - sizeX) - (topX/2f);
             float drawY = (GameConfig.WORLD_HEIGHT - sizeY) / 2f;
             deckDraw.setPositionAndBounds(drawX, drawY, sizeX, sizeY);
             Card.render(batch, drawDeckRegion, drawX, drawY, sizeX, sizeY);
 
-            //DRAW PLAYER HANDS
-            for(Player player : playersData) {
-                if(player!=null) {
+            //DRAW PLAYER HANDS for each current player
+            int currentPlayerIndex = getIndexOfCurrentPlayer();
+            for (int i = 0; i < playersData.size(); ++i) {
+                // Calculate the index in a circular manner
+                int playerIndex = (currentPlayerIndex + i) % playersData.size();
+                // Get the player at the calculated index
+                Player player = playersData.get(playerIndex);
+
+                if (player != null) {
+                    boolean isCurrentPlayer = (player.getId() == localPlayerId);
+
                     Hand playerHand = player.getHand();
                     playerHand.setArrowRegions(gameplayAtlas.findRegion(RegionNames.arrow));
-                    drawHand(playerHand, 0,
-                            sizeX, sizeY, true);
+                    drawHand(playerHand, i,
+                            sizeX, sizeY, isCurrentPlayer);
                 }
             }
 
@@ -766,17 +781,36 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         //drawExitButton();
     }
 
-    private void drawHand(Hand hand, float startY, float sizeX, float sizeY, boolean isPlayer) {
+    private void drawHand(Hand hand, int index, float sizeX, float sizeY, boolean isPlayer) {
         Array<Card> cards = hand.getCards();
         int size = cards.size;
         //hand.setIndexLast();
         int firstIndex = hand.getIndexFirst();
         int lastIndex = hand.getIndexLast();
 
+        //Y-axis: where to draw cards depending on current player
+        //bottom
+        float startY = 0;
+        //0-P1, 1-P2, 2-P3, 3-P4
+        switch (index) {
+            //right
+            case 1:
+                //TODO
+                break;
+            //top
+            case 2:
+                startY = GameConfig.WORLD_HEIGHT - sizeY;
+                break;
+            //left
+            case 3:
+                //TODO
+                break;
+        }
+
         //OVERLAP CARD KO IMAS VEC KOT 5
         float overlap = 0f;
-        for (int i = 5; i < size; ++i) {
-            if (i >= GameConfig.MAX_CARDS_SHOW) break;
+        for (int i = GameConfig.MAX_CARDS_SHOW_SM-2; i < size; ++i) {
+            if (i >= GameConfig.MAX_CARDS_SHOW_SM) break;
             overlap += 0.1f;
         }
         //overlap = sizeX*overlap;
@@ -785,13 +819,13 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         float spacing = sizeX;
 
         //brez spacing
-        if (size <= 5) {
+        if (size <= GameConfig.MAX_CARDS_SHOW_SM-2) {
             hand.setIndexLast();
             lastIndex = hand.getIndexLast();
             startX = (GameConfig.WORLD_WIDTH - size * sizeX) / 2f;
         }
         //spacing le dokler ne reachas MaxCardsToShow
-        else if (size <= GameConfig.MAX_CARDS_SHOW) {
+        else if (size <= GameConfig.MAX_CARDS_SHOW_SM) {
             hand.setIndexLast();
             lastIndex = hand.getIndexLast();
             spacing = overlap;
@@ -800,7 +834,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         //ne vec spacingat ko je imas card kot MaxCardsToShow
         else {
             spacing = overlap;
-            startX = (GameConfig.WORLD_WIDTH - GameConfig.MAX_CARDS_SHOW * sizeX) / 2f;
+            startX = (GameConfig.WORLD_WIDTH - GameConfig.MAX_CARDS_SHOW_SM * sizeX) / 2f;
         }
 
         //LIMIT RENDER CARDS LEVO (plac vmes je 70% card width)
@@ -809,26 +843,28 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
         //IZRISI CARDE
         Array<Integer> indexHover = new Array<Integer>();
-        if (isPlayer) {
-            for (int i = firstIndex; i < size; ++i) {
-                //==i<=lastIndex razen ko settamo Card (izogni index izven array)
-                if (i > lastIndex)
-                    break;
-                Card card = cards.get(i);
-                String texture;
-                TextureRegion region;
-                if (!card.getHighlight()) {
+        for (int i = firstIndex; i < size; ++i) {
+            //==i<=lastIndex razen ko settamo Card (izogni index izven array)
+            if (i > lastIndex)
+                break;
+            Card card = cards.get(i);
+            String texture;
+            TextureRegion region;
+            if (!card.getHighlight()) {
+                if(isPlayer || state==State.Over)
                     texture = card.getTexture();
-                    region = gameplayAtlas.findRegion(texture);
-                    float posX = startX + (i - firstIndex) * spacing;
-                    float posY = startY;
-                    card.setPositionAndBounds(posX, posY, sizeX, sizeY);
-                    Card.render(batch, region, card);
-                } else {
-                    indexHover.add(i);
-                }
+                else
+                    texture = RegionNames.back;
+                region = gameplayAtlas.findRegion(texture);
+                float posX = startX + (i - firstIndex) * spacing;
+                float posY = startY;
+                card.setPositionAndBounds(posX, posY, sizeX, sizeY);
+                Card.render(batch, region, card);
+            } else {
+                indexHover.add(i);
             }
         }
+
 
         //IZRISI CARDE KI SO HOVERANE
         if (!indexHover.isEmpty()) {
@@ -836,12 +872,11 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 Card card = cards.get(j);
                 String texture;
                 TextureRegion region;
-                if (isPlayer || state == State.Over) {
+                if(isPlayer || state==State.Over)
                     texture = card.getTexture();
-                    region = gameplayAtlas.findRegion(texture);
-                } else {
-                    region = gameplayAtlas.findRegion(RegionNames.back);
-                }
+                else
+                    texture = RegionNames.back;
+                region = gameplayAtlas.findRegion(texture);
                 float posX = startX + (j - firstIndex) * spacing;
                 float posY = startY + 2f; //slightly gor
                 card.setPositionAndBounds(posX, posY, sizeX, sizeY);
@@ -850,7 +885,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         }
 
         //kakuliraj kje se bo koncala zadnja karta
-        //float endX = GameConfig.MAX_CARDS_SHOW*sizeX-overlap;
+        //float endX = GameConfig.MAX_CARDS_SHOW_SM*sizeX-overlap;
         float endX = 0;
         if (!hand.getCards().isEmpty())
             endX = (GameConfig.WORLD_WIDTH - (sizeX * 0.7f));
@@ -867,18 +902,18 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
         //preveri ce so arrowi prikazani
         if (isPlayer) {
-            if (firstIndex != 0)
+            if (firstIndex != 0 && state!=State.Over)
                 showLeftArrow = true;
             else
                 showLeftArrow = false;
-            if (lastIndex != cards.size - 1)
+            if (lastIndex != cards.size - 1 && state!=State.Over)
                 showRightArrow = true;
             else
                 showRightArrow = false;
         }
 
         //render button left
-        if (size >= GameConfig.MAX_CARDS_SHOW && isPlayer && showLeftArrow) {
+        if (size >= GameConfig.MAX_CARDS_SHOW_SM && isPlayer && showLeftArrow) {
             float arrowX = startX - sizeX / 2 - (sizeX * 0.1f);
             //float arrowY = startY + arrowRegion.getRegionHeight() / 2;
             float arrowY = startY + (sizeY * 0.2f);
@@ -886,7 +921,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             hand.renderArrowLeft(batch);
         }
         //render button right
-        if (size >= GameConfig.MAX_CARDS_SHOW && isPlayer && showRightArrow) {
+        if (size >= GameConfig.MAX_CARDS_SHOW_SM && isPlayer && showRightArrow) {
             float arrowX = endX + (sizeX * 0.1f);
             //float arrowY = startY + arrowRegion.getRegionHeight() / 2;
             float arrowY = startY + (sizeY * 0.2f);
@@ -1147,8 +1182,8 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     private void drawColorWheel() {
         if (choosingCards.isEmpty()) {
             //B,R,G,Y
-            float sizeX = GameConfig.CARD_HEIGHT;
-            float sizeY = GameConfig.CARD_WIDTH;
+            float sizeX = GameConfig.CARD_HEIGHT_SM;
+            float sizeY = GameConfig.CARD_WIDTH_SM;
 
             float startX = (GameConfig.WORLD_WIDTH - 4 * sizeX) / 2f;
             //float centerX = (GameConfig.WORLD_WIDTH - sizeX) / 2f;

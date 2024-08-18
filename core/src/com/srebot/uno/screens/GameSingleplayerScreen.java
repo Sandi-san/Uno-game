@@ -249,6 +249,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
 
             //DRAW DECK
             TextureRegion drawDeckRegion = gameplayAtlas.findRegion(RegionNames.back);
+            //FAR RIGHT
             float drawX = (GameConfig.WORLD_WIDTH - sizeX);
             float drawY = (GameConfig.WORLD_HEIGHT - sizeY) / 2f;
             deckDraw.setPositionAndBounds(drawX, drawY, sizeX, sizeY);
@@ -279,7 +280,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
 
         //OVERLAP CARD KO IMAS VEC KOT 5
         float overlap = 0f;
-        for (int i = 5; i < size; ++i) {
+        for (int i = GameConfig.MAX_CARDS_SHOW-2; i < size; ++i) {
             if (i >= GameConfig.MAX_CARDS_SHOW) break;
             overlap += 0.1f;
         }
@@ -289,7 +290,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
         float spacing = sizeX;
 
         //brez spacing
-        if (size <= 5) {
+        if (size <= GameConfig.MAX_CARDS_SHOW-2) {
             hand.setIndexLast();
             lastIndex = hand.getIndexLast();
             startX = (GameConfig.WORLD_WIDTH - size * sizeX) / 2f;
@@ -313,48 +314,25 @@ public class GameSingleplayerScreen extends ScreenAdapter {
 
         //IZRISI CARDE
         Array<Integer> indexHover = new Array<Integer>();
-        if (isPlayer) {
-            for (int i = firstIndex; i < size; ++i) {
-                //==i<=lastIndex razen ko settamo Card (izogni index izven array)
-                if (i > lastIndex)
-                    break;
-                Card card = cards.get(i);
-                String texture;
-                TextureRegion region;
-                if (!card.getHighlight()) {
+        for (int i = firstIndex; i < size; ++i) {
+            //==i<=lastIndex razen ko settamo Card (izogni index izven array)
+            if (i > lastIndex)
+                break;
+            Card card = cards.get(i);
+            String texture;
+            TextureRegion region;
+            if (!card.getHighlight()) {
+                if (isPlayer || state == State.Over)
                     texture = card.getTexture();
-                    region = gameplayAtlas.findRegion(texture);
-                    float posX = startX + (i - firstIndex) * spacing;
-                    float posY = startY;
-                    card.setPositionAndBounds(posX, posY, sizeX, sizeY);
-                    Card.render(batch, region, card);
-                } else {
-                    indexHover.add(i);
-                }
-            }
-        }
-        //TODO: render computer cards posebej ker se first/last index ne spreminja pravilno (ODPRAVLJENO)
-        else {
-            for (int i = 0; i < GameConfig.MAX_CARDS_SHOW; ++i) {
-                if (i >= size)
-                    break;
-                Card card = cards.get(i);
-                String texture;
-                TextureRegion region;
-                if (!card.getHighlight()) {
-                    if (state == State.Over) {
-                        texture = card.getTexture();
-                        region = gameplayAtlas.findRegion(texture);
-                    } else {
-                        region = gameplayAtlas.findRegion(RegionNames.back);
-                    }
-                    float posX = startX + i * spacing;
-                    float posY = startY;
-                    card.setPositionAndBounds(posX, posY, sizeX, sizeY);
-                    Card.render(batch, region, card);
-                } else {
-                    indexHover.add(i);
-                }
+                else
+                    texture = RegionNames.back;
+                region = gameplayAtlas.findRegion(texture);
+                float posX = startX + (i - firstIndex) * spacing;
+                float posY = startY;
+                card.setPositionAndBounds(posX, posY, sizeX, sizeY);
+                Card.render(batch, region, card);
+            } else {
+                indexHover.add(i);
             }
         }
 
@@ -395,11 +373,11 @@ public class GameSingleplayerScreen extends ScreenAdapter {
 
         //preveri ce so arrowi prikazani
         if (isPlayer) {
-            if (firstIndex != 0)
+            if (firstIndex != 0 && state!=State.Over)
                 showLeftArrow = true;
             else
                 showLeftArrow = false;
-            if (lastIndex != cards.size - 1)
+            if (lastIndex != cards.size - 1 && state!=State.Over)
                 showRightArrow = true;
             else
                 showRightArrow = false;
@@ -620,10 +598,9 @@ public class GameSingleplayerScreen extends ScreenAdapter {
                 }
                 playerPerformedAction = false;
             }
-        }
-        else if (state == State.Choosing) {
+        } else if (state == State.Choosing) {
             Card card = isClickedOnChoosingCards(worldCoords.x, worldCoords.y);
-            if(card!=null) {
+            if (card != null) {
                 if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
                     if (sfxCollect != null) {
                         sfxCollect.play();
@@ -656,7 +633,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
                 specialCardAction(card, hand, true);
             }
             //player odpravil turn (if - ne increment turna ce se caka da bo izbral new color)
-            if(state == State.Running) {
+            if (state == State.Running) {
                 playerPerformedAction = true;
                 playerTurn = getNextTurn(playerTurn);
             }
@@ -686,7 +663,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
                 //dobi naslednjega playerja glede na turnOrder pref
                 //naj vlecejo +2
                 index = getNextTurn(playerTurn);
-                //naslednji player picka 2x karti
+                //naslednji player pick-a 2x karti
                 playersData.get(index - 1).getHand().pickCards(deckDraw, 2);
                 //inkrementiraj lastIndex
                 playersData.get(index - 1).getHand().lastIndexIncrement(2);
@@ -814,7 +791,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
         for (Card card : choosingCards) {
             Vector2 position = card.getPosition();
             Rectangle bounds = card.getBounds();
-            if(mouseX >= position.x && mouseX <= position.x + bounds.width
+            if (mouseX >= position.x && mouseX <= position.x + bounds.width
                     && mouseY >= position.y && mouseY <= position.y + bounds.height)
                 return card;
         }
@@ -838,7 +815,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
     }
 
     private void drawColorWheel() {
-        if(choosingCards.isEmpty()) {
+        if (choosingCards.isEmpty()) {
             //B,R,G,Y
             float sizeX = GameConfig.CARD_HEIGHT;
             float sizeY = GameConfig.CARD_WIDTH;
@@ -857,7 +834,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
 
             Card cardR = new Card();
             //float RX = centerX - sizeX;
-            float RX = startX+sizeX;
+            float RX = startX + sizeX;
             float RY = centerY;
             cardR.setPositionAndBounds(RX, RY, sizeX, sizeY);
             cardR.setDefault(RegionNames.Rdefault);
@@ -865,7 +842,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
 
             Card cardG = new Card();
             //float GX = centerX;
-            float GX = startX+sizeX*2;
+            float GX = startX + sizeX * 2;
             float GY = centerY;
             cardG.setPositionAndBounds(GX, GY, sizeX, sizeY);
             cardG.setDefault(RegionNames.Gdefault);
@@ -873,7 +850,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
 
             Card cardY = new Card();
             //float YX = centerX + sizeX;
-            float YX = startX+sizeX*3;
+            float YX = startX + sizeX * 3;
             float YY = centerY;
             cardY.setPositionAndBounds(YX, YY, sizeX, sizeY);
             cardY.setDefault(RegionNames.Ydefault);
@@ -933,7 +910,9 @@ public class GameSingleplayerScreen extends ScreenAdapter {
 
     //PREKRITE (STATIC) METODE
     @Override
-    public void hide() {dispose();}
+    public void hide() {
+        dispose();
+    }
 
     @Override
     public void dispose() {

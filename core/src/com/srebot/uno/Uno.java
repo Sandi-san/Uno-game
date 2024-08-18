@@ -53,6 +53,7 @@ public class Uno extends Game {
 						Gdx.app.log("DISPOSE", "MultiplayerScreen closed with localPlayerId: ");
 						//TODO: CALL DELETE GAME IN BACKEND
 						//BE: delete player's GameId from Game, if Game then has no players, delete game
+						//TODO: PUT PLAYER'S HANDS BACK IN DRAW DECK BEFORE LOGOFF
 					}
 				}
 				Gdx.app.log("DISPOSE", "CLOSING APPLICATION FROM LIFECYCLE LISTENER");

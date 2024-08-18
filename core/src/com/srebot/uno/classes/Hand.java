@@ -145,6 +145,8 @@ public class Hand {
     }
     public void lastIndexDecrement(){
         this.indexLast--;
+        if(!indexDiffValid())
+            this.indexLast++;
     }
 
     public void lastIndexIncrement(int num){
