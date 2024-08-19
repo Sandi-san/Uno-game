@@ -36,7 +36,6 @@ import com.srebot.uno.config.GameManager;
 import com.srebot.uno.config.GameService;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -46,7 +45,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class GameMultiplayerScreen extends ScreenAdapter {
-    private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private ScheduledExecutorService scheduler = null;
 
     //status igre
     public enum State {
@@ -155,6 +154,11 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         void onPlayersFetched(Player[] players);
     }
 
+    //get turn of Game
+    public interface TurnFetchCallback {
+        void onTurnFetched(int turn);
+    }
+
     //METODS FOR STARTING/STOPPING SCHEDULER
     private void startScheduler() {
         // If scheduler is already running, return
@@ -165,10 +169,12 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         // Create a new scheduler
         scheduler = Executors.newScheduledThreadPool(1);
 
+        //run players checker and turn checker
         playerChecker();
+        turnChecker();
     }
 
-    private void stopScheduler() {
+    public void stopScheduler() {
         if (scheduler != null && !scheduler.isShutdown()) {
             scheduler.shutdown();
             try {
@@ -180,16 +186,36 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         }
     }
 
-    //Player checker scheduler
+    //Player checker scheduler: check for new joined players
     private void playerChecker() {
-        scheduler.scheduleAtFixedRate(() -> {
-            checkForNewPlayers(fetchedPlayers -> {
-                int localPlayersSize = getPlayersSize();
-                if (fetchedPlayers.length != localPlayersSize) {
-                    checkPlayersChanged(fetchedPlayers);
-                }
-            });
-        }, 0, 10, TimeUnit.SECONDS); // Check every 5 seconds
+        if (waitForPlayers()) {
+            scheduler.scheduleAtFixedRate(() -> {
+                checkForNewPlayers(fetchedPlayers -> {
+                    int localPlayersSize = getPlayersSize();
+                    if (fetchedPlayers.length != localPlayersSize) {
+                        checkPlayersChanged(fetchedPlayers);
+                    }
+                });
+            }, 0, 10, TimeUnit.SECONDS); // Check every 10 seconds (completes within 10s)
+        }
+    }
+
+    //Turn checker scheduler: check DB for turn change if not currently playing
+    private void turnChecker() {
+        if (waitForTurn()) {
+            scheduler.scheduleAtFixedRate(() -> {
+                checkForTurnChange(fetchedTurn -> {
+                    //fetched turn is valid
+                    if (fetchedTurn != 0) {
+                        //fetched turn is different than current turn
+                        if (fetchedTurn != playerTurn) {
+                            //get full data of database
+
+                        }
+                    }
+                });
+            }, 0, 3, TimeUnit.SECONDS); // Check every 3 seconds (completes within 3s)
+        }
     }
 
     //CREATE GAME
@@ -260,8 +286,9 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 updateGameData(fetchedGame);
 
                 //TODO: TESTING: uncomment in final version
-                state = State.Paused; //
+                state = State.Paused;
                 localPlayerId = player2.getId();
+                startScheduler();
                 /*
                 // Step 2: Create the player and update the game
                 createPlayerFromBackend(playerName, player -> {
@@ -272,6 +299,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                             Gdx.app.log("GAME", "Game updated with player: " + player.getId());
                             //game is initialized, change state to Paused
                             state = State.Paused;
+                            startScheduler();
                         } else {
                             Gdx.app.log("ERROR", "Failed to update game with player.");
                         }
@@ -370,7 +398,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 //game is initialized, change state to Paused
                 state = State.Paused;
                 //run scheduler that checks for new players
-                playerChecker();
+                startScheduler();
             });
         });
 
@@ -446,6 +474,23 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             public void onFailure(Throwable t) {
                 Gdx.app.log("PLAYERS", "FAILED: " + t);
                 callback.onPlayersFetched(null);
+            }
+        }, currentGameId);
+    }
+
+    private void checkForTurnChange(TurnFetchCallback callback) {
+        service.fetchGameTurn(new GameService.FetchGameTurnCallback() {
+            @Override
+            public void onSuccess(int fetchedTurn) {
+                Gdx.app.log("TURN FETCH", "Fetched turn: " + fetchedTurn);
+                //get array of players from current Game from DB
+                callback.onTurnFetched(fetchedTurn);
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                Gdx.app.log("TURN FETCH", "FAILED: " + t);
+                callback.onTurnFetched(0);
             }
         }, currentGameId);
     }
@@ -690,6 +735,28 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     //TODO: v handleInput, po vsakem actionu player-ja
     // -> update Game v DB (ne player-jev), check ce se je pridruzil nov, etc.
 
+    //check scheduler for retrieving players
+    public boolean waitForPlayers() {
+        int count = getPlayersSize();
+        //1 or less players: game cannot start
+        if (count <= 1 && state != State.Paused) {
+            state = State.Paused;
+            return true;
+        }
+        //2 or more players: game can start
+        //if (count >= 2 && state != State.Running) {
+        state = State.Running;
+        return false;
+
+    }
+
+    //check scheduler for retrieving turn
+    public boolean waitForTurn() {
+        if (playerTurn != getIndexOfCurrentPlayer() + 1)
+            return true;
+        return false;
+    }
+
     @Override
     public void render(float delta) {
         //doloci barve ozadja
@@ -711,7 +778,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         if (state != State.Over) {
             checkGamestate();
             //handle input only if it is current player's turn
-            if (playerTurn == getIndexOfCurrentPlayer() + 1)
+            if (!waitForTurn())
                 handleInput();
         }
 
@@ -723,6 +790,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         batch.end();
 
         if (state == State.Over) {
+            stopScheduler();
             if (manager.getMusicPref())
                 game.stopMusic();
             stage.act(delta);
@@ -750,7 +818,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
             //DRAW DECK
             TextureRegion drawDeckRegion = gameplayAtlas.findRegion(RegionNames.back);
-            float drawX = (GameConfig.WORLD_WIDTH - sizeX) - (topX/2f);
+            float drawX = (GameConfig.WORLD_WIDTH - sizeX) - (topX / 2f);
             float drawY = (GameConfig.WORLD_HEIGHT - sizeY) / 2f;
             deckDraw.setPositionAndBounds(drawX, drawY, sizeX, sizeY);
             Card.render(batch, drawDeckRegion, drawX, drawY, sizeX, sizeY);
@@ -809,7 +877,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
         //OVERLAP CARD KO IMAS VEC KOT 5
         float overlap = 0f;
-        for (int i = GameConfig.MAX_CARDS_SHOW_SM-2; i < size; ++i) {
+        for (int i = GameConfig.MAX_CARDS_SHOW_SM - 2; i < size; ++i) {
             if (i >= GameConfig.MAX_CARDS_SHOW_SM) break;
             overlap += 0.1f;
         }
@@ -819,7 +887,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         float spacing = sizeX;
 
         //brez spacing
-        if (size <= GameConfig.MAX_CARDS_SHOW_SM-2) {
+        if (size <= GameConfig.MAX_CARDS_SHOW_SM - 2) {
             hand.setIndexLast();
             lastIndex = hand.getIndexLast();
             startX = (GameConfig.WORLD_WIDTH - size * sizeX) / 2f;
@@ -851,7 +919,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             String texture;
             TextureRegion region;
             if (!card.getHighlight()) {
-                if(isPlayer || state==State.Over)
+                if (isPlayer || state == State.Over)
                     texture = card.getTexture();
                 else
                     texture = RegionNames.back;
@@ -872,7 +940,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 Card card = cards.get(j);
                 String texture;
                 TextureRegion region;
-                if(isPlayer || state==State.Over)
+                if (isPlayer || state == State.Over)
                     texture = card.getTexture();
                 else
                     texture = RegionNames.back;
@@ -902,11 +970,11 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
         //preveri ce so arrowi prikazani
         if (isPlayer) {
-            if (firstIndex != 0 && state!=State.Over)
+            if (firstIndex != 0 && state != State.Over)
                 showLeftArrow = true;
             else
                 showLeftArrow = false;
-            if (lastIndex != cards.size - 1 && state!=State.Over)
+            if (lastIndex != cards.size - 1 && state != State.Over)
                 showRightArrow = true;
             else
                 showRightArrow = false;
@@ -1229,20 +1297,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         }
     }
 
-    //TODO: NEXT TIME: create game, add new player v db, glej breakpointe
     private void checkGamestate() {
-        int count = getPlayersSize();
-        //2 or more players: game can start
-        if (count >= 2 && state != State.Running) {
-            state = State.Running;
-            stopScheduler();
-        }
-        //1 or less players: game cannot start
-        else if (count <= 1 && state != State.Paused) {
-            state = State.Paused;
-            startScheduler();
-        }
-
         if (deckDraw.isEmpty()) {
             state = State.Over;
             winner = Winner.None;

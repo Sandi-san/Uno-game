@@ -253,6 +253,60 @@ public class GameService {
         });
     }
 
+    public interface FetchGameTurnCallback {
+        void onSuccess(int gameTurn);
+        void onFailure(Throwable t);
+    }
+    public void fetchGameTurn(FetchGameTurnCallback callback, int gameId){
+        HttpRequestBuilder requestBuilder = new HttpRequestBuilder();
+        Net.HttpRequest request = requestBuilder.newRequest()
+                .method(Net.HttpMethods.GET)
+                .url(GameConfig.SERVER_URL + GameConfig.GAME_URL + "/" +gameId+"/turn")
+                .header("Content-Type", "application/json")
+                .build();
+
+        Gdx.net.sendHttpRequest(request, new Net.HttpResponseListener() {
+            @Override
+            public void handleHttpResponse(Net.HttpResponse httpResponse) {
+                int statusCode = httpResponse.getStatus().getStatusCode();
+                if (statusCode == 200) {
+                    String responseJson = httpResponse.getResultAsString();
+                    Gdx.app.log("DATA:", responseJson);
+                    int fetchedTurn = 0;
+                    fetchedTurn = gson.fromJson(responseJson, Integer.class);
+                    int finalFetchedTurn = fetchedTurn;
+                        Gdx.app.postRunnable(() -> {
+                            // Perform actions on the main thread
+                            if (finalFetchedTurn != 0) {
+                                callback.onSuccess(finalFetchedTurn);
+                            } else {
+                                // Handle the error
+                                Gdx.app.log("fetchGameTurn", "Failed to parse game data - turn");
+                                callback.onFailure(new Exception("Failed to parse game data - turn"));
+                            }
+                        });
+                    Gdx.app.log("fetchGameTurn", "Thread interrupted: " + Thread.currentThread().isInterrupted());
+                }
+                else{
+                    // Handle non-200 response codes
+                    Gdx.app.log("fetchGameTurn", "Invalid status code response: "+statusCode);
+                    callback.onFailure(new Exception("Failed to fetch game turn. Status code: " + statusCode));
+                }
+            }
+
+            @Override
+            public void failed(Throwable t) {
+                Gdx.app.log("FAILED","CANNOT CONNECT TO SERVER");
+                Gdx.app.postRunnable(() -> callback.onFailure(t));
+            }
+
+            @Override
+            public void cancelled() {
+                Gdx.app.log("CANCELLED","REQUEST CANCELLED");
+                Gdx.app.postRunnable(() -> callback.onFailure(new Exception("Request cancelled")));
+            }
+        });
+    }
 
     //callback metoda, ker so http funkcije async in ne podpirajo regular return
     public interface FetchGamesCallback {

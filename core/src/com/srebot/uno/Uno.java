@@ -14,93 +14,105 @@ import com.srebot.uno.screens.IntroScreen;
 
 //PRVI CLASS KI SE ZAŽENE
 public class Uno extends Game {
-	private AssetManager assetManager;
-	private SpriteBatch batch;
-	private GameManager manager;
-	private GameService service;
-	private Music music;
+    private AssetManager assetManager;
+    private SpriteBatch batch;
+    private GameManager manager;
+    private GameService service;
+    private Music music;
 
-	@Override
-	public void create () {
-		batch = new SpriteBatch();
-		assetManager = new AssetManager();
-		manager = new GameManager();
-		service = new GameService();
-		music = null;
+    @Override
+    public void create() {
+        batch = new SpriteBatch();
+        assetManager = new AssetManager();
+        manager = new GameManager();
+        service = new GameService();
+        music = null;
 
-		setScreen(new IntroScreen(this));
+        setScreen(new IntroScreen(this));
 
-		// Adding the LifecycleListener here
-		Gdx.app.addLifecycleListener(new LifecycleListener() {
-			@Override
-			public void pause() {
-				// Handle pause
-			}
+        // Adding the LifecycleListener here
+        Gdx.app.addLifecycleListener(new LifecycleListener() {
+            @Override
+            public void pause() {
+                // Handle pause
+            }
 
-			@Override
-			public void resume() {
-				// Handle resume
-			}
+            @Override
+            public void resume() {
+                // Handle resume
+            }
 
-			@Override
-			public void dispose() {
-				if(screen instanceof GameMultiplayerScreen){
-					Gdx.app.log("DISPOSE", "Calling from GameMultiplayerScreen");
-					GameMultiplayerScreen mpScreen = (GameMultiplayerScreen) screen;
-					int playerId = mpScreen.getPlayerId();
-					int gameId = mpScreen.getGameId();
-					if(playerId != 0){
-						Gdx.app.log("DISPOSE", "MultiplayerScreen closed with localPlayerId: ");
-						//TODO: CALL DELETE GAME IN BACKEND
-						//BE: delete player's GameId from Game, if Game then has no players, delete game
-						//TODO: PUT PLAYER'S HANDS BACK IN DRAW DECK BEFORE LOGOFF
-					}
-				}
-				Gdx.app.log("DISPOSE", "CLOSING APPLICATION FROM LIFECYCLE LISTENER");
-				// Clean up resources
-			}
-		});
-	}
-	
-	@Override
-	public void dispose () {
-		batch.dispose();
-		assetManager.dispose();
-	}
+            @Override
+            public void dispose() {
+                Gdx.app.log("DISPOSE", "CLOSING APPLICATION FROM LIFECYCLE LISTENER");
+                // Clean up resourcesif(screen instanceof GameMultiplayerScreen){
+                Gdx.app.log("DISPOSE", "Calling from GameMultiplayerScreen");
+                GameMultiplayerScreen mpScreen = (GameMultiplayerScreen) screen;
+                //close scheduler
+                mpScreen.stopScheduler();
+                int playerId = mpScreen.getPlayerId();
+                int gameId = mpScreen.getGameId();
+                if (playerId != 0) {
+                    Gdx.app.log("DISPOSE", "MultiplayerScreen closed with localPlayerId: " + playerId);
+                    //TODO: CALL DELETE GAME IN BACKEND
+                    //BE: delete player's GameId from Game, if Game then has no players, delete game
+                    //TODO: PUT PLAYER'S HANDS BACK IN DRAW DECK BEFORE LOGOFF
+                }
+            }
+        });
+    }
 
-	public AssetManager getAssetManager(){return assetManager;}
-	public SpriteBatch getBatch(){
-		return batch;
-	}
-	public GameManager getManager(){
-		return manager;
-	}
-	public GameService getService(){return service;}
+    @Override
+    public void dispose() {
+        batch.dispose();
+        assetManager.dispose();
+    }
 
-	public Music getMusic() {
-		return music;
-	}
-	public void setMusic(Music music) {
-		this.music = music;
-	}
-	public void playMusic() {
-		if(!this.music.isPlaying()) {
-			stopMusic();
-			music.setLooping(true);
-			music.play();
-		}
-	}
-	public void stopMusic() {
-		if (music != null) {
-			music.stop();
-			music.dispose();
-		}
-	}
-	public void setMusicVolume(float volume){
-		music.setVolume(volume);
-	}
-	//TODO
-	public void setSoundVolume(float volume){
-		//sound.setVolume(volume);
-	}
+    public AssetManager getAssetManager() {
+        return assetManager;
+    }
+
+    public SpriteBatch getBatch() {
+        return batch;
+    }
+
+    public GameManager getManager() {
+        return manager;
+    }
+
+    public GameService getService() {
+        return service;
+    }
+
+    public Music getMusic() {
+        return music;
+    }
+
+    public void setMusic(Music music) {
+        this.music = music;
+    }
+
+    public void playMusic() {
+        if (!this.music.isPlaying()) {
+            stopMusic();
+            music.setLooping(true);
+            music.play();
+        }
+    }
+
+    public void stopMusic() {
+        if (music != null) {
+            music.stop();
+            music.dispose();
+        }
+    }
+
+    public void setMusicVolume(float volume) {
+        music.setVolume(volume);
+    }
+
+    //TODO
+    public void setSoundVolume(float volume) {
+        //sound.setVolume(volume);
+    }
 }
