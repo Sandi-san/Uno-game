@@ -570,7 +570,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
                                 gameControl(card, currentPlayer.getHand());
                                 topCard = deckDiscard.getTopCard();
 
-                                //move hand index left (removed card)
+                                //move hand index left (removed card) - in gameControl
                                 //handArrowLeftClicked(currentPlayer.getHand());
                                 break;
                             }
