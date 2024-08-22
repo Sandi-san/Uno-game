@@ -127,6 +127,13 @@ public class Card {
         batch.draw(texture, card.getPosition().x, card.getPosition().y,
                 card.getBounds().width, card.getBounds().height);
     }
+    //render card with rotation
+    public static void renderFlipped(SpriteBatch batch, TextureRegion texture,
+                              Card card, int rotationScalar) {
+            batch.draw(texture, card.getPosition().x, card.getPosition().y,
+                    card.getBounds().width/2f,card.getBounds().height/2f,
+                    card.getBounds().width, card.getBounds().height,1f,1f,rotationScalar*90f);
+    }
 
     public static void render(SpriteBatch batch, TextureRegion texture,
                               float x, float y,

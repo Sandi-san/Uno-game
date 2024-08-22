@@ -976,163 +976,224 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         int firstIndex = hand.getIndexFirst();
         int lastIndex = hand.getIndexLast();
 
-        float startX=0; //0: default
+        float startX = 0; //start at bottom
 
-        //NEXT: test 1. Android Studio: new game create, 2: join game
-        //TODO: currently 2 players: draw bottom->top, 2< players: draw bottom->right->top->left
+        //NEXT: test 4 playerji z cardim (kako zgleda?)
+
         //Y-axis: where to draw cards depending on current player
         //bottom
         float startY = 0;
+        //startY = sizeX;
         int numPlayers = getPlayersSize();
         //0-P1, 1-P2, 2-P3, 3-P4
         switch (index) {
             //right
             case 1:
-                //TODO: ce maxPlayers==2: draw P1
-                //namesto maxPlayers, checkiraj playerje (not null) v playersData
-                if(numPlayers==2) {
+                if (numPlayers == 2) {
                     //top
                     startY = GameConfig.WORLD_HEIGHT - sizeY;
-                }
-                else {
+                } else {
                     //right
-                    startY = GameConfig.WORLD_WIDTH - sizeX;
+                    startY = sizeX;
                     startX = 1; //start at right
                 }
                 break;
             //top
             case 2:
                 //ce maxPlayers=>3: draw P1
-                startY = GameConfig.WORLD_HEIGHT - sizeY; //top
+                startY = sizeX; //top
+                startX = 2; //start at top
                 break;
             //left
             case 3:
-                startY = GameConfig.WORLD_WIDTH - sizeX; //left
+                startY = sizeX; //left
                 startX = 3; //start at left
                 break;
         }
 
-        //OVERLAP CARD KO IMAS VEC KOT 5
         float overlap = 0f;
-        for (int i = GameConfig.MAX_CARDS_SHOW_SM - 2; i < size; ++i) {
-            if (i >= GameConfig.MAX_CARDS_SHOW_SM) break;
-            overlap += 0.1f;
-        }
-        //overlap = sizeX*overlap;
-        overlap = sizeX * (1 - overlap);
-        float spacing = sizeX;
-
-        //brez spacing
-        if (size <= GameConfig.MAX_CARDS_SHOW_SM - 2) {
-            hand.setIndexLast();
-            lastIndex = hand.getIndexLast();
-            startX = (GameConfig.WORLD_WIDTH - size * sizeX) / 2f;
-        }
-        //spacing le dokler ne reachas MaxCardsToShow
-        else if (size <= GameConfig.MAX_CARDS_SHOW_SM) {
-            hand.setIndexLast();
-            lastIndex = hand.getIndexLast();
-            spacing = overlap;
-            startX = (GameConfig.WORLD_WIDTH - size * sizeX) / 2f;
-        }
-        //ne vec spacingat ko imas vec kart kot MaxCardsToShow
-        else {
-            spacing = overlap;
-            startX = (GameConfig.WORLD_WIDTH - GameConfig.MAX_CARDS_SHOW_SM * sizeX) / 2f;
-        }
-
-
-        //LIMIT RENDER CARDS LEVO (plac vmes je 70% card width)
-        if (startX < (sizeX * 0.7f))
-            startX = (sizeX * 0.7f);
-
-        //IZRISI CARDE
-        Array<Integer> indexHover = new Array<Integer>();
-        for (int i = firstIndex; i < size; ++i) {
-            //==i<=lastIndex razen ko settamo Card (izogni index izven array)
-            if (i > lastIndex)
-                break;
-            Card card = cards.get(i);
-            String texture;
-            TextureRegion region;
-            if (!card.getHighlight()) {
-                if (isPlayer || state == State.Over)
-                    texture = card.getTexture();
-                else
-                    texture = RegionNames.back;
-                region = gameplayAtlas.findRegion(texture);
-                float posX = startX + (i - firstIndex) * spacing;
-                float posY = startY;
-                card.setPositionAndBounds(posX, posY, sizeX, sizeY);
-                Card.render(batch, region, card);
-            } else {
-                indexHover.add(i);
+        float spacing = 0f;
+        //drawing left/right sides of screen
+        if (startX == 1 || startX == 3){
+        //if (startX == 0 || startX == 2){
+            for (int i = GameConfig.MAX_CARDS_SHOW_SM - 4; i < size; ++i) {
+                if (i >= GameConfig.MAX_CARDS_SHOW_SM) break;
+                overlap += 0.1f;
             }
         }
+        //drawing top/bottom sides of screen
+        else {
+            for (int i = GameConfig.MAX_CARDS_SHOW_SM - 2; i < size; ++i) {
+                if (i >= GameConfig.MAX_CARDS_SHOW_SM) break;
+                overlap += 0.1f;
+            }
+        }
+        overlap = sizeX * (1 - overlap);
+        spacing = sizeX;
 
+        //0-bottom, 2-top
+        if (startX == 0 || startX == 2) {
+        //if (startX == 1 || startX == 3) {
+            //brez spacing
+            if (size <= GameConfig.MAX_CARDS_SHOW_SM - 2) {
+                hand.setIndexLast();
+                lastIndex = hand.getIndexLast();
+                startX = (GameConfig.WORLD_WIDTH - size * sizeX) / 2f;
+            }
+            //spacing le dokler ne reachas MaxCardsToShow
+            else if (size <= GameConfig.MAX_CARDS_SHOW_SM) {
+                hand.setIndexLast();
+                lastIndex = hand.getIndexLast();
+                spacing = overlap;
+                startX = (GameConfig.WORLD_WIDTH - size * sizeX) / 2f;
+            }
+            //ne vec spacingat ko imas vec kart kot MaxCardsToShow
+            else {
+                spacing = overlap;
+                startX = (GameConfig.WORLD_WIDTH - GameConfig.MAX_CARDS_SHOW_SM * sizeX) / 2f;
+            }
 
-        //IZRISI CARDE KI SO HOVERANE
-        if (!indexHover.isEmpty()) {
-            for (int j : indexHover) {
-                Card card = cards.get(j);
+            //LIMIT RENDER CARDS LEVO (plac vmes je 70% card width)
+            if (startX < (sizeX * 0.7f))
+                startX = (sizeX * 0.7f);
+
+            //IZRISI CARDE
+            Array<Integer> indexHover = new Array<Integer>();
+            for (int i = firstIndex; i < size; ++i) {
+                //==i<=lastIndex razen ko settamo Card (izogni index izven array)
+                if (i > lastIndex)
+                    break;
+                Card card = cards.get(i);
                 String texture;
                 TextureRegion region;
-                if (isPlayer || state == State.Over)
-                    texture = card.getTexture();
-                else
-                    texture = RegionNames.back;
-                region = gameplayAtlas.findRegion(texture);
-                float posX = startX + (j - firstIndex) * spacing;
-                float posY = startY + 2f; //slightly gor
-                card.setPositionAndBounds(posX, posY, sizeX, sizeY);
-                Card.render(batch, region, card);
+                if (!card.getHighlight()) {
+                    if (isPlayer || state == State.Over)
+                        texture = card.getTexture();
+                    else
+                        texture = RegionNames.back;
+                    region = gameplayAtlas.findRegion(texture);
+                    float posX = startX + (i - firstIndex) * spacing;
+                    float posY = startY;
+                    card.setPositionAndBounds(posX, posY, sizeX, sizeY);
+                    Card.render(batch, region, card);
+                } else {
+                    indexHover.add(i);
+                }
             }
-        }
 
-        //kakuliraj kje se bo koncala zadnja karta
-        //float endX = GameConfig.MAX_CARDS_SHOW_SM*sizeX-overlap;
-        float endX = 0;
-        if (!hand.getCards().isEmpty())
-            endX = (GameConfig.WORLD_WIDTH - (sizeX * 0.7f));
-        //endX = (hand.getCards().get(lastIndex).getPosition().x+sizeX);
+            //IZRISI CARDE KI SO HOVERANE
+            if (!indexHover.isEmpty()) {
+                for (int j : indexHover) {
+                    Card card = cards.get(j);
+                    String texture;
+                    TextureRegion region;
+                    if (isPlayer || state == State.Over)
+                        texture = card.getTexture();
+                    else
+                        texture = RegionNames.back;
+                    region = gameplayAtlas.findRegion(texture);
+                    float posX = startX + (j - firstIndex) * spacing;
+                    float posY = startY + 2f; //slightly gor
+                    card.setPositionAndBounds(posX, posY, sizeX, sizeY);
+                    Card.render(batch, region, card);
+                }
+            }
+
+            //kakuliraj kje se bo koncala zadnja karta
+            //float endX = GameConfig.MAX_CARDS_SHOW_SM*sizeX-overlap;
+            float endX = 0;
+            if (!hand.getCards().isEmpty())
+                endX = (GameConfig.WORLD_WIDTH - (sizeX * 0.7f));
+            //endX = (hand.getCards().get(lastIndex).getPosition().x+sizeX);
 
         /*
         if (isPlayer)
             Gdx.app.log("PLAYER", "size: " + size + " | indexes: " + firstIndex + " , " + lastIndex);
         */
 
-        //LIMIT RENDER CARDS DESNO (plac vmes je 70% card width)
-        if (endX > GameConfig.WORLD_WIDTH - (sizeX * 0.7f))
-            endX = (GameConfig.WORLD_WIDTH - (sizeX * 0.7f));
+            //LIMIT RENDER CARDS DESNO (plac vmes je 70% card width)
+            if (endX > GameConfig.WORLD_WIDTH - (sizeX * 0.7f))
+                endX = (GameConfig.WORLD_WIDTH - (sizeX * 0.7f));
 
-        //preveri ce so arrowi prikazani
-        if (isPlayer) {
-            if (firstIndex != 0 && state != State.Over)
-                showLeftArrow = true;
-            else
-                showLeftArrow = false;
-            if (lastIndex != cards.size - 1 && state != State.Over)
-                showRightArrow = true;
-            else
-                showRightArrow = false;
-        }
+            //preveri ce so arrowi prikazani
+            if (isPlayer) {
+                if (firstIndex != 0 && state != State.Over)
+                    showLeftArrow = true;
+                else
+                    showLeftArrow = false;
+                if (lastIndex != cards.size - 1 && state != State.Over)
+                    showRightArrow = true;
+                else
+                    showRightArrow = false;
+            }
 
-        //render button left
-        if (size >= GameConfig.MAX_CARDS_SHOW_SM && isPlayer && showLeftArrow) {
-            float arrowX = startX - sizeX / 2 - (sizeX * 0.1f);
-            //float arrowY = startY + arrowRegion.getRegionHeight() / 2;
-            float arrowY = startY + (sizeY * 0.2f);
-            hand.setArrowRegionLeft(arrowX, arrowY, sizeX / 2, sizeY / 2);
-            hand.renderArrowLeft(batch);
+            //render button left
+            if (size >= GameConfig.MAX_CARDS_SHOW_SM && isPlayer && showLeftArrow) {
+                float arrowX = startX - sizeX / 2 - (sizeX * 0.1f);
+                //float arrowY = startY + arrowRegion.getRegionHeight() / 2;
+                float arrowY = startY + (sizeY * 0.2f);
+                hand.setArrowRegionLeft(arrowX, arrowY, sizeX / 2, sizeY / 2);
+                hand.renderArrowLeft(batch);
+            }
+            //render button right
+            if (size >= GameConfig.MAX_CARDS_SHOW_SM && isPlayer && showRightArrow) {
+                float arrowX = endX + (sizeX * 0.1f);
+                //float arrowY = startY + arrowRegion.getRegionHeight() / 2;
+                float arrowY = startY + (sizeY * 0.2f);
+                //batch.draw(arrowRegion, arrowX, arrowY);
+                hand.setArrowRegionRight(arrowX, arrowY, sizeX / 2, sizeY / 2);
+                hand.renderArrowRight(batch);
+            }
         }
-        //render button right
-        if (size >= GameConfig.MAX_CARDS_SHOW_SM && isPlayer && showRightArrow) {
-            float arrowX = endX + (sizeX * 0.1f);
-            //float arrowY = startY + arrowRegion.getRegionHeight() / 2;
-            float arrowY = startY + (sizeY * 0.2f);
-            //batch.draw(arrowRegion, arrowX, arrowY);
-            hand.setArrowRegionRight(arrowX, arrowY, sizeX / 2, sizeY / 2);
-            hand.renderArrowRight(batch);
+        else if (startX == 1 || startX == 3) {
+        //else if (startX == 0 || startX == 2) {
+            //for rotating Card 90deg (far left) or -90deg (far right)
+            int rotationScalar=1;
+            //if(startX==2)
+            if(startX==3)
+                rotationScalar=-1;
+
+            //brez spacing
+            if (size <= GameConfig.MAX_CARDS_SHOW_SM - 3) {
+                hand.setIndexLast();
+                lastIndex = hand.getIndexLast();
+                startY = (GameConfig.WORLD_HEIGHT - size * sizeY) / 2f;
+            }
+            //spacing le dokler ne reachas MaxCardsToShow
+            else if (size <= GameConfig.MAX_CARDS_SHOW_SM-1) {
+                hand.setIndexLast();
+                lastIndex = hand.getIndexLast();
+                spacing = overlap;
+                startY = (GameConfig.WORLD_HEIGHT - size * sizeY) / 2f;
+            }
+            //ne vec spacingat ko imas vec kart kot MaxCardsToShow
+            else {
+                spacing = overlap;
+                startY = (GameConfig.WORLD_HEIGHT - GameConfig.MAX_CARDS_SHOW_SM * sizeY) / 2f;
+            }
+
+            //LIMIT RENDER CARDS DOL
+            if (startY < (sizeY * 0.8f))
+                startY = (sizeY * 0.8f);
+
+            // Render vertically
+            for (int i = firstIndex; i < size; ++i) {
+                //if (i > lastIndex) break;
+                if (i > GameConfig.MAX_CARDS_SHOW_SM-2) break;
+
+                Card card = cards.get(i);
+                String texture;
+                TextureRegion region;
+
+                texture = (isPlayer || state == State.Over) ? card.getTexture() : RegionNames.back;
+                region = gameplayAtlas.findRegion(texture);
+
+                float posX = startX; // X stays constant (left or right)
+                float posY = startY + (i - firstIndex) * spacing; // Adjust along the y-axis
+
+                card.setPositionAndBounds(posX, posY, sizeX, sizeY);
+                Card.renderFlipped(batch, region, card,rotationScalar);
+            }
         }
     }
 
