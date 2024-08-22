@@ -239,7 +239,9 @@ public class Hand {
             card = deck.pickCard();
             cards.add(card);
         }
-        //setIndexLast();
+        //first draw?: set lastIndex
+        if(indexLast==-1)
+            setIndexLast();
     }
     public void setCard(Card card,Deck deck){
         if(deck!=null)

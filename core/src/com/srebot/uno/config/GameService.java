@@ -56,7 +56,7 @@ public class GameService {
         String jsonData = gson.toJson(gameData); // Serialize your game data here
         Gdx.app.log("CREATE GAME:",jsonData);
         request.setContent(jsonData);
-
+        //TODO: GDX.POST?
         Gdx.net.sendHttpRequest(request, new Net.HttpResponseListener() {
             @Override
             public void handleHttpResponse(Net.HttpResponse httpResponse) {

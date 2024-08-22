@@ -45,18 +45,20 @@ public class Uno extends Game {
             @Override
             public void dispose() {
                 Gdx.app.log("DISPOSE", "CLOSING APPLICATION FROM LIFECYCLE LISTENER");
-                // Clean up resourcesif(screen instanceof GameMultiplayerScreen){
-                Gdx.app.log("DISPOSE", "Calling from GameMultiplayerScreen");
-                GameMultiplayerScreen mpScreen = (GameMultiplayerScreen) screen;
-                //close scheduler
-                mpScreen.stopScheduler();
-                int playerId = mpScreen.getPlayerId();
-                int gameId = mpScreen.getGameId();
-                if (playerId != 0) {
-                    Gdx.app.log("DISPOSE", "MultiplayerScreen closed with localPlayerId: " + playerId);
-                    //TODO: CALL DELETE GAME IN BACKEND
-                    //BE: delete player's GameId from Game, if Game then has no players, delete game
-                    //TODO: PUT PLAYER'S HANDS BACK IN DRAW DECK BEFORE LOGOFF
+                // Clean up resources
+                if(screen instanceof GameMultiplayerScreen) {
+                    Gdx.app.log("DISPOSE", "Calling from GameMultiplayerScreen");
+                    GameMultiplayerScreen mpScreen = (GameMultiplayerScreen) screen;
+                    //close scheduler
+                    mpScreen.stopScheduler();
+                    int playerId = mpScreen.getPlayerId();
+                    int gameId = mpScreen.getGameId();
+                    if (playerId != 0) {
+                        Gdx.app.log("DISPOSE", "MultiplayerScreen closed with localPlayerId: " + playerId);
+                        //TODO: CALL DELETE GAME IN BACKEND
+                        //BE: delete player's GameId from Game, if Game then has no players, delete game
+                        //TODO: PUT PLAYER'S HANDS BACK IN DRAW DECK BEFORE LOGOFF
+                    }
                 }
             }
         });
