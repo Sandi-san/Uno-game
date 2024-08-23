@@ -160,6 +160,9 @@ export class GameService {
               },
             },
           },
+          orderBy: {
+            id: 'asc',
+          }
         },
         topCard: true,
         /*
@@ -197,7 +200,20 @@ export class GameService {
     return players
   }
 
-  //GET function, return only deck and hand ids
+  async getTurn(id: number): Promise<number | null> {
+    const game = await this.prisma.game.findUnique({
+      where: { id }
+    })
+
+    if (!game)
+      throw new BadRequestException(`Id ${id} is invalid!`);
+
+    const turn = game.currentTurn
+    console.log("TURN:", turn)
+    return turn
+  }
+
+  //GET function, return only deck, player and hand ids
   async getIds(id: number): Promise<Game &
   {
     decks: Deck[],
@@ -251,7 +267,9 @@ export class GameService {
     // Update players if provided in dto
     if (dto.players) {
       updateData.players = {
-        update: dto.players.map((player) => {
+        update: dto.players
+        .filter(player => player && player.id !== undefined)
+        .map((player) => {
           const existingPlayer = gameToUpdate.players.find(p => p.id === player.id);
           if (!existingPlayer) {
             throw new BadRequestException(`Player with id ${player.id} not found in game`);
@@ -297,6 +315,9 @@ export class GameService {
               },
             },
           },
+          orderBy: {
+            id: 'asc',
+          }
         },
         topCard: true,
       },

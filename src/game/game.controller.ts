@@ -14,8 +14,8 @@ export class GameController {
       console.log("GAME CREATE:",data);
       //console.log("DECK 1:",data.decks[0].cards);
       //console.log("DECK 2:",data.decks[1].cards);
-      //return this.gameService.create(data);
-      return undefined;
+      return this.gameService.create(data);
+      //return undefined;
     }
   
     @Get()
@@ -32,6 +32,12 @@ export class GameController {
     async getGamePlayers(@Param('id', ParseIntPipe) id: number): Promise<Player[]> {
       console.log("FETCH PLAYERS OF GAME:",id);
       return this.gameService.getPlayers(id);
+    }
+
+    @Get(':id/turn')
+    async getGameTurn(@Param('id', ParseIntPipe) id: number): Promise<number> {
+      console.log("FETCH TURN OF GAME:",id);
+      return this.gameService.getTurn(id);
     }
   
     //NEXT TIME: update z patch, update dto
