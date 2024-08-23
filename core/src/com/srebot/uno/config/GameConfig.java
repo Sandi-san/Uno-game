@@ -15,11 +15,11 @@ public class GameConfig {
     public static final float CARD_WIDTH_RATIO = 0.7f;
     public static final float CARD_HEIGHT_RATIO = 1f;
     //CARD SIZE IN WORLD UNITS
-    public static final float CARD_WIDTH = 16f;
-    public static final float CARD_HEIGHT = 11.2f;
+    public static final float CARD_HEIGHT = 16f;
+    public static final float CARD_WIDTH = 11.2f;
     //CARD SIZE SMALL
-    public static final float CARD_WIDTH_SM = 12f;
-    public static final float CARD_HEIGHT_SM = 8.4f;
+    public static final float CARD_HEIGHT_SM = 12f;
+    public static final float CARD_WIDTH_SM = 8.4f;
 
     //TEXT SIZE RATIO
     public static final float TEXT_WIDTH = WIDTH*0.25f;

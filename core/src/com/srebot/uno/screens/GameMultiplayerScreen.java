@@ -333,6 +333,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                             //when fetching updated game, check if any players have to be added
                             if (!checkPlayersChanged(updatedGame.getPlayers()))
                                 startScheduler();
+                            fakeFunction();
                         }
 
                         @Override
@@ -358,6 +359,14 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 Gdx.app.log("ERROR", "Failed to fetch game from backend.");
             }
         });
+    }
+
+    //TODO: TEST ONLY - DELETE!!!
+    private void fakeFunction() {
+        playersData.add(new Player("Bla1", 0, new Hand()));
+        playersData.add(new Player("Bla2", 0, new Hand()));
+        playersData.get(2).getHand().pickCards(deckDraw, 5);
+        playersData.get(3).getHand().pickCards(deckDraw, 5);
     }
 
     /**
@@ -417,7 +426,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             @Override
             public void onGameFetched(GameData game) {
                 Gdx.app.log("SUCCESS", "Updated game data: " + game.getId());
-                //TODO: PROBAJ: PREDENJ UPDATEAS GAME, ADDAS NEW PLAYERJA
                 int localPlayersSize = getPlayersSize();
                 if (game.getPlayers().length != localPlayersSize) {
                     checkPlayersChanged(game.getPlayers());
@@ -429,12 +437,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 Gdx.app.log("ERROR", "Failed to update game: " + t.getMessage());
             }
         });
-        /*
-        //update game in DB and fetch response
-        updateGame(gameData, fetchedGameData -> {
-
-        });
-         */
     }
 
     //pripravi igro (init globals)
@@ -921,8 +923,8 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         //TODO HUD
 
         //VELIKOST kart (v WORLD UNITS)
-        float sizeX = GameConfig.CARD_HEIGHT_SM;
-        float sizeY = GameConfig.CARD_WIDTH_SM;
+        float sizeX = GameConfig.CARD_WIDTH_SM;
+        float sizeY = GameConfig.CARD_HEIGHT_SM;
 
         if (state == State.Running) {
             //MIDDLE DECK
@@ -1001,7 +1003,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             //top
             case 2:
                 //ce maxPlayers=>3: draw P1
-                startY = sizeX; //top
+                startY = GameConfig.WORLD_HEIGHT - GameConfig.CARD_HEIGHT_SM; //top
                 startX = 2; //start at top
                 break;
             //left
@@ -1014,8 +1016,8 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         float overlap = 0f;
         float spacing = 0f;
         //drawing left/right sides of screen
-        if (startX == 1 || startX == 3){
-        //if (startX == 0 || startX == 2){
+        if (startX == 1 || startX == 3) {
+            //if (startX == 0 || startX == 2){
             for (int i = GameConfig.MAX_CARDS_SHOW_SM - 4; i < size; ++i) {
                 if (i >= GameConfig.MAX_CARDS_SHOW_SM) break;
                 overlap += 0.1f;
@@ -1033,7 +1035,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
         //0-bottom, 2-top
         if (startX == 0 || startX == 2) {
-        //if (startX == 1 || startX == 3) {
+            //if (startX == 1 || startX == 3) {
             //brez spacing
             if (size <= GameConfig.MAX_CARDS_SHOW_SM - 2) {
                 hand.setIndexLast();
@@ -1057,6 +1059,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             if (startX < (sizeX * 0.7f))
                 startX = (sizeX * 0.7f);
 
+            //TODO: NO HOVER CE NI PLAYER
             //IZRISI CARDE
             Array<Integer> indexHover = new Array<Integer>();
             for (int i = firstIndex; i < size; ++i) {
@@ -1144,14 +1147,13 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 hand.setArrowRegionRight(arrowX, arrowY, sizeX / 2, sizeY / 2);
                 hand.renderArrowRight(batch);
             }
-        }
-        else if (startX == 1 || startX == 3) {
-        //else if (startX == 0 || startX == 2) {
+        } else if (startX == 1 || startX == 3) {
+            //else if (startX == 0 || startX == 2) {
             //for rotating Card 90deg (far left) or -90deg (far right)
-            int rotationScalar=1;
+            int rotationScalar = 1;
             //if(startX==2)
-            if(startX==3)
-                rotationScalar=-1;
+            if (startX == 3)
+                rotationScalar = -1;
 
             //brez spacing
             if (size <= GameConfig.MAX_CARDS_SHOW_SM - 3) {
@@ -1160,7 +1162,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 startY = (GameConfig.WORLD_HEIGHT - size * sizeY) / 2f;
             }
             //spacing le dokler ne reachas MaxCardsToShow
-            else if (size <= GameConfig.MAX_CARDS_SHOW_SM-1) {
+            else if (size <= GameConfig.MAX_CARDS_SHOW_SM - 1) {
                 hand.setIndexLast();
                 lastIndex = hand.getIndexLast();
                 spacing = overlap;
@@ -1168,7 +1170,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             }
             //ne vec spacingat ko imas vec kart kot MaxCardsToShow
             else {
-                spacing = overlap;
+                spacing = overlap; //lastIndex=maxcards
                 startY = (GameConfig.WORLD_HEIGHT - GameConfig.MAX_CARDS_SHOW_SM * sizeY) / 2f;
             }
 
@@ -1176,10 +1178,16 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             if (startY < (sizeY * 0.8f))
                 startY = (sizeY * 0.8f);
 
+            //set x-axis based on hand location (left/right)
+            if (startX == 1)
+                startX = GameConfig.WORLD_WIDTH - (GameConfig.CARD_WIDTH_SM + GameConfig.CARD_HEIGHT * 0.1f); //malce levo
+            else
+                startX = GameConfig.CARD_HEIGHT * 0.1f; //malce desno
+
             // Render vertically
             for (int i = firstIndex; i < size; ++i) {
                 //if (i > lastIndex) break;
-                if (i > GameConfig.MAX_CARDS_SHOW_SM-2) break;
+                if (i > GameConfig.MAX_CARDS_SHOW_SM - 2) break;
 
                 Card card = cards.get(i);
                 String texture;
@@ -1192,7 +1200,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 float posY = startY + (i - firstIndex) * spacing; // Adjust along the y-axis
 
                 card.setPositionAndBounds(posX, posY, sizeX, sizeY);
-                Card.renderFlipped(batch, region, card,rotationScalar);
+                Card.renderFlipped(batch, region, card, rotationScalar);
             }
         }
     }
@@ -1442,8 +1450,8 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     private void drawColorWheel() {
         if (choosingCards.isEmpty()) {
             //B,R,G,Y
-            float sizeX = GameConfig.CARD_HEIGHT_SM;
-            float sizeY = GameConfig.CARD_WIDTH_SM;
+            float sizeX = GameConfig.CARD_WIDTH_SM;
+            float sizeY = GameConfig.CARD_HEIGHT_SM;
 
             float startX = (GameConfig.WORLD_WIDTH - 4 * sizeX) / 2f;
             //float centerX = (GameConfig.WORLD_WIDTH - sizeX) / 2f;
@@ -1490,7 +1498,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     }
 
     private void drawWait() {
-        font.draw(batch, "Waiting for players", GameConfig.WORLD_WIDTH/3f, GameConfig.WORLD_HEIGHT/3f);
+        font.draw(batch, "Waiting for players", GameConfig.WORLD_WIDTH / 3f, GameConfig.WORLD_HEIGHT / 3f);
     }
 
     private void checkGamestate() {

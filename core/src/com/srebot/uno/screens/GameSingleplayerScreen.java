@@ -234,8 +234,8 @@ public class GameSingleplayerScreen extends ScreenAdapter {
         //TODO HUD
 
         //VELIKOST kart (v WORLD UNITS)
-        float sizeX = GameConfig.CARD_HEIGHT;
-        float sizeY = GameConfig.CARD_WIDTH;
+        float sizeX = GameConfig.CARD_WIDTH;
+        float sizeY = GameConfig.CARD_HEIGHT;
 
         if (state == State.Running) {
             //MIDDLE DECK
@@ -817,8 +817,8 @@ public class GameSingleplayerScreen extends ScreenAdapter {
     private void drawColorWheel() {
         if (choosingCards.isEmpty()) {
             //B,R,G,Y
-            float sizeX = GameConfig.CARD_HEIGHT;
-            float sizeY = GameConfig.CARD_WIDTH;
+            float sizeX = GameConfig.CARD_WIDTH;
+            float sizeY = GameConfig.CARD_HEIGHT;
 
             float startX = (GameConfig.WORLD_WIDTH - 4 * sizeX) / 2f;
             //float centerX = (GameConfig.WORLD_WIDTH - sizeX) / 2f;
