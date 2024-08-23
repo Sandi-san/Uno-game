@@ -152,7 +152,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     //get one Game
     public interface GameUpdateCallback {
         void onGameFetched(GameData game);
-
         void onFailure(Throwable t);
     }
 
@@ -333,7 +332,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                             //when fetching updated game, check if any players have to be added
                             if (!checkPlayersChanged(updatedGame.getPlayers()))
                                 startScheduler();
-                            fakeFunction();
+                            //fakeFunction();
                         }
 
                         @Override
@@ -363,10 +362,11 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
     //TODO: TEST ONLY - DELETE!!!
     private void fakeFunction() {
+        deckDraw.generateByRules(2, 2, 2);
         playersData.add(new Player("Bla1", 0, new Hand()));
         playersData.add(new Player("Bla2", 0, new Hand()));
-        playersData.get(2).getHand().pickCards(deckDraw, 5);
-        playersData.get(3).getHand().pickCards(deckDraw, 5);
+        playersData.get(2).getHand().pickCards(deckDraw, 9);
+        playersData.get(3).getHand().pickCards(deckDraw, 9);
     }
 
     /**
@@ -1015,11 +1015,13 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
         float overlap = 0f;
         float spacing = 0f;
+        //for showing less cards than MaxCardsShow on left/right
+        int verticalShow = GameConfig.MAX_CARDS_SHOW_SM - 4;
         //drawing left/right sides of screen
         if (startX == 1 || startX == 3) {
             //if (startX == 0 || startX == 2){
-            for (int i = GameConfig.MAX_CARDS_SHOW_SM - 4; i < size; ++i) {
-                if (i >= GameConfig.MAX_CARDS_SHOW_SM) break;
+            for (int i = verticalShow; i < size; ++i) {
+                if (i >= verticalShow + 3) break;
                 overlap += 0.1f;
             }
         }
@@ -1059,7 +1061,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             if (startX < (sizeX * 0.7f))
                 startX = (sizeX * 0.7f);
 
-            //TODO: NO HOVER CE NI PLAYER
             //IZRISI CARDE
             Array<Integer> indexHover = new Array<Integer>();
             for (int i = firstIndex; i < size; ++i) {
@@ -1156,13 +1157,13 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 rotationScalar = -1;
 
             //brez spacing
-            if (size <= GameConfig.MAX_CARDS_SHOW_SM - 3) {
+            if (size <= verticalShow + 1) {
                 hand.setIndexLast();
                 lastIndex = hand.getIndexLast();
                 startY = (GameConfig.WORLD_HEIGHT - size * sizeY) / 2f;
             }
             //spacing le dokler ne reachas MaxCardsToShow
-            else if (size <= GameConfig.MAX_CARDS_SHOW_SM - 1) {
+            else if (size <= verticalShow + 3) {
                 hand.setIndexLast();
                 lastIndex = hand.getIndexLast();
                 spacing = overlap;
@@ -1186,8 +1187,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
             // Render vertically
             for (int i = firstIndex; i < size; ++i) {
-                //if (i > lastIndex) break;
-                if (i > GameConfig.MAX_CARDS_SHOW_SM - 2) break;
+                if (i > verticalShow) break;
 
                 Card card = cards.get(i);
                 String texture;
@@ -1203,42 +1203,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 Card.renderFlipped(batch, region, card, rotationScalar);
             }
         }
-    }
-
-    //set positions of playersData players' hands (different for each player)
-    private void setPositions() {
-        Player currentPlayer = getCurrentPlayer();
-        if (currentPlayer == null) {
-            //TODO: throw exception
-            Gdx.app.log("ERROR", "There is no local player with id: " + localPlayerId);
-            return;
-        }
-        /*
-        1-bottom
-        2-left
-        3-top
-        4-right
-         */
-        switch (getPlayersSize()) {
-            case 2:
-                //positions for 2 players
-                break;
-            case 3:
-                //positions for 3 players
-                break;
-            case 4:
-                //positions for 4 players
-                break;
-        }
-    }
-
-    //get current player in playerData from localPlayerId
-    private Player getCurrentPlayer() {
-        for (Player player : playersData) {
-            if (player.getId() == localPlayerId)
-                return player;
-        }
-        return null;
     }
 
     private void handleInput() {
@@ -1384,7 +1348,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         topCard = Card.switchCard(deckDiscard.getSecondTopCard(), color);
     }
 
-    //TODO: computer card num v Hand ko hoveras
     //SPREMINJANJE INDEXOV CARD ELEMENTOV KI SE PRIKAZEJO V PLAYER HAND-U
     private void handArrowLeftClicked(Hand currentHand) {
         currentHand.firstIndexDecrement();
@@ -1497,6 +1460,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         }
     }
 
+    //TODO: drawi text v WORLD_UNITS
     private void drawWait() {
         font.draw(batch, "Waiting for players", GameConfig.WORLD_WIDTH / 3f, GameConfig.WORLD_HEIGHT / 3f);
     }
