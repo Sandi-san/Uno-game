@@ -1,4 +1,4 @@
-import { Deck, Game, Hand, Player } from '@prisma/client';
+import { Card, Deck, Game, Hand, Player } from '@prisma/client';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateGameDto } from './dto/create-game.dto';
@@ -110,8 +110,9 @@ export class GameService {
       }
     }
 
-    console.log('GAME CREATED:', game);
-    return game;
+    const newGame = this.get(game.id);
+    console.log('GAME CREATED:', newGame);
+    return newGame;
   }
 
 
@@ -214,18 +215,25 @@ export class GameService {
   }
 
   //GET function, return only deck, player and hand ids
-  async getIds(id: number): Promise<Game &
-  {
-    decks: Deck[],
-    players: (Player & { hand: Hand })[]
+  async getIds(id: number): Promise<Game & {
+    decks: (Deck & { cards: Card[] } )[],
+    players: (Player & { hand: Hand & { cards: Card[] } })[]
   } | null> {
     const game = await this.prisma.game.findUnique({
       where: { id },
       include: {
-        decks: true,  // Include decks
+        decks: {  // Include decks
+          include: {
+            cards: true
+          }
+        },        
         players: {
           include: {
-            hand: true,
+            hand: {
+              include: {
+                cards: true
+              }
+            }
           },
         },
       },
@@ -236,96 +244,103 @@ export class GameService {
 
   //TODO?: UPDATE GAME RAZEN PLAYERJEV
   async update(id: number, dto: UpdateGameDto): Promise<Game> {
-    const gameToUpdate = await this.getIds(id)
-
-    if (!gameToUpdate) 
-      throw new BadRequestException(`Id ${id} is invalid!`);
+    const gameToUpdate = await this.getIds(id);
+    if (!gameToUpdate) throw new BadRequestException(`Id ${id} is invalid!`);
   
-
-    const updateData: any = {}
-
-    // Step 2: Update decks if provided in dto
+    const updateData: any = {};
+  
+    // Update Decks
     if (dto.decks) {
       updateData.decks = {
         update: gameToUpdate.decks.map((existingDeck, index) => {
           const deckDto = dto.decks[index];
           return {
-            where: { id: existingDeck.id },  // Use the existing deck ID
+            where: { id: existingDeck.id },
             data: {
-              size: deckDto.size,  // Update the size if needed
+              size: deckDto.size,
               cards: {
-                set: deckDto.cards
-                  .filter(card => card && card.id !== undefined)
-                  .map(card => ({ id: card.id })),
+                disconnect: existingDeck.cards
+                .filter(card => card && card.id !== undefined)
+                .map(card => ({ id: card.id })),  // Disconnect
+                connect: deckDto.cards
+                .filter(card => card && card.id !== undefined)
+                .map(card => ({ id: card.id })),  // Reconnect
               },
             },
           };
         }),
       };
     }
-
-    // Update players if provided in dto
+  
+    // Update Players and Hands
     if (dto.players) {
       updateData.players = {
-        update: dto.players
-        .filter(player => player && player.id !== undefined)
-        .map((player) => {
+        update: dto.players.map(player => {
           const existingPlayer = gameToUpdate.players.find(p => p.id === player.id);
-          if (!existingPlayer) {
-            throw new BadRequestException(`Player with id ${player.id} not found in game`);
-          }
+          if (!existingPlayer) throw new BadRequestException(`Player with id ${player.id} not found`);
+  
+          const newCardIds = player.hand.cards
+            .filter(card => card && card.id !== undefined)
+            .map(card => card.id);
+          const existingCardIds = existingPlayer.hand.cards
+            .filter(card => card && card.id !== undefined)
+            .map(card => card.id);
+  
           return {
-            where: { id: player.id },  // Use the existing player ID
+            where: { id: player.id },
             data: {
               score: player.score,
               hand: {
                 update: {
                   cards: {
-                    set: player.hand.cards
-                      .filter(card => card && card.id !== undefined)
-                      .map(card => ({ id: card.id })),
+                    disconnect: existingCardIds
+                    .filter(id => !newCardIds.includes(id))
+                    .map(id => ({ id })),
+                    connect: newCardIds
+                    .filter(id => !existingCardIds.includes(id))
+                    .map(id => ({ id })),
                   },
                 },
               },
-            }
-          }
-        })
-      }
+            },
+          };
+        }),
+      };
     }
-
+  
+    // Update topCard
     if (dto.topCard && dto.topCard.id !== undefined) {
+      const topCardExists = await this.prisma.card.findUnique({
+        where: { id: dto.topCard.id },
+      });
+      if (!topCardExists) throw new BadRequestException(`Top card with id ${dto.topCard.id} not found`);
       updateData.topCard = { connect: { id: dto.topCard.id } };
     }
-
+  
+    // Other updates
     if (dto.maxPlayers !== undefined) updateData.maxPlayers = dto.maxPlayers;
     if (dto.gameState !== undefined) updateData.gameState = dto.gameState;
     if (dto.currentTurn !== undefined) updateData.currentTurn = dto.currentTurn;
     if (dto.turnOrder !== undefined) updateData.turnOrder = dto.turnOrder;
-
+  
     const game = await this.prisma.game.update({
       where: { id },
       data: updateData,
       include: {
-        decks: true,
+        decks: { include: { cards: true } },
         players: {
           include: {
-            hand: {
-              include: {
-                cards: true,
-              },
-            },
+            hand: { include: { cards: true } },
           },
-          orderBy: {
-            id: 'asc',
-          }
+          orderBy: { id: 'asc' },
         },
         topCard: true,
       },
     });
-
-    console.log(game)
-    return game
+  
+    return game;
   }
+  
 
   //ADD PLAYER TO GAME
   async updatePlayer(id: number, dto: UpdatePlayerDto): Promise<Game> {
