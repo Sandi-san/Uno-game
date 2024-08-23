@@ -141,7 +141,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
     //create one Game
     public interface GameCreateCallback {
-        void onGameIdFetched(int gameId); //get id of newly created game
+        void onGameFetched(GameData game); //get newly created game (important to get and save ids)
     }
 
     //get one Game
@@ -328,11 +328,11 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                         public void onGameFetched(GameData updatedGame) {
                             Gdx.app.log("GAME", "Game updated with player: " + player.getId());
                             //game is initialized, change state to Paused
+                            setGameData(updatedGame);
                             state = State.Paused;
                             //when fetching updated game, check if any players have to be added
                             if (!checkPlayersChanged(updatedGame.getPlayers()))
                                 startScheduler();
-                            //fakeFunction();
                         }
 
                         @Override
@@ -398,8 +398,13 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         if (!checkPlayersChanged(fetchedGame.getPlayers())) {
             //get players from DB
             Player[] fetchedPlayers = fetchedGame.getPlayers();
-            for (Player fetchedPlayer : fetchedPlayers) {
-                addPlayerToArray(fetchedPlayer);
+            for (int i=0;i<fetchedPlayers.length;++i) {
+                //if newly fetched player is already in array don't re-add (important on gameCreate)
+                if(!isPlayerAlreadyInArray(fetchedPlayers[i]))
+                    addPlayerToArray(fetchedPlayers[i]);
+                //get newly created ids of Hand and its Cards from database and set them locally
+                else
+                    playersData.get(i).setIds(fetchedPlayers[i]);
             }
         }
         //else, players already changed in checkPlayersChanged function
@@ -478,9 +483,9 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                     state.toString(), playerTurn, getOrderAsString());
 
             //create game in DB and fetch id of newly created game
-            createGame(gameData, gameId -> {
+            createGame(gameData, fetchedGame -> {
                 //set current game id locally (prevent unneeded DB fetching)
-                currentGameId = gameId;
+                setGameData(fetchedGame);
                 //game is initialized, change state to Paused
                 state = State.Paused;
                 //run scheduler that checks for new players
@@ -538,9 +543,9 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     private void createGame(GameData gameData, GameCreateCallback callback) {
         service.createGame(new GameService.GameCreateCallback() {
             @Override
-            public void onSuccess(int gameId) {
-                Gdx.app.log("SUCCESS", "Game created with ID: " + gameId);
-                callback.onGameIdFetched(gameId);
+            public void onSuccess(GameData fetchedGame) {
+                Gdx.app.log("SUCCESS", "Game created with ID: " + fetchedGame.getId());
+                callback.onGameFetched(fetchedGame);
             }
 
             @Override
@@ -634,6 +639,16 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         if (index == -1)
             Gdx.app.log("ERROR", "Player with id " + localPlayerId + " not found in playersData");
         return index;
+    }
+
+    private boolean isPlayerAlreadyInArray(Player player){
+        for(Player arrayPlayer : playersData){
+            if(arrayPlayer!=null && player!=null) {
+                if (arrayPlayer.getId() == player.getId())
+                    return true;
+            }
+        }
+        return false;
     }
 
     //any players changed?

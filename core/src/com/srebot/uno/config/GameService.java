@@ -41,7 +41,7 @@ public class GameService {
 
     //callback metoda, ker so http funkcije async in ne podpirajo regular return
     public interface GameCreateCallback {
-        void onSuccess(int gameId);
+        void onSuccess(GameData game);
         void onFailure(Throwable t);
     }
 
@@ -65,9 +65,8 @@ public class GameService {
                     String responseJson = httpResponse.getResultAsString();
                     try {
                         // Handle the response
-                        GameData response = gson.fromJson(responseJson, GameData.class);
-                        int gameId = response.getId();
-                        callback.onSuccess(gameId);
+                        GameData game = gson.fromJson(responseJson, GameData.class);
+                        callback.onSuccess(game);
                     } catch (GdxRuntimeException e) {
                         // Handle the error (invalid JSON, etc.)
                         e.printStackTrace();
