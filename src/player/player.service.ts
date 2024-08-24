@@ -32,8 +32,11 @@ export class PlayerService {
             },
           },
         } : undefined,
-        //add gameId if
-        ...(data.gameId !== undefined && { gameId: data.gameId })
+        //set gameId if provided, also set joinedAt for the current game
+        ...(data.gameId !== undefined && { 
+          gameId: data.gameId,
+          joinedAt: new Date() 
+        })
       }
     })
     console.log(player)
@@ -136,6 +139,7 @@ export class PlayerService {
       },
       data: {
         gameId, //change gameId
+        joinedAt: new Date(),
         hand: player.hand ? {
           update: handData,
         } : {

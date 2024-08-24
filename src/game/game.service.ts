@@ -46,6 +46,7 @@ export class GameService {
               create: {
                 name: player.name,
                 score: player.score,
+                joinedAt: new Date()
               },
             })),
         },
@@ -162,7 +163,7 @@ export class GameService {
             },
           },
           orderBy: {
-            id: 'asc',
+            joinedAt: 'asc',
           }
         },
         topCard: true,
@@ -332,7 +333,9 @@ export class GameService {
           include: {
             hand: { include: { cards: true } },
           },
-          orderBy: { id: 'asc' },
+          orderBy: {
+            joinedAt: 'asc',
+          }
         },
         topCard: true,
       },

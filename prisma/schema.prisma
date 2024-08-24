@@ -34,6 +34,7 @@ model Player {
   gameId    Int?
   game      Game?    @relation(fields: [gameId], references: [id])
   createdAt DateTime @default(now())
+  joinedAt  DateTime?
   name      String
   score     Int
   hand      Hand?
