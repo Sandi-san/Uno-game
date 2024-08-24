@@ -282,4 +282,15 @@ public class Hand {
         }
         return value;
     }
+    //for each card, set id in fetchedHand
+    public void setIdCards(Hand fetchedHand) {
+        for(int i=0;i<this.cards.size;++i) {
+            //for(int i=0;i<fetchedHand.getCards().size;++i){
+            Card thisCard = this.cards.get(i);
+            if (thisCard.getHandId() == 0 || thisCard.getId() == 0) {
+                thisCard.setId(fetchedHand.getCards().get(i).getId());
+                thisCard.setHandId(fetchedHand.getId());
+            }
+        }
+    }
 }

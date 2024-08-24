@@ -61,6 +61,14 @@ public class Card {
         this.id = id;
     }
 
+    public int getHandId() {
+        return handId;
+    }
+
+    public void setHandId(int handId) {
+        this.handId = handId;
+    }
+
     public int getPriority() {
         return priority;
     }

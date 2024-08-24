@@ -203,11 +203,16 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             scheduler.scheduleAtFixedRate(() -> {
                 checkForNewPlayers(fetchedPlayers -> {
                     int localPlayersSize = getPlayersSize();
-                    if (fetchedPlayers.length != localPlayersSize) {
-                        Gdx.app.log("PLAYERCHECKER", "FOUND NEW PLAYER");
-                        checkPlayersChanged(fetchedPlayers);
-                    } else
-                        Gdx.app.log("PLAYERCHECKER", "NO NEW PLAYERS");
+                    //TODO: pri vsaki funkciji iz db baze, poglej ce je returned element null
+                    if(fetchedPlayers != null) {
+                        if (fetchedPlayers.length != localPlayersSize) {
+                            Gdx.app.log("PLAYERCHECKER", "FOUND NEW PLAYER");
+                            checkPlayersChanged(fetchedPlayers);
+                        } else
+                            Gdx.app.log("PLAYERCHECKER", "NO NEW PLAYERS");
+                    }
+                    else
+                        Gdx.app.log("PLAYERCHECKER", "FETCHED PLAYERS ARE NULL");
                 });
             }, 0, 10, TimeUnit.SECONDS); // Check every 10 seconds (completes within 10s)
         }
@@ -217,7 +222,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     private void turnChecker() {
         if (scheduler == null || scheduler.isShutdown()) {
             startScheduler();
-        }
+        }   //TODO: wait for turn daj v sam db fetching
         if (waitForTurn()) {
             scheduler.scheduleAtFixedRate(() -> {
                 checkForTurnChange(fetchedTurn -> {
@@ -312,13 +317,9 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
                 //create game variables, set decks & managers
                 setGameData(fetchedGame);
-
-                //TODO: DEBUG ONLY: uncomment in final version
-                /*
+                //state paused, da ne bo runnal draw in handle funkcij predenj ne pridobi vse podatke iz db
                 state = State.Paused;
-                localPlayerId = player2.getId();
-                startScheduler();
-                */
+
                 // Step 2: Create the player and update the game
                 createPlayerFromBackend(playerName, player -> {
                     state = State.Paused; //TEST IF UPDATE IN DB
@@ -327,7 +328,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                         @Override
                         public void onGameFetched(GameData updatedGame) {
                             Gdx.app.log("GAME", "Game updated with player: " + player.getId());
-                            //game is initialized, change state to Paused
+                            localPlayerId = player.getId();
                             setGameData(updatedGame);
                             state = State.Paused;
                             //when fetching updated game, check if any players have to be added
@@ -340,18 +341,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                             Gdx.app.log("ERROR", "Failed to update game with player.");
                         }
                     });
-                    /*
-                    updateGameWithPlayer(player, fetchedGame.getId(), updatedGame -> {
-                        if (updatedGame != null) {
-                            Gdx.app.log("GAME", "Game updated with player: " + player.getId());
-                            //game is initialized, change state to Paused
-                            state = State.Paused;
-                            startScheduler();
-                        } else {
-                            Gdx.app.log("ERROR", "Failed to update game with player.");
-                        }
-                    });
-                     */
                 });
 
             } else {
@@ -384,7 +373,8 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         deckDiscard.setManager(game);
 
         //ustvari current top card
-        topCard = fetchedGame.getTopCard();
+        //topCard = fetchedGame.getTopCard();
+        topCard = deckDiscard.getTopCard();
 
         maxPlayers = fetchedGame.getMaxPlayers();
 
@@ -422,7 +412,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     private void updateGameData() {
         // Create and save game data
         GameData gameData = new GameData(
-                playersData, deckDraw, deckDiscard, maxPlayers, topCard,
+                playersData, deckDraw, deckDiscard, maxPlayers,
                 state.toString(), playerTurn, getOrderAsString());
         gameData.setId(currentGameId);
 
@@ -431,7 +421,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             @Override
             public void onGameFetched(GameData game) {
                 Gdx.app.log("SUCCESS", "Updated game data: " + game.getId());
-                int localPlayersSize = getPlayersSize();
+                int localPlayersSize = getPlayersSize(); //fetched new players?
                 if (game.getPlayers().length != localPlayersSize) {
                     checkPlayersChanged(game.getPlayers());
                 }
@@ -472,14 +462,12 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         }
         //PRIPRAVI FIRST PLAYER (HOST)
         createPlayerFromBackend(manager.getNamePref(), player -> {
-            // Code that should run after the player is fetched/created
-
             // Get first turn, set up game, etc.
             getFirstTurn();
 
             // Create and save game data
             GameData gameData = new GameData(
-                    playersData, deckDraw, deckDiscard, maxPlayers, topCard,
+                    playersData, deckDraw, deckDiscard, maxPlayers,
                     state.toString(), playerTurn, getOrderAsString());
 
             //create game in DB and fetch id of newly created game
@@ -492,15 +480,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 startScheduler();
             });
         });
-
-        //for each player dodaj v playerData
-        //Pomembni order: bottom->left->top->right
-        /*
-        playersData.add(player); //bottom
-        playersData.add(null);  //left
-        playersData.add(computer); //top
-        playersData.add(null);  //right
-        */
     }
 
     private void fetchGameFromBackend(int gameId, GameFetchCallback callback) {
@@ -881,7 +860,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
     //check scheduler for retrieving turn
     public boolean waitForTurn() {
-        if (playerTurn != getIndexOfCurrentPlayer() + 1)
+        if (playerTurn != getIndexOfCurrentPlayer() + 1) //todo turn
             return true;
         return false;
     }
@@ -905,7 +884,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             startScheduler();
         } else if (state != State.Over) {
             checkGamestate();
-            //playerTurn = 2; //DEBUG ONLY
+
             //handle input only if it is current player's turn
             if (!waitForTurn()) {
                 //current player's turn, disable DB fetching
@@ -943,6 +922,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
         if (state == State.Running) {
             //MIDDLE DECK
+            topCard = deckDiscard.getTopCard();
             String topCardTexture = topCard.getTexture();
             TextureRegion topCardRegion = gameplayAtlas.findRegion(topCardTexture);
             //POZICIJA - MIDDLE
@@ -960,6 +940,9 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
             //DRAW PLAYER HANDS for each current player
             int currentPlayerIndex = getIndexOfCurrentPlayer();
+            //if returned==-1 -> data iz db se se ni shranil localno
+            if(currentPlayerIndex==-1)
+                return;
             for (int i = 0; i < playersData.size(); ++i) {
                 // Calculate the index in a circular manner
                 int playerIndex = (currentPlayerIndex + i) % playersData.size();
@@ -1230,7 +1213,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
         if (state == State.Running) {
             //arrow button click cycle
-            Player currentPlayer = playersData.get(playerTurn - 1);
+            Player currentPlayer = playersData.get(playerTurn - 1); //todo turn
             //TODO?: get actual player turn-a
             Hand currentHand = currentPlayer.getHand();
             if (isClickedOnArrowButtonLeft(worldCoords.x, worldCoords.y, currentHand)) {
@@ -1255,7 +1238,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                         }
                         currentPlayer.getHand().pickCard(deckDraw);
                         //ce hocemo da konec tren player turna, ko vlece karto iz decka
-                        playerTurn = getNextTurn(playerTurn);
+                        playerTurn = getNextTurn(playerTurn); //todo turn
                         playerPerformedAction = true;
                         //move hand index right (draw card)
                         handArrowRightClicked(currentPlayer.getHand());
@@ -1292,7 +1275,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                     changeTopDeckCard(card.getColor());
                     state = State.Running;
                     choosingCards.clear();
-                    playerTurn = getNextTurn(playerTurn);
+                    playerTurn = getNextTurn(playerTurn); //todo turn
                 }
             }
         }
@@ -1309,7 +1292,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             //player opravil turn (if: ne increment turna če še čaka da bo izbral new color)
             if (state == State.Running) {
                 playerPerformedAction = true;
-                playerTurn = getNextTurn(playerTurn);
+                playerTurn = getNextTurn(playerTurn); //todo turn
                 topCard = deckDiscard.getTopCard();
                 updateGameData();
             }
@@ -1340,7 +1323,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 //naj vlecejo +2
                 index = getNextTurn(playerTurn);
                 //naslednji player picka 2x karti
-                playersData.get(index - 1).getHand().pickCards(deckDraw, 2);
+                playersData.get(index - 1).getHand().pickCards(deckDraw, 2); //todo turn
                 //inkrementiraj lastIndex
                 playersData.get(index - 1).getHand().lastIndexIncrement(2);
                 break;

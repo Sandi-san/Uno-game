@@ -439,6 +439,7 @@ public class GameService {
         void onSuccess(Player player);
         void onFailure(Throwable t);
     }
+    /** Get player from database with unique name */
     public void fetchPlayerByName(PlayerFetchCallback callback, String name) {
         HttpRequestBuilder requestBuilder = new HttpRequestBuilder();
         Net.HttpRequest request = requestBuilder.newRequest()

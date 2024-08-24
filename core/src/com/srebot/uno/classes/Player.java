@@ -56,4 +56,10 @@ public class Player {
     public String toString(){
         return "Id: "+id+" Name: "+name+" Score: "+score;
     }
+
+    //get ids of hand and cards from fetchedPlayer and set them to this object
+    public void setIds(Player fetchedPlayer) {
+        this.getHand().setId(fetchedPlayer.getHand().getId());
+        this.getHand().setIdCards(fetchedPlayer.getHand());
+    }
 }
