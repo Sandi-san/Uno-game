@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
 import { CardService } from './card.service';
 import { Card, Prisma } from '@prisma/client';
 import { CreateCardDto } from './dto/create-card.dto';
@@ -14,17 +14,17 @@ export class CardController {
     }
   
     @Get(':id')
-    async getCard(@Param('id') id: number): Promise<Card> {
+    async getCard(@Param('id', ParseIntPipe) id: number): Promise<Card> {
       return this.cardService.get(id);
     }
   
     @Patch(':id')
-    async updateCard(@Param('id') id: number, @Body() data: Prisma.CardUpdateInput): Promise<Card> {
+    async updateCard(@Param('id', ParseIntPipe) id: number, @Body() data: Prisma.CardUpdateInput): Promise<Card> {
       return this.cardService.update(id, data);
     }
   
     @Delete(':id')
-    async deleteCard(@Param('id') id: number): Promise<Card> {
+    async deleteCard(@Param('id', ParseIntPipe) id: number): Promise<Card> {
       return this.cardService.delete(id);
     }
 }

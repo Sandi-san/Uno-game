@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
 import { PlayerService } from './player.service';
 import { Player, Prisma } from '@prisma/client';
 import { CreatePlayerDto } from './dto/create-player.dto';
@@ -15,7 +15,7 @@ export class PlayerController {
     }
   
     @Get(':id')
-    async getPlayer(@Param('id') id: number): Promise<Player> {
+    async getPlayer(@Param('id', ParseIntPipe) id: number): Promise<Player> {
       return this.playerService.get(id);
     }
   
@@ -27,13 +27,13 @@ export class PlayerController {
 
     /*
     @Patch(':id')
-    async updatePlayer(@Param('id') id: number, @Body() data: UpdatePlayerDto): Promise<Player> {
+    async updatePlayer(@Param('id', ParseIntPipe) id: number, @Body() data: UpdatePlayerDto): Promise<Player> {
       return this.playerService.update(id, data);
     }
     */
   
     @Delete(':id')
-    async deletePlayer(@Param('id') id: number): Promise<Player> {
+    async deletePlayer(@Param('id', ParseIntPipe) id: number): Promise<Player> {
       return this.playerService.delete(id);
     }
 }

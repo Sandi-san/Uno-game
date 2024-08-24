@@ -117,7 +117,8 @@ export class PlayerService {
   }
 
   //update one player's data & gameId
-  async update(dto: UpdatePlayerDto, gameId: number): Promise<Player> {
+  async update(dto: UpdatePlayerDto, gameId: number): 
+  Promise<(Player & { hand: Hand & { cards: Card[] } })> {
     const player = await this.get(dto.id)
 
     if (!player)

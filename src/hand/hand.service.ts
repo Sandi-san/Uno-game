@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
-import { Hand, Prisma } from '@prisma/client';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { Card, Hand, Player, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateHandDto } from './dto/create-hand.dto';
 import { CreateCardDto } from 'src/card/dto/create-card.dto';
 import { PlayerService } from 'src/player/player.service';
 import { CreatePlayerDto } from 'src/player/dto/create-player.dto';
+import { UpdatePlayerDto } from 'src/player/dto/update-player.dto';
 
 @Injectable()
 export class HandService {
@@ -47,6 +48,44 @@ export class HandService {
         });
       }
     
+      //update hands for specific game 
+      async updateForGame(gameId: number, dtoPlayers: UpdatePlayerDto[], 
+        gamePlayers: (Player & { hand: Hand & { cards: Card[] } })[]): Promise<void> {
+        for (const playerDto of dtoPlayers) {
+          const player = gamePlayers.find(p => p.id === playerDto.id);
+          if (!player) throw new BadRequestException(`Player with id ${playerDto.id} not found`);
+      
+          const newCardIds = playerDto.hand.cards
+          .filter(card => card && card.id !== undefined)
+          .map(card => card.id);
+          const existingCardIds = player.hand.cards
+          .filter(card => card && card.id !== undefined)
+          .map(card => card.id);
+      
+          // Disconnect removed cards
+          await this.prisma.hand.update({
+            where: { id: player.hand.id },
+            data: {
+              cards: {
+                disconnect: existingCardIds
+                .filter(id => !newCardIds.includes(id)).map(id => ({ id })),
+              },
+            },
+          });
+      
+          // Connect new cards
+          await this.prisma.hand.update({
+            where: { id: player.hand.id },
+            data: {
+              cards: {
+                connect: newCardIds
+                .filter(id => !existingCardIds.includes(id)).map(id => ({ id })),
+              },
+            },
+          });
+        }
+      }
+
       async delete(id: number): Promise<Hand> {
         return this.prisma.hand.delete({
           where: { id },

@@ -24,7 +24,7 @@ Content-Type: application/json
 
 ## GET GAME
 ### POST /auth/register
-GET http://localhost:3000/game/46 HTTP/1.1
+GET http://localhost:3000/game/85 HTTP/1.1
 Content-Type: application/json
 
 
@@ -42,363 +42,348 @@ Content-Type: application/json
   "id": 0,
   "decks": [
     {
-      "size": 104,
-      "cards": [
-        null
-      ]
-    },
-    {
-      "size": 104,
-      "cards": [
-        null
-      ]
-    }
-  ],
-  "players": [
-    {
-      "id": 28,
-      "name": "Nick2",
-      "score": 0,
-      "hand": {
-        "indexFirst": 0,
-        "indexLast": -1,
-        "cards": [
-			{
-				"priority": 1,
-				"value": 6,
-				"color": "B",
-				"texture": "blue6"
-			},
-			null
-        ]
-      }
-    },
-    null
-  ],
-  "maxPlayers": 2,
-  "topCard": {
-    "priority": 1,
-    "value": 6,
-    "color": "B",
-    "texture": "blue6"
-  }
-}
-
-## UPDATE GAME
-### POST /auth/register
-PUT http://localhost:3000/game/75 HTTP/1.1
-Content-Type: application/json
-
-{
-  "id": 76,
-  "decks": [
-    {
-      "id": 145,
+      "id": 0,
       "size": 52,
       "cards": [
         {
-          "id": 4675,
-          "priority": 6,
-          "value": 50,
-          "color": "-",
-          "texture": "rainbow"
-        },
-        {
-          "id": 4676,
-          "priority": 1,
-          "value": 8,
-          "color": "G",
-          "texture": "green8"
-        },
-        {
-          "id": 4677,
-          "priority": 1,
-          "value": 3,
-          "color": "R",
-          "texture": "red3"
-        },
-        {
-          "id": 4678,
-          "priority": 1,
-          "value": 6,
-          "color": "R",
-          "texture": "red6"
-        },
-        {
-          "id": 4679,
-          "priority": 1,
-          "value": 4,
-          "color": "R",
-          "texture": "red4"
-        },
-        {
-          "id": 4680,
-          "priority": 4,
-          "value": 20,
-          "color": "B-R",
-          "texture": "plus2blueRed"
-        },
-        {
-          "id": 4681,
-          "priority": 1,
-          "value": 9,
-          "color": "R",
-          "texture": "red9"
-        },
-        {
-          "id": 4682,
-          "priority": 1,
-          "value": 2,
-          "color": "B",
-          "texture": "blue2"
-        },
-        {
-          "id": 4683,
-          "priority": 1,
-          "value": 1,
-          "color": "R",
-          "texture": "red1"
-        },
-        {
-          "id": 4684,
-          "priority": 1,
-          "value": 7,
-          "color": "G",
-          "texture": "green7"
-        },
-        {
-          "id": 4685,
-          "priority": 1,
-          "value": 8,
-          "color": "R",
-          "texture": "red8"
-        },
-        {
-          "id": 4686,
-          "priority": 1,
-          "value": 3,
-          "color": "G",
-          "texture": "green3"
-        },
-        {
-          "id": 4687,
-          "priority": 4,
-          "value": 20,
-          "color": "G-Y",
-          "texture": "plus2greenYellow"
-        },
-        {
-          "id": 4688,
-          "priority": 1,
-          "value": 7,
-          "color": "B",
-          "texture": "blue7"
-        },
-        {
-          "id": 4689,
-          "priority": 1,
-          "value": 7,
-          "color": "Y",
-          "texture": "yellow7"
-        },
-        {
-          "id": 4690,
-          "priority": 1,
-          "value": 5,
-          "color": "Y",
-          "texture": "yellow5"
-        },
-        {
-          "id": 4691,
-          "priority": 1,
-          "value": 6,
-          "color": "B",
-          "texture": "blue6"
-        },
-        {
-          "id": 4692,
-          "priority": 1,
-          "value": 2,
-          "color": "R",
-          "texture": "red2"
-        },
-        {
-          "id": 4693,
-          "priority": 1,
-          "value": 4,
-          "color": "Y",
-          "texture": "yellow4"
-        },
-        {
-          "id": 4694,
-          "priority": 5,
-          "value": 20,
-          "color": "Y",
-          "texture": "plus2yellow"
-        },
-        {
-          "id": 4695,
-          "priority": 3,
-          "value": 20,
-          "color": "Y",
-          "texture": "yellowReverse"
-        },
-        {
-          "id": 4696,
-          "priority": 6,
-          "value": 50,
-          "color": "-",
-          "texture": "plus4"
-        },
-        {
-          "id": 4697,
-          "priority": 1,
-          "value": 4,
-          "color": "G",
-          "texture": "green4"
-        },
-        {
-          "id": 4698,
-          "priority": 1,
-          "value": 1,
-          "color": "G",
-          "texture": "green1"
-        },
-        {
-          "id": 4699,
-          "priority": 1,
-          "value": 2,
-          "color": "Y",
-          "texture": "yellow2"
-        },
-        {
-          "id": 4700,
+          "id": 0,
           "priority": 1,
           "value": 1,
           "color": "B",
           "texture": "blue1"
         },
         {
-          "id": 4701,
+          "id": 0,
+          "priority": 1,
+          "value": 8,
+          "color": "G",
+          "texture": "green8"
+        },
+        {
+          "id": 0,
           "priority": 1,
           "value": 6,
-          "color": "Y",
-          "texture": "yellow6"
+          "color": "R",
+          "texture": "red6"
         },
         {
-          "id": 4702,
+          "id": 0,
+          "priority": 4,
+          "value": 20,
+          "color": "G-Y",
+          "texture": "plus2greenYellow"
+        },
+        {
+          "id": 0,
+          "priority": 6,
+          "value": 50,
+          "color": "-",
+          "texture": "rainbow"
+        },
+        {
+          "id": 0,
+          "priority": 1,
+          "value": 1,
+          "color": "Y",
+          "texture": "yellow1"
+        },
+        {
+          "id": 0,
           "priority": 1,
           "value": 4,
-          "color": "B",
-          "texture": "blue4"
+          "color": "Y",
+          "texture": "yellow4"
         },
         {
-          "id": 4703,
-          "priority": 1,
-          "value": 9,
-          "color": "G",
-          "texture": "green9"
-        },
-        {
-          "id": 4704,
-          "priority": 3,
+          "id": 0,
+          "priority": 2,
           "value": 20,
-          "color": "B",
-          "texture": "blueReverse"
+          "color": "G",
+          "texture": "stopGreen"
         },
         {
-          "id": 4705,
+          "id": 0,
+          "priority": 1,
+          "value": 3,
+          "color": "R",
+          "texture": "red3"
+        },
+        {
+          "id": 0,
           "priority": 5,
           "value": 20,
-          "color": "R",
-          "texture": "plus2red"
+          "color": "B",
+          "texture": "plus2blue"
         },
         {
-          "id": 4706,
+          "id": 0,
           "priority": 1,
-          "value": 7,
-          "color": "R",
-          "texture": "red7"
+          "value": 6,
+          "color": "B",
+          "texture": "blue6"
         },
         {
-          "id": 4707,
-          "priority": 3,
-          "value": 20,
-          "color": "G",
-          "texture": "greenReverse"
-        },
-        {
-          "id": 4708,
+          "id": 0,
           "priority": 1,
           "value": 9,
-          "color": "Y",
-          "texture": "yellow9"
+          "color": "R",
+          "texture": "red9"
         },
         {
-          "id": 4709,
+          "id": 0,
+          "priority": 1,
+          "value": 5,
+          "color": "Y",
+          "texture": "yellow5"
+        },
+        {
+          "id": 0,
+          "priority": 1,
+          "value": 6,
+          "color": "G",
+          "texture": "green6"
+        },
+        {
+          "id": 0,
+          "priority": 1,
+          "value": 1,
+          "color": "G",
+          "texture": "green1"
+        },
+        {
+          "id": 0,
+          "priority": 1,
+          "value": 9,
+          "color": "B",
+          "texture": "blue9"
+        },
+        {
+          "id": 0,
           "priority": 5,
           "value": 20,
           "color": "G",
           "texture": "plus2green"
         },
         {
-          "id": 4710,
-          "priority": 2,
-          "value": 20,
+          "id": 0,
+          "priority": 1,
+          "value": 5,
           "color": "R",
-          "texture": "stopRed"
+          "texture": "red5"
         },
         {
-          "id": 4711,
+          "id": 0,
+          "priority": 4,
+          "value": 20,
+          "color": "B-R",
+          "texture": "plus2blueRed"
+        },
+        {
+          "id": 0,
+          "priority": 1,
+          "value": 9,
+          "color": "G",
+          "texture": "green9"
+        },
+        {
+          "id": 0,
+          "priority": 1,
+          "value": 2,
+          "color": "Y",
+          "texture": "yellow2"
+        },
+        {
+          "id": 0,
+          "priority": 1,
+          "value": 1,
+          "color": "R",
+          "texture": "red1"
+        },
+        {
+          "id": 0,
+          "priority": 3,
+          "value": 20,
+          "color": "R",
+          "texture": "redReverse"
+        },
+        {
+          "id": 0,
+          "priority": 2,
+          "value": 20,
+          "color": "Y",
+          "texture": "stopYellow"
+        },
+        {
+          "id": 0,
+          "priority": 1,
+          "value": 7,
+          "color": "B",
+          "texture": "blue7"
+        },
+        {
+          "id": 0,
+          "priority": 1,
+          "value": 6,
+          "color": "Y",
+          "texture": "yellow6"
+        },
+        {
+          "id": 0,
+          "priority": 1,
+          "value": 3,
+          "color": "B",
+          "texture": "blue3"
+        },
+        {
+          "id": 0,
           "priority": 1,
           "value": 5,
           "color": "G",
           "texture": "green5"
         },
         {
-          "id": 4712,
+          "id": 0,
+          "priority": 1,
+          "value": 4,
+          "color": "B",
+          "texture": "blue4"
+        },
+        {
+          "id": 0,
+          "priority": 3,
+          "value": 20,
+          "color": "B",
+          "texture": "blueReverse"
+        },
+        {
+          "id": 0,
+          "priority": 1,
+          "value": 2,
+          "color": "B",
+          "texture": "blue2"
+        },
+        {
+          "id": 0,
+          "priority": 3,
+          "value": 20,
+          "color": "G",
+          "texture": "greenReverse"
+        },
+        {
+          "id": 0,
+          "priority": 2,
+          "value": 20,
+          "color": "R",
+          "texture": "stopRed"
+        },
+        {
+          "id": 0,
           "priority": 1,
           "value": 8,
           "color": "Y",
           "texture": "yellow8"
         },
         {
-          "id": 4713,
-          "priority": 2,
-          "value": 20,
-          "color": "B",
-          "texture": "stopBlue"
+          "id": 0,
+          "priority": 1,
+          "value": 8,
+          "color": "R",
+          "texture": "red8"
         },
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
+        {
+          "id": 0,
+          "priority": 1,
+          "value": 7,
+          "color": "Y",
+          "texture": "yellow7"
+        },
+        {
+          "id": 0,
+          "priority": 1,
+          "value": 7,
+          "color": "G",
+          "texture": "green7"
+        },
+        {
+          "id": 0,
+          "priority": 1,
+          "value": 4,
+          "color": "R",
+          "texture": "red4"
+        },
+        {
+          "id": 0,
+          "priority": 1,
+          "value": 3,
+          "color": "Y",
+          "texture": "yellow3"
+        },
+        {
+          "id": 0,
+          "priority": 1,
+          "value": 3,
+          "color": "G",
+          "texture": "green3"
+        },
+        {
+          "id": 0,
+          "priority": 1,
+          "value": 2,
+          "color": "R",
+          "texture": "red2"
+        },
+        {
+          "id": 0,
+          "priority": 1,
+          "value": 4,
+          "color": "G",
+          "texture": "green4"
+        },
+        {
+          "id": 0,
+          "priority": 1,
+          "value": 7,
+          "color": "R",
+          "texture": "red7"
+        },
+        {
+          "id": 0,
+          "priority": 1,
+          "value": 2,
+          "color": "G",
+          "texture": "green2"
+        },
+        {
+          "id": 0,
+          "priority": 5,
+          "value": 20,
+          "color": "R",
+          "texture": "plus2red"
+        },
+        {
+          "id": 0,
+          "priority": 5,
+          "value": 20,
+          "color": "Y",
+          "texture": "plus2yellow"
+        },
         null,
         null,
         null
       ]
     },
     {
-      "id": 146,
+      "id": 0,
       "size": 52,
       "cards": [
         {
-          "id": 4721,
+          "id": 0,
           "priority": 1,
-          "value": 5,
-          "color": "B",
-          "texture": "blue5"
+          "value": 9,
+          "color": "Y",
+          "texture": "yellow9"
         },
-        {
-          "id": 4722,
-          "priority": 5,
-          "value": 20,
-          "color": "B",
-          "texture": "plus2blue"
-        },
+        null,
         null,
         null,
         null,
@@ -422,164 +407,642 @@ Content-Type: application/json
       "name": "Nick1",
       "score": 0,
       "hand": {
-        "id": 51,
+        "id": 0,
         "indexFirst": 0,
         "indexLast": 4,
         "cards": [
           {
-            "id": 4723,
-            "priority": 1,
-            "value": 2,
-            "color": "G",
-            "texture": "green2"
+            "id": 0,
+            "priority": 6,
+            "value": 50,
+            "color": "-",
+            "texture": "plus4"
           },
           {
-            "id": 4724,
-            "priority": 1,
-            "value": 3,
-            "color": "Y",
-            "texture": "yellow3"
-          },
-          {
-            "id": 4725,
-            "priority": 1,
-            "value": 1,
-            "color": "Y",
-            "texture": "yellow1"
-          },
-          {
-            "id": 4726,
-            "priority": 3,
-            "value": 20,
-            "color": "R",
-            "texture": "redReverse"
-          },
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null
-        ]
-      }
-    },
-    {
-      "id": 37,
-      "name": "Nick2",
-      "score": 0,
-      "hand": {
-        "id": 0,
-        "indexFirst": 0,
-        "indexLast": 6,
-        "cards": [
-          {
-            "id": 4720,
-            "priority": 2,
-            "value": 20,
-            "color": "G",
-            "texture": "stopGreen"
-          },
-          {
-            "id": 4719,
-            "priority": 1,
-            "value": 5,
-            "color": "R",
-            "texture": "red5"
-          },
-          {
-            "id": 4718,
+            "id": 0,
             "priority": 1,
             "value": 8,
             "color": "B",
             "texture": "blue8"
           },
           {
-            "id": 4717,
-            "priority": 1,
-            "value": 6,
-            "color": "G",
-            "texture": "green6"
-          },
-          {
-            "id": 4716,
+            "id": 0,
             "priority": 2,
             "value": 20,
+            "color": "B",
+            "texture": "stopBlue"
+          },
+          {
+            "id": 0,
+            "priority": 3,
+            "value": 20,
             "color": "Y",
-            "texture": "stopYellow"
+            "texture": "yellowReverse"
           },
           {
-            "id": 4715,
+            "id": 0,
             "priority": 1,
-            "value": 9,
+            "value": 5,
             "color": "B",
-            "texture": "blue9"
+            "texture": "blue5"
           },
-          {
-            "id": 4714,
-            "priority": 1,
-            "value": 3,
-            "color": "B",
-            "texture": "blue3"
-          },
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
           null
+        ]
+      }
+    },
+    null
+  ],
+  "maxPlayers": 2,
+  "gameState": "Initializing",
+  "currentTurn": 1,
+  "turnOrder": "Clockwise"
+}
+
+## GET GAME PLAYERS
+### POST /auth/register
+GET http://localhost:3000/game/85/players HTTP/1.1
+Content-Type: application/json
+
+## UPDATE GAME PLAYERS (ADD PLAYER TO GAME)
+### POST /auth/register
+PUT http://localhost:3000/game/85/players HTTP/1.1
+Content-Type: application/json
+
+{
+  "id": 37,
+  "name": "Nick2",
+  "score": 0,
+  "hand": {
+    "id": 0,
+    "indexFirst": 0,
+    "indexLast": 4,
+    "cards": [
+      {
+      "id": 5242,
+      "handId": null,
+      "priority": 1,
+      "value": 4,
+      "color": "G",
+      "texture": "green4"
+      },
+      {
+        "id": 5243,
+        "handId": null,
+        "priority": 1,
+        "value": 7,
+        "color": "R",
+        "texture": "red7"
+      },
+      {
+        "id": 5244,
+        "handId": null,
+        "priority": 1,
+        "value": 2,
+        "color": "G",
+        "texture": "green2"
+      },
+      {
+        "id": 5245,
+        "handId": null,
+        "priority": 5,
+        "value": 20,
+        "color": "R",
+        "texture": "plus2red"
+      },
+      {
+        "id": 5246,
+        "handId": null,
+        "priority": 5,
+        "value": 20,
+        "color": "Y",
+        "texture": "plus2yellow"
+      },
+      null
+    ]
+  }
+}
+
+## UPDATE GAME
+### POST /auth/register
+PUT http://localhost:3000/game/83 HTTP/1.1
+Content-Type: application/json
+
+{
+  "id": 83,
+  "decks": [
+    {
+      "id": 159,
+      "gameId": 83,
+      "size": 52,
+      "cards": [
+        {
+          "id": 5097,
+          "handId": null,
+          "priority": 1,
+          "value": 1,
+          "color": "B",
+          "texture": "blue1"
+        },
+        {
+          "id": 5098,
+          "handId": null,
+          "priority": 1,
+          "value": 8,
+          "color": "G",
+          "texture": "green8"
+        },
+        {
+          "id": 5099,
+          "handId": null,
+          "priority": 1,
+          "value": 6,
+          "color": "R",
+          "texture": "red6"
+        },
+        {
+          "id": 5100,
+          "handId": null,
+          "priority": 4,
+          "value": 20,
+          "color": "G-Y",
+          "texture": "plus2greenYellow"
+        },
+        {
+          "id": 5101,
+          "handId": null,
+          "priority": 6,
+          "value": 50,
+          "color": "-",
+          "texture": "rainbow"
+        },
+        {
+          "id": 5102,
+          "handId": null,
+          "priority": 1,
+          "value": 1,
+          "color": "Y",
+          "texture": "yellow1"
+        },
+        {
+          "id": 5103,
+          "handId": null,
+          "priority": 1,
+          "value": 4,
+          "color": "Y",
+          "texture": "yellow4"
+        },
+        {
+          "id": 5104,
+          "handId": null,
+          "priority": 2,
+          "value": 20,
+          "color": "G",
+          "texture": "stopGreen"
+        },
+        {
+          "id": 5105,
+          "handId": null,
+          "priority": 1,
+          "value": 3,
+          "color": "R",
+          "texture": "red3"
+        },
+        {
+          "id": 5106,
+          "handId": null,
+          "priority": 5,
+          "value": 20,
+          "color": "B",
+          "texture": "plus2blue"
+        },
+        {
+          "id": 5107,
+          "handId": null,
+          "priority": 1,
+          "value": 6,
+          "color": "B",
+          "texture": "blue6"
+        },
+        {
+          "id": 5108,
+          "handId": null,
+          "priority": 1,
+          "value": 9,
+          "color": "R",
+          "texture": "red9"
+        },
+        {
+          "id": 5109,
+          "handId": null,
+          "priority": 1,
+          "value": 5,
+          "color": "Y",
+          "texture": "yellow5"
+        },
+        {
+          "id": 5110,
+          "handId": null,
+          "priority": 1,
+          "value": 6,
+          "color": "G",
+          "texture": "green6"
+        },
+        {
+          "id": 5111,
+          "handId": null,
+          "priority": 1,
+          "value": 1,
+          "color": "G",
+          "texture": "green1"
+        },
+        {
+          "id": 5112,
+          "handId": null,
+          "priority": 1,
+          "value": 9,
+          "color": "B",
+          "texture": "blue9"
+        },
+        {
+          "id": 5113,
+          "handId": null,
+          "priority": 5,
+          "value": 20,
+          "color": "G",
+          "texture": "plus2green"
+        },
+        {
+          "id": 5114,
+          "handId": null,
+          "priority": 1,
+          "value": 5,
+          "color": "R",
+          "texture": "red5"
+        },
+        {
+          "id": 5115,
+          "handId": null,
+          "priority": 4,
+          "value": 20,
+          "color": "B-R",
+          "texture": "plus2blueRed"
+        },
+        {
+          "id": 5116,
+          "handId": null,
+          "priority": 1,
+          "value": 9,
+          "color": "G",
+          "texture": "green9"
+        },
+        {
+          "id": 5117,
+          "handId": null,
+          "priority": 1,
+          "value": 2,
+          "color": "Y",
+          "texture": "yellow2"
+        },
+        {
+          "id": 5118,
+          "handId": null,
+          "priority": 1,
+          "value": 1,
+          "color": "R",
+          "texture": "red1"
+        },
+        {
+          "id": 5119,
+          "handId": null,
+          "priority": 3,
+          "value": 20,
+          "color": "R",
+          "texture": "redReverse"
+        },
+        {
+          "id": 5120,
+          "handId": null,
+          "priority": 2,
+          "value": 20,
+          "color": "Y",
+          "texture": "stopYellow"
+        },
+        {
+          "id": 5121,
+          "handId": null,
+          "priority": 1,
+          "value": 7,
+          "color": "B",
+          "texture": "blue7"
+        },
+        {
+          "id": 5122,
+          "handId": null,
+          "priority": 1,
+          "value": 6,
+          "color": "Y",
+          "texture": "yellow6"
+        },
+        {
+          "id": 5123,
+          "handId": null,
+          "priority": 1,
+          "value": 3,
+          "color": "B",
+          "texture": "blue3"
+        },
+        {
+          "id": 5124,
+          "handId": null,
+          "priority": 1,
+          "value": 5,
+          "color": "G",
+          "texture": "green5"
+        },
+        {
+          "id": 5125,
+          "handId": null,
+          "priority": 1,
+          "value": 4,
+          "color": "B",
+          "texture": "blue4"
+        },
+        {
+          "id": 5126,
+          "handId": null,
+          "priority": 3,
+          "value": 20,
+          "color": "B",
+          "texture": "blueReverse"
+        },
+        {
+          "id": 5127,
+          "handId": null,
+          "priority": 1,
+          "value": 2,
+          "color": "B",
+          "texture": "blue2"
+        },
+        {
+          "id": 5128,
+          "handId": null,
+          "priority": 3,
+          "value": 20,
+          "color": "G",
+          "texture": "greenReverse"
+        },
+        {
+          "id": 5129,
+          "handId": null,
+          "priority": 2,
+          "value": 20,
+          "color": "R",
+          "texture": "stopRed"
+        },
+        {
+          "id": 5130,
+          "handId": null,
+          "priority": 1,
+          "value": 8,
+          "color": "Y",
+          "texture": "yellow8"
+        },
+        {
+          "id": 5131,
+          "handId": null,
+          "priority": 1,
+          "value": 8,
+          "color": "R",
+          "texture": "red8"
+        },
+        {
+          "id": 5132,
+          "handId": null,
+          "priority": 1,
+          "value": 7,
+          "color": "Y",
+          "texture": "yellow7"
+        },
+        {
+          "id": 5133,
+          "handId": null,
+          "priority": 1,
+          "value": 7,
+          "color": "G",
+          "texture": "green7"
+        },
+        {
+          "id": 5134,
+          "handId": null,
+          "priority": 1,
+          "value": 4,
+          "color": "R",
+          "texture": "red4"
+        },
+        {
+          "id": 5135,
+          "handId": null,
+          "priority": 1,
+          "value": 3,
+          "color": "Y",
+          "texture": "yellow3"
+        },
+        {
+          "id": 5136,
+          "handId": null,
+          "priority": 1,
+          "value": 3,
+          "color": "G",
+          "texture": "green3"
+        },
+        {
+          "id": 5137,
+          "handId": null,
+          "priority": 1,
+          "value": 2,
+          "color": "R",
+          "texture": "red2"
+        },
+        {
+          "id": 5138,
+          "handId": 58,
+          "priority": 1,
+          "value": 4,
+          "color": "G",
+          "texture": "green4"
+        }
+      ]
+    },
+    {
+      "id": 160,
+      "gameId": 83,
+      "size": 52,
+      "cards": [
+        {
+          "id": 5143,
+          "handId": null,
+          "priority": 1,
+          "value": 9,
+          "color": "Y",
+          "texture": "yellow9"
+        },
+        {
+          "id": 5144,
+          "handId": 56,
+          "priority": 6,
+          "value": 50,
+          "color": "-",
+          "texture": "plus4"
+        }
+      ]
+    }
+  ],
+  "players": [
+    {
+      "id": 28,
+      "gameId": 83,
+      "createdAt": "2024-08-11T12:46:04.607Z",
+      "joinedAt": "2024-08-24T10:52:26.345Z",
+      "name": "Nick1",
+      "score": 0,
+      "hand": {
+        "id": 56,
+        "playerId": 28,
+        "indexFirst": 0,
+        "indexLast": 4,
+        "cards": [
+          {
+            "id": 5145,
+            "handId": 56,
+            "priority": 1,
+            "value": 8,
+            "color": "B",
+            "texture": "blue8"
+          },
+          {
+            "id": 5146,
+            "handId": 56,
+            "priority": 2,
+            "value": 20,
+            "color": "B",
+            "texture": "stopBlue"
+          },
+          {
+            "id": 5147,
+            "handId": 56,
+            "priority": 3,
+            "value": 20,
+            "color": "Y",
+            "texture": "yellowReverse"
+          },
+          {
+            "id": 5148,
+            "handId": 56,
+            "priority": 1,
+            "value": 5,
+            "color": "B",
+            "texture": "blue5"
+          }
+        ]
+      }
+    },
+    {
+      "id": 37,
+      "gameId": 83,
+      "createdAt": "2024-08-12T15:23:53.234Z",
+      "joinedAt": "2024-08-24T13:34:47.362Z",
+      "name": "Nick2",
+      "score": 0,
+      "hand": {
+        "id": 58,
+        "playerId": 37,
+        "indexFirst": 0,
+        "indexLast": 4,
+        "cards": [
+          {
+            "id": 5138,
+            "handId": 58,
+            "priority": 1,
+            "value": 4,
+            "color": "G",
+            "texture": "green4"
+          },
+          {
+            "id": 5139,
+            "handId": 58,
+            "priority": 1,
+            "value": 7,
+            "color": "R",
+            "texture": "red7"
+          },
+          {
+            "id": 5140,
+            "handId": 58,
+            "priority": 1,
+            "value": 2,
+            "color": "G",
+            "texture": "green2"
+          },
+          {
+            "id": 5141,
+            "handId": 58,
+            "priority": 5,
+            "value": 20,
+            "color": "R",
+            "texture": "plus2red"
+          },
+          {
+            "id": 5142,
+            "handId": 58,
+            "priority": 5,
+            "value": 20,
+            "color": "Y",
+            "texture": "plus2yellow"
+          },
+          {
+            "id": 5139,
+            "handId": 58,
+            "priority": 1,
+            "value": 7,
+            "color": "R",
+            "texture": "red7"
+          },
+          {
+            "id": 5140,
+            "handId": 58,
+            "priority": 1,
+            "value": 2,
+            "color": "G",
+            "texture": "green2"
+          },
+          {
+            "id": 5141,
+            "handId": 58,
+            "priority": 5,
+            "value": 20,
+            "color": "R",
+            "texture": "plus2red"
+          },
+          {
+            "id": 5142,
+            "handId": 58,
+            "priority": 5,
+            "value": 20,
+            "color": "Y",
+            "texture": "plus2yellow"
+          }
         ]
       }
     }
   ],
   "maxPlayers": 2,
-  "topCard": {
-    "id": 4722,
-    "priority": 5,
-    "value": 20,
-    "color": "B",
-    "texture": "plus2blue"
-  },
   "gameState": "Running",
   "currentTurn": 2,
   "turnOrder": "Clockwise"
 }
 
 
-
-## GET GAME PLAYERS
+## GET DECK
 ### POST /auth/register
-GET http://localhost:3000/game/46/players HTTP/1.1
+GET http://localhost:3000/deck/163 HTTP/1.1
 Content-Type: application/json
-
-## UPDATE GAME PLAYERS
-### POST /auth/register
-PUT http://localhost:3000/game/46/players HTTP/1.1
-Content-Type: application/json
-
-{
-  "id": 41,
-  "name": "Bleh",
-  "score": 0,
-  "hand": {
-    "indexFirst": 0,
-    "indexLast": -1,
-    "cards": [
-      {
-        "priority": 1,
-        "value": 7,
-        "color": "Y",
-        "texture": "yellow7"
-      },
-      null
-    ]
-  }
-}

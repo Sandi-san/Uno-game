@@ -10,7 +10,6 @@ export class CreateGameDto {
   decks: DeckDto[];
   players: PlayerDto[];
   maxPlayers?: number;
-  topCard?: Card;
   gameState: string;
   currentTurn: number;
   turnOrder: string;
@@ -25,10 +24,6 @@ export class CreateGameDto {
   @IsNumber()
   @IsOptional()
   maxPlayers?: number;
-
-  @IsObject()
-  @IsOptional()
-  topCard?: Card;
 
   @IsString()
   gameState: string;

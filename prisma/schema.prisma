@@ -14,8 +14,6 @@ model Game {
   decks       Deck[]
   players     Player[]
   maxPlayers  Int      @default(4)
-  topCard     Card?    @relation(fields: [topCardId], references: [id])
-  topCardId   Int?
   gameState   String   @default("Paused")
   currentTurn Int      @default(1) //currentPlayer's turn
   turnOrder   String   @default("Clockwise")
@@ -59,5 +57,4 @@ model Card {
   texture  String
 
   Deck Deck[]
-  Game Game[]
 }
