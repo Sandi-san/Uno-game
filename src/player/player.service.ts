@@ -116,7 +116,7 @@ export class PlayerService {
     return updatedPlayers;
   }
 
-  //update one player's data & gameId
+  //update one player's data (Hands) & gameId
   async update(dto: UpdatePlayerDto, gameId: number): 
   Promise<(Player & { hand: Hand & { cards: Card[] } })> {
     const player = await this.get(dto.id)

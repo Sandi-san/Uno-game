@@ -46,8 +46,7 @@ export class GameService {
               where: { id: player.id || 0 }, // Ensure player.id is valid
               create: {
                 name: player.name,
-                score: player.score,
-                joinedAt: new Date()
+                score: player.score
               },
             })),
         },
@@ -64,7 +63,10 @@ export class GameService {
         // Update gameId
         await this.prisma.player.update({
           where: { id: player.id },
-          data: { gameId: game.id },
+          data: { 
+            gameId: game.id, 
+            joinedAt: new Date()
+           },
         });
 
         // If hand data is provided, handle the hand creation or update
@@ -102,7 +104,7 @@ export class GameService {
       }
     }
 
-    const newGame = this.get(game.id);
+    const newGame = await this.get(game.id);
     console.log('GAME CREATED:', newGame);
     return newGame;
   }
@@ -164,7 +166,7 @@ export class GameService {
         */
       },
     })
-    console.log(game)
+    console.log("GAME:",game)
     return game
   }
 
@@ -192,17 +194,20 @@ export class GameService {
     return players
   }
 
-  async getTurn(id: number): Promise<number | null> {
+  //TODO: get 2nd Deck of game (discard Deck and return)
+  async getTurnAndDiscardDeck(id: number): Promise<
+  Game | null> {
     const game = await this.prisma.game.findUnique({
-      where: { id }
+      where: { id },
+      include: {decks:{include:{cards:true}}}
     })
 
     if (!game)
       throw new BadRequestException(`Id ${id} is invalid!`);
 
-    const turn = game.currentTurn
-    console.log("TURN:", turn)
-    return turn
+    const topCard = game.decks[1].cards.pop()
+    console.log(`TURN: ${game.currentTurn} TOPCARD: ${topCard.texture} STATE: ${game.gameState}`)
+    return game
   }
 
   //GET function, return only deck, player and hand ids
@@ -229,7 +234,7 @@ export class GameService {
         },
       },
     })
-    console.log(game)
+    //console.log(game)
     return game
   }
 
@@ -319,7 +324,7 @@ export class GameService {
           cards: updatedPlayer.hand.cards,
           gameId: id
         }
-        console.log("DECK:", deckDto)
+        //console.log("DECK:", deckDto)
         //remove cards from the decks that are now in player's hand
         await this.deckService.updateRemoveCards(deckDto)
       }
