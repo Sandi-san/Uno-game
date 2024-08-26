@@ -227,6 +227,8 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 checkForTurnChange(fetchedTurnAndDeck -> {
                     int fetchedTurn = fetchedTurnAndDeck.getCurrentTurn();
                     Deck discardDeck = fetchedTurnAndDeck.getDecks()[1];
+                    if(Objects.equals(fetchedTurnAndDeck.getGameState(), "Over"))
+                        state = State.Over;
                     Gdx.app.log("TURN FETCH", "Player: " + localPlayerId + " is waiting for turn...");
                     //fetched turn is valid
                     if (fetchedTurn != 0 && !discardDeck.isEmpty()) {
@@ -250,20 +252,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         }, 0, 5, TimeUnit.SECONDS); // Check every 3 seconds (completes within 3s)
     }
 
-    /**
-     * Class constructors
-     */
-    //CREATE GAME
-    public GameMultiplayerScreen(Uno game, Array<String> args) {
-        this.game = game;
-        assetManager = game.getAssetManager();
-        manager = game.getManager();
-        service = game.getService();
-        //Paused dokler ni 2 playerju
-        state = State.Initializing;
-        winner = Winner.None;
-
-        //TODO: posebej function
+    private void setMusicAndSounds() {
         //music on?
         if (manager.getMusicPref()) {
             game.stopMusic();
@@ -278,6 +267,22 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             sfxPickup = assetManager.get(AssetDescriptors.PICK_SOUND);
             sfxCollect = assetManager.get(AssetDescriptors.SET_SOUND);
         }
+    }
+
+    /**
+     * Class constructors
+     */
+    //CREATE GAME
+    public GameMultiplayerScreen(Uno game, Array<String> args) {
+        this.game = game;
+        assetManager = game.getAssetManager();
+        manager = game.getManager();
+        service = game.getService();
+        //Paused dokler ni 2 playerju
+        state = State.Initializing;
+        winner = Winner.None;
+
+        setMusicAndSounds();
 
         font = assetManager.get(AssetDescriptors.UI_FONT);
         batch = new SpriteBatch();
@@ -294,20 +299,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         state = State.Initializing;
         winner = Winner.None;
 
-        //music on?
-        if (manager.getMusicPref()) {
-            game.stopMusic();
-            game.setMusic(assetManager.get(AssetDescriptors.GAME_MUSIC_1));
-            game.playMusic();
-            game.setMusicVolume(manager.getMusicVolumePref());
-        } else {
-            game.stopMusic();
-        }
-        //sounds on?
-        if (manager.getSoundPref()) {
-            sfxPickup = assetManager.get(AssetDescriptors.PICK_SOUND);
-            sfxCollect = assetManager.get(AssetDescriptors.SET_SOUND);
-        }
+        setMusicAndSounds();
 
         font = assetManager.get(AssetDescriptors.UI_FONT);
         batch = new SpriteBatch();
@@ -338,6 +330,8 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                             //when fetching updated game, check if any players have to be added
                             if (!checkPlayersChanged(updatedGame.getPlayers()))
                                 startScheduler();
+                            //update game State before fetching from DB
+                            waitForPlayers();
                         }
 
                         @Override
@@ -741,7 +735,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     }
 
     //fetch player form DB and create new local player object and draw from deck
-    //TODO: DON'T CREATE PLAYER IF DRAWDECK SIZE IS LESS THAN 5 (throw exception)
     private Player createPlayerAndDraw(Player player) {
         Player thisPlayer = new Player(player.getId(), player.getName(), 0, new Hand());
         thisPlayer.getHand().pickCards(deckDraw, 5);
@@ -860,9 +853,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         hudViewport.update(width, height, true);
     }
 
-    //TODO: v handleInput, po vsakem actionu player-ja
-    // -> update Game v DB (ne player-jev), check ce se je pridruzil nov, etc.
-
     //check scheduler for retrieving players
     public boolean waitForPlayers() {
         int count = getPlayersSize();
@@ -874,7 +864,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         }
         //2 or more players: game can start
         //if (count >= 2 && state != State.Running) {
-        if(state == State.Paused)
+        if(state == State.Paused || state == State.Initializing)
             state = State.Running;
         return false;
     }
@@ -1523,7 +1513,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         if (state == State.Over) {
             stopScheduler();
             calcPoints();
-            updateGameData();
         }
     }
 
@@ -1561,7 +1550,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
          */
     }
 
-    public void playerLeaveGame(){
+    public void playerLeaveGame(int playerId, int gameId){
         //get player from playersData that is leaving (based on localId)
         Player currentPlayer = playersData.get(getIndexOfCurrentPlayer());
         //if game is over, dont add cards back into drawDeck
@@ -1597,11 +1586,8 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 Gdx.app.log("Button Clicked", "Exit button clicked!");
-                playerLeaveGame();
+                playerLeaveGame(localPlayerId,currentGameId);
                 game.setScreen(new MenuScreen(game));
-                //TODO: ko player leave-a game: delete Player from Game in affected ids
-                // (pozor: ne deletaj Player-je, le nullaj gameId in hand)
-
             }
         });
 

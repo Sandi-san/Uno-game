@@ -22,8 +22,6 @@ public class DeckSerializer implements JsonSerializer<Deck> {
         jsonObject.addProperty("id", deck.getId());
         jsonObject.addProperty("size", deck.getSize());
 
-        //TODO: does not filter null
-        // Get the filtered list of cards
         Array<Card> filteredCards = new Array<>();
         for (Card card : deck.getCards()) {
             if (card != null) {

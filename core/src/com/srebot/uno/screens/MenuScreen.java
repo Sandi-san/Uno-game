@@ -33,10 +33,12 @@ import com.srebot.uno.Uno;
 import com.srebot.uno.assets.AssetDescriptors;
 import com.srebot.uno.assets.RegionNames;
 import com.srebot.uno.classes.GameData;
+import com.srebot.uno.classes.Player;
 import com.srebot.uno.config.GameConfig;
 import com.srebot.uno.config.GameManager;
 import com.srebot.uno.config.GameService;
 
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MenuScreen extends ScreenAdapter {
@@ -322,16 +324,25 @@ public class MenuScreen extends ScreenAdapter {
                 if (!gamesList.getItems().isEmpty() && serverConnected.get()) {
                     GameData selectedGame = gamesList.getSelected();
                     if (selectedGame != null) {
-                        if(selectedGame.getPlayers().length>=4){
+                        Player[] gamePlayers = selectedGame.getPlayers();
+                        if(gamePlayers.length>=selectedGame.getMaxPlayers()){
                             Gdx.app.log("ERROR", "CANNOT JOIN GAME: " + selectedGame.getId()
                             +". PLAYER SLOTS ARE FULL.");
                             return;
                         }
+                        for(Player player : gamePlayers){
+                            if(Objects.equals(player.getName(), manager.getNamePref())) {
+                                Gdx.app.log("ERROR", "CANNOT JOIN GAME: " + selectedGame.getId()
+                                        + ". PLAYER WITH SAME NAME IS ALREADY PLAYING.");
+                                return;
+                            }
+                        }
+
                         Gdx.app.log("JOINING GAME", "JOINING GAME: " + selectedGame.getId());
                         game.setScreen(new GameMultiplayerScreen(game,selectedGame.getId(),manager.getNamePref()));
                     }
                 } else {
-                    Gdx.app.log("CANNOT CONNECT TO SERVER", "CANNOT JOIN GAME");
+                    Gdx.app.log("CANNOT JOIN GAME", "NO GAME SELECTED");
                 }
             }
         });

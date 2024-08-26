@@ -89,12 +89,11 @@ public enum CardValues {
         return textureName;
     }
 
-    //TODO: old card: yellowReverse; new color: red; output: redReverse
     public static String switchTexture(Card oldCard, Card newCard){
         int oldValue = oldCard.getValue();
         String newColor = newCard.getColor();
-        //old color je all ("-"), ker nimajo 4 colorjev, vrni default new color card
-        if(oldCard.getColor().equals("-")){
+        //old color is all ("-"), or dual color: no alt color exists, so return default new color card
+        if(oldCard.getColor().equals("-") || oldCard.getPriority()==4){
             switch (newColor) {
                 case "B":
                     return RegionNames.Bdefault;
@@ -217,6 +216,7 @@ public enum CardValues {
                 break;
             case 20:
                 int priority = oldCard.getPriority();
+                //stop
                 if(priority==2){
                     switch (newColor) {
                         case "B":
@@ -229,6 +229,20 @@ public enum CardValues {
                             return YS.textureName;
                     }
                 }
+                //reverse
+                else if(priority==3){
+                    switch (newColor) {
+                        case "B":
+                            return BR.textureName;
+                        case "R":
+                            return RR.textureName;
+                        case "G":
+                            return GR.textureName;
+                        case "Y":
+                            return YR.textureName;
+                    }
+                }
+                //plus2 - single color
                 else if(priority==5){
                     switch (newColor) {
                         case "B":
@@ -240,12 +254,6 @@ public enum CardValues {
                         case "Y":
                             return P2Y.textureName;
                     }
-                }
-                else{
-                    if(Objects.equals(oldCard.getColor(), "B-R"))
-                        return P2GY.textureName;
-                    else
-                        return P2BR.textureName;
                 }
                 break;
          }
