@@ -87,6 +87,7 @@ export class DeckService {
 
   //update decks for specific game 
   async updateForGame(gameId: number, dtoDecks: UpdateDeckDto[], gameDecks: (Deck & { cards: Card[] })[]): Promise<void> {
+    console.log(`Update Deck Discard ${dtoDecks[1].id}`,dtoDecks[1].cards)
     for (const deckDto of dtoDecks) {
       const deck = gameDecks.find(d => d.id === deckDto.id);
       if (!deck) throw new BadRequestException(`Deck with id ${deckDto.id} not found`);
@@ -125,6 +126,14 @@ export class DeckService {
   async delete(id: number): Promise<Deck> {
     return this.prisma.deck.delete({
       where: { id },
+    });
+  }
+
+  
+  async deleteMany(gameId: number): Promise<void> {
+    console.log("Deleting Decks of Game:",gameId)
+    await this.prisma.deck.deleteMany({
+      where: {gameId: gameId}
     });
   }
 }

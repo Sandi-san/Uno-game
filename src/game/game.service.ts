@@ -11,6 +11,7 @@ import { UpdateGameDto } from './dto/update-game.dto';
 import { CreatePlayerDto } from 'src/player/dto/create-player.dto';
 import { UpdatePlayerDto } from 'src/player/dto/update-player.dto';
 import { UpdateDeckDto } from 'src/deck/dto/update-deck.dto';
+import { CardService } from 'src/card/card.service';
 
 @Injectable()
 export class GameService {
@@ -19,6 +20,7 @@ export class GameService {
     private deckService: DeckService,
     private playerService: PlayerService,
     private handService: HandService,
+    private cardService: CardService,
   ) { }
 
   async create(data: CreateGameDto): Promise<Game> {
@@ -205,7 +207,7 @@ export class GameService {
     if (!game)
       throw new NotFoundException(`Game with id ${id} not found!`);
 
-    const topCard = game.decks[1].cards.pop()
+    const topCard = game.decks[1].cards[game.decks[1].cards.length-1]
     console.log(`TURN: ${game.currentTurn} TOPCARD: ${topCard.texture} STATE: ${game.gameState}`)
     return game
   }
@@ -367,8 +369,8 @@ export class GameService {
         await this.deckService.updateAddCards(drawDeck, playerCards)
       }
       //game is over: update player's score before removing him from game
-      else{
-        await this.playerService.updateScore(dto.id,dto.score)
+      else {
+        await this.playerService.updateScore(dto.id, dto.score)
       }
 
       //remove player from game
@@ -396,7 +398,7 @@ export class GameService {
 
       //check if game has no more active players and is over
       //in this case, delete game and all its connected ids (player is not deleted)
-      if(updatedGame.players.length==0 && updatedGame.gameState=="Over"){
+      if (updatedGame.players.length == 0 && updatedGame.gameState == "Over") {
         await this.delete(gameId)
         return null
       }
@@ -407,9 +409,16 @@ export class GameService {
   }
 
   async delete(id: number): Promise<Game> {
-    console.log("Deleting Game ",id)
-    return this.prisma.game.delete({
-      where: { id },
+    return await this.prisma.$transaction(async (prisma) => {
+      //delete cards
+      await this.cardService.deleteManyFromDeck(id)
+      //delete decks
+      await this.deckService.deleteMany(id)
+
+      console.log("Deleting Game", id)
+      return this.prisma.game.delete({
+        where: { id },
+      })
     })
   }
 }

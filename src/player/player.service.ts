@@ -4,10 +4,14 @@ import { PrismaService } from 'src/prisma/prisma.service'
 import { CreatePlayerDto } from './dto/create-player.dto';
 import { CreateCardDto } from 'src/card/dto/create-card.dto';
 import { UpdatePlayerDto } from './dto/update-player.dto';
+import { CardService } from 'src/card/card.service';
 
 @Injectable()
 export class PlayerService {
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private cardService: CardService,
+  ) { }
 
   //TODO: GET PLAYER: IF EXISTS, UPDATE; ELSE: CREATE
   async create(data: CreatePlayerDto): Promise<Player> {
@@ -150,6 +154,8 @@ export class PlayerService {
       // If hand data is provided, update or create the hand
       updateData.hand = player.hand ? { update: handData } : { create: handData };
     } else if (player.hand) {
+      //delete cards from hand
+      await this.cardService.deleteManyFromHand(player.hand.id)
       // If hand is not provided and player already has a hand, delete it
       updateData.hand = { delete: true };
     }
