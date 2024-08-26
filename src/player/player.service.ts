@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common'
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { Card, Hand, Player, Prisma } from '@prisma/client'
 import { PrismaService } from 'src/prisma/prisma.service'
 import { CreatePlayerDto } from './dto/create-player.dto';
@@ -33,9 +33,9 @@ export class PlayerService {
           },
         } : undefined,
         //set gameId if provided, also set joinedAt for the current game
-        ...(data.gameId !== undefined && { 
+        ...(data.gameId !== undefined && {
           gameId: data.gameId,
-          joinedAt: new Date() 
+          joinedAt: new Date()
         })
       }
     })
@@ -45,9 +45,9 @@ export class PlayerService {
 
   async get(id: number): Promise<Player &
   {
-    hand: (Hand & {cards: Card[]})
+    hand: (Hand & { cards: Card[] })
   }
-   | null> {
+    | null> {
     return this.prisma.player.findUnique({
       where: { id },
       include: {
@@ -117,14 +117,14 @@ export class PlayerService {
   }
 
   //update one player's data (Hands) & gameId
-  async update(dto: UpdatePlayerDto, gameId: number): 
-  Promise<(Player & { hand: Hand & { cards: Card[] } })> {
+  async update(dto: UpdatePlayerDto, gameId: number):
+    Promise<(Player & { hand: Hand & { cards: Card[] } })> {
     const player = await this.get(dto.id)
 
     if (!player)
-      throw new BadRequestException(`Player with id ${dto.id} not found.`);
+      throw new NotFoundException(`Player with id ${dto.id} not found.`);
 
-    const handData = {
+    const handData = dto.hand ? {
       indexFirst: dto.hand?.indexFirst ?? 0, // Default to 0 if not provided
       indexLast: dto.hand?.indexLast ?? -1,  // Default to -1 if not provided
       cards: {
@@ -132,21 +132,35 @@ export class PlayerService {
           ?.filter(card => card && card.id !== undefined)
           .map(card => ({ id: card.id })) || [], // Handle case where cards might be undefined
       },
-    };
+    } : null
+
+    const updateData: any = {}
+
+    if (dto.gameId == -1){
+      updateData.joinedAt = null
+      updateData.gameId = null
+    }
+    else{
+      updateData.joinedAt = new Date()
+      updateData.gameId = gameId
+    }
+
+    // Handle hand update or deletion
+    if (handData) {
+      // If hand data is provided, update or create the hand
+      updateData.hand = player.hand ? { update: handData } : { create: handData };
+    } else if (player.hand) {
+      // If hand is not provided and player already has a hand, delete it
+      updateData.hand = { delete: true };
+    }
+
+    console.log("PLAYER UPDATE DTO: ", updateData)
 
     const updatedPlayer = await this.prisma.player.update({
       where: {
         id: dto.id,
       },
-      data: {
-        gameId, //change gameId
-        joinedAt: new Date(),
-        hand: player.hand ? {
-          update: handData,
-        } : {
-          create: handData,
-        },
-      },
+      data: updateData,
       include: {
         hand: {
           include: {
@@ -158,6 +172,22 @@ export class PlayerService {
 
     console.log("UPDATED PLAYER", updatedPlayer)
     return updatedPlayer;
+  }
+
+  async updateScore(id: number, score: number): Promise<Player> {
+    const player = await this.get(id)
+    if (!player)
+      throw new NotFoundException(`Player with id ${id} not found.`);
+
+    if (score > player.score) {
+      const updatedPlayer = await this.prisma.player.update({
+        where: { id },
+        data: { score }
+      })
+      console.log(`Player ${id} changed score to ${score}`)
+      return updatedPlayer
+    }
+    return player
   }
 
   async delete(id: number): Promise<Player> {

@@ -53,15 +53,35 @@ export class DeckService {
 
     // Step 2: Update the deck by disconnecting the cards from it
     const updatedDeck = await this.prisma.deck.update({
-        where: { id: deckId },
-        data: {
-            cards: {
-                disconnect: cardIdsToRemove.map(cardId => ({ id: cardId })),
-            },
+      where: { id: deckId },
+      data: {
+        cards: {
+          disconnect: cardIdsToRemove.map(cardId => ({ id: cardId })),
         },
+      },
     });
 
-    console.log(`DECK ${deckId}:`, cardIdsToRemove)
+    console.log(`DECK ${deckId} REMOVE: `, cardIdsToRemove)
+    return updatedDeck
+  }
+
+  //add cards defined in the dto
+  async updateAddCards(deck: Deck, cards: Card[]): Promise<Deck> {
+    const cardIds = cards
+      ?.filter(card => card && card.id !== undefined)
+      .map(card => ({ id: card.id }))
+
+    const updatedDeck = await this.prisma.deck.update({
+      where: { id: deck.id },
+      data: {
+        cards: {
+          connect: cardIds, // Connect the player's hand cards to the draw deck
+        },
+      },
+      include: {cards: true}
+    });
+
+    console.log(`DECK ${updatedDeck.id} ADD: `, cardIds)
     return updatedDeck
   }
 

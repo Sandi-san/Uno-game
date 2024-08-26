@@ -1,5 +1,5 @@
 import { Card, Deck, Game, Hand, Player } from '@prisma/client';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateGameDto } from './dto/create-game.dto';
 import { DeckService } from 'src/deck/deck.service';
@@ -63,10 +63,10 @@ export class GameService {
         // Update gameId
         await this.prisma.player.update({
           where: { id: player.id },
-          data: { 
-            gameId: game.id, 
+          data: {
+            gameId: game.id,
             joinedAt: new Date()
-           },
+          },
         });
 
         // If hand data is provided, handle the hand creation or update
@@ -166,7 +166,7 @@ export class GameService {
         */
       },
     })
-    console.log("GAME:",game)
+    console.log("GAME:", game)
     return game
   }
 
@@ -187,7 +187,7 @@ export class GameService {
     })
 
     if (!game)
-      throw new BadRequestException(`Id ${id} is invalid!`);
+      throw new NotFoundException(`Game with id ${id} not found!`);
 
     const players = game.players
     console.log("PLAYERS:", players)
@@ -196,14 +196,14 @@ export class GameService {
 
   //TODO: get 2nd Deck of game (discard Deck and return)
   async getTurnAndDiscardDeck(id: number): Promise<
-  Game | null> {
+    Game | null> {
     const game = await this.prisma.game.findUnique({
       where: { id },
-      include: {decks:{include:{cards:true}}}
+      include: { decks: { include: { cards: true } } }
     })
 
     if (!game)
-      throw new BadRequestException(`Id ${id} is invalid!`);
+      throw new NotFoundException(`Game with id ${id} not found!`);
 
     const topCard = game.decks[1].cards.pop()
     console.log(`TURN: ${game.currentTurn} TOPCARD: ${topCard.texture} STATE: ${game.gameState}`)
@@ -241,7 +241,8 @@ export class GameService {
   //TODO?: UPDATE GAME RAZEN PLAYERJEV
   async update(id: number, dto: UpdateGameDto): Promise<Game> {
     const gameToUpdate = await this.getIds(id);
-    if (!gameToUpdate) throw new BadRequestException(`Id ${id} is invalid!`);
+    if (!gameToUpdate)
+      throw new NotFoundException(`Game with id ${id} not found!`)
 
     /*
     // Update Decks
@@ -278,6 +279,12 @@ export class GameService {
         await this.handService.updateForGame(id, dto.players, gameToUpdate.players)
       }
 
+      //if the game is over, update all connected players' scores
+      if (dto.gameState == 'Over' && dto.players) {
+        for (const player of dto.players)
+          await this.playerService.updateScore(player.id, player.score)
+      }
+
       const updateData: any = {};
 
       // Other updates
@@ -308,15 +315,18 @@ export class GameService {
 
 
   //ADD PLAYER TO GAME
-  async updatePlayer(id: number, dto: UpdatePlayerDto): Promise<Game> {
+  async updatePlayerAdd(id: number, dto: UpdatePlayerDto): Promise<Game> {
     //run update as transaction
     return await this.prisma.$transaction(async (prisma) => {
       //check if player data sent: update player's gameId
       if (dto) {
         //update player and return
         const updatedPlayer = await this.playerService.update(dto, id)
+
         //get game including ids of decks
         const game = await this.getIds(id)
+        if (!game) throw new NotFoundException(`Game with id ${id} not found!`);
+
         //create a deck dto of the draw deck filled with cards from the updated player hands
         const deckDto: UpdateDeckDto = {
           id: game.decks[0].id,
@@ -324,6 +334,7 @@ export class GameService {
           cards: updatedPlayer.hand.cards,
           gameId: id
         }
+
         //console.log("DECK:", deckDto)
         //remove cards from the decks that are now in player's hand
         await this.deckService.updateRemoveCards(deckDto)
@@ -334,7 +345,69 @@ export class GameService {
     })
   }
 
+  //REMOVE PLAYER FROM GAME
+  async updatePlayerRemove(gameId: number, playerId: number, dto: UpdatePlayerDto): Promise<Game | null> {
+    //run update as transaction
+    return await this.prisma.$transaction(async (prisma) => {
+      //get ids of objects connected to game
+      const game = await this.getIds(gameId)
+      if (!game) throw new NotFoundException(`Game with id ${gameId} is invalid!`);
+
+      //get player from game to delete
+      const player = game.players.find(p => p.id === playerId);
+      if (!player) throw new NotFoundException(`Player with id ${playerId} not found in game with id ${gameId}`);
+
+      //move player's cards from hand and move to drawDeck of game
+      //move only if game isnt already over
+      if (game.gameState != "Over") {
+        const drawDeck = game.decks[0]
+        const playerCards = player.hand.cards
+
+        //update deck with player's cards
+        await this.deckService.updateAddCards(drawDeck, playerCards)
+      }
+      //game is over: update player's score before removing him from game
+      else{
+        await this.playerService.updateScore(dto.id,dto.score)
+      }
+
+      //remove player from game
+      const updatedGame = await this.prisma.game.update({
+        where: { id: gameId },
+        data: {
+          players: {
+            disconnect: { id: playerId }
+          }
+        },
+        include: {
+          players: true
+        }
+      })
+
+      //update player (remove joinedAt, gameId and Hand)
+      const updatedPlayerDto = {
+        ...dto,
+        gameId: -1, // Remove association with game
+        joinedAt: -1, // Remove joinedAt
+        hand: null, // Remove hand object (handled in your service update logic)
+      };
+
+      await this.playerService.update(updatedPlayerDto, gameId)
+
+      //check if game has no more active players and is over
+      //in this case, delete game and all its connected ids (player is not deleted)
+      if(updatedGame.players.length==0 && updatedGame.gameState=="Over"){
+        await this.delete(gameId)
+        return null
+      }
+
+      //return the game
+      return this.get(gameId)
+    })
+  }
+
   async delete(id: number): Promise<Game> {
+    console.log("Deleting Game ",id)
     return this.prisma.game.delete({
       where: { id },
     })

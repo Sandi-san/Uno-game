@@ -51,7 +51,7 @@ export class GameController {
   @Put(':id/players')
   async updateGamePlayer(@Param('id', ParseIntPipe) id: number, @Body() data: UpdatePlayerDto): Promise<Game> {
     console.log("UPDATE DATA:", data)
-    return this.gameService.updatePlayer(id, data);
+    return this.gameService.updatePlayerAdd(id, data);
   }
 
   @Put(':gameId/player/:playerId')
@@ -61,8 +61,8 @@ export class GameController {
     console.log("REMOVE PLAYER DATA:", data)
     console.log("PlayerId:", playerId)
     console.log("GameId:", gameId)
-    //return this.gameService.updatePlayer(id, data);
-    return undefined
+    return this.gameService.updatePlayerRemove(gameId, playerId, data);
+    //return undefined
   }
 
   @Delete(':id')
