@@ -153,6 +153,68 @@ public class GameService {
         });
     }
 
+    public interface GameUpdatePlayerRemoveCallback {
+        void onSuccess(GameData game);
+        void onFailure(Throwable t);
+    }
+
+    public void updateGameRemovePlayer(GameUpdatePlayerRemoveCallback callback, int gameId, Player player) {
+        HttpRequestBuilder requestBuilder = new HttpRequestBuilder();
+        Net.HttpRequest request = requestBuilder.newRequest()
+                .method(Net.HttpMethods.PUT)
+                .url(GameConfig.SERVER_URL + GameConfig.GAME_URL + "/" + gameId+"/player/"+player.getId())
+                .header("Content-Type", "application/json")
+                .build();
+
+        //String jsonData = gson.toJson(gameData.getPlayers()); // Serialize your game data here
+        String jsonData = gson.toJson(player); // Serialize your game data here
+        Gdx.app.log("REMOVE PLAYER FROM GAME:", jsonData);
+        request.setContent(jsonData);
+
+        Gdx.net.sendHttpRequest(request, new Net.HttpResponseListener() {
+            @Override
+            public void handleHttpResponse(Net.HttpResponse httpResponse) {
+                int statusCode = httpResponse.getStatus().getStatusCode();
+                if (statusCode == 200) {
+                    String responseJson = httpResponse.getResultAsString();
+                    Gdx.app.log("DATA:", responseJson);
+                    //save response as GameData, unless response is null, in which case Game does not exist on backend/was deleted
+                    GameData game = null;
+                    if(!responseJson.equals(""))
+                        game = gson.fromJson(responseJson, GameData.class);
+                    GameData finalGame = game;
+                    Gdx.app.postRunnable(() -> {
+                        // Perform actions on the main thread
+                        if (finalGame != null) {
+                            callback.onSuccess(finalGame);
+                        } else {
+                            // Handle the error
+                            Gdx.app.log("updateGameWithPlayer", "Failed to parse game data");
+                            callback.onFailure(new Exception("Failed to parse game data"));
+                        }
+                    });
+                }
+                else{
+                    // Handle non-200 response codes
+                    Gdx.app.log("updateGameWithPlayer", "Invalid status code response: "+statusCode);
+                    callback.onFailure(new Exception("Failed to update game. Status code: " + statusCode));
+                }
+            }
+
+            @Override
+            public void failed(Throwable t) {
+                Gdx.app.log("FAILED", "CANNOT CONNECT TO SERVER");
+                Gdx.app.postRunnable(() -> callback.onFailure(t));
+            }
+
+            @Override
+            public void cancelled() {
+                Gdx.app.log("CANCELLED", "REQUEST CANCELLED");
+                Gdx.app.postRunnable(() -> callback.onFailure(new Exception("Request cancelled")));
+            }
+        });
+    }
+
     public interface GameUpdateCallback {
         void onSuccess(GameData game);
         void onFailure(Throwable t);
@@ -263,7 +325,7 @@ public class GameService {
     }
 
     public interface FetchGameTurnCallback {
-        void onSuccess(int gameTurn);
+        void onSuccess(GameData gameTurn);
         void onFailure(Throwable t);
     }
     public void fetchGameTurn(FetchGameTurnCallback callback, int gameId){
@@ -281,20 +343,18 @@ public class GameService {
                 if (statusCode == 200) {
                     String responseJson = httpResponse.getResultAsString();
                     Gdx.app.log("DATA:", responseJson);
-                    int fetchedTurn = 0;
-                    fetchedTurn = gson.fromJson(responseJson, Integer.class);
-                    int finalFetchedTurn = fetchedTurn;
-                        Gdx.app.postRunnable(() -> {
-                            // Perform actions on the main thread
-                            if (finalFetchedTurn != 0) {
-                                callback.onSuccess(finalFetchedTurn);
-                            } else {
-                                // Handle the error
-                                Gdx.app.log("fetchGameTurn", "Failed to parse game data - turn");
-                                callback.onFailure(new Exception("Failed to parse game data - turn"));
-                            }
-                        });
-                    Gdx.app.log("fetchGameTurn", "Thread interrupted: " + Thread.currentThread().isInterrupted());
+                    GameData game = gson.fromJson(responseJson, GameData.class);
+                    // Handle the GameData array (e.g., update the UI)
+                    Gdx.app.postRunnable(() -> {
+                        // Perform actions on the main thread
+                        if (game != null) {
+                            callback.onSuccess(game);
+                        } else {
+                            // Handle the error
+                            Gdx.app.log("fetchGame", "Failed to parse game data");
+                            callback.onFailure(new Exception("Failed to parse game data"));
+                        }
+                    });
                 }
                 else{
                     // Handle non-200 response codes

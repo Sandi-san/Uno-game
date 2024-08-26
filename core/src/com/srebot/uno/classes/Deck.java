@@ -61,6 +61,12 @@ public class Deck {
     public void setCard(Card card){
         cards.add(card);
     }
+    //polozi vec kart na kup
+    public void setCards(Array<Card> cardsToSet){
+        for(Card card : cardsToSet){
+            cards.add(card);
+        }
+    }
 
     public void shuffleDeck(){
         cards.shuffle();
@@ -69,6 +75,15 @@ public class Deck {
     //dobi top karto iz deka
     public Card getTopCard(){
         return cards.peek();
+    }
+
+    public void setTopCard(Card topCard){
+        topCard.setId(cards.peek().getId());
+        if (cards != null && !cards.isEmpty()) {
+            cards.set(cards.size - 1, topCard); // Replace the last card with topCard
+        } else {
+            throw new IllegalStateException("The cards list is empty or null, cannot set top card.");
+        }
     }
 
     public Card getSecondTopCard(){

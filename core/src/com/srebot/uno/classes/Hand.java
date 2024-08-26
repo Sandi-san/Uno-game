@@ -119,6 +119,21 @@ public class Hand {
     }
 
     public int getIndexLast(){return this.indexLast;}
+    //Get last index: if last index is less
+    public int getIndexLast(int maxShow){
+        int diff = indexLast-indexFirst;
+        //diff ni neg (tj. indexLast ni -1)
+        if(diff>=0){
+            //v roki (cards) vec kart kot maximum to show?
+            if(cards.size>maxShow){
+                //ce diff ni isti kot maxShow vendar v roki vec kart kot maxShow
+                //last index dodaj razliko ki manka da bo prisel do maxShow
+                if(diff<maxShow)
+                    this.indexLast+=(maxShow-diff);
+            }
+        }
+        return this.indexLast;
+    }
     //set default (v tem classu)
     public void setIndexLast(){this.indexLast=this.cards.size-1;}
 
@@ -284,9 +299,12 @@ public class Hand {
     }
     //for each card, set id in fetchedHand
     public void setIdCards(Hand fetchedHand) {
-        for(int i=0;i<this.cards.size;++i) {
+        //get size of smallest hand to avoid out of bounds error
+        int size = Math.min(this.cards.size, fetchedHand.getCards().size);
+        for(int i=0;i<size;++i) {
             //for(int i=0;i<fetchedHand.getCards().size;++i){
             Card thisCard = this.cards.get(i);
+            //local card doesn't have set id or handId, add it
             if (thisCard.getHandId() == 0 || thisCard.getId() == 0) {
                 thisCard.setId(fetchedHand.getCards().get(i).getId());
                 thisCard.setHandId(fetchedHand.getId());
