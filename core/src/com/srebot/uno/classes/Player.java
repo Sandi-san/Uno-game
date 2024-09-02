@@ -54,7 +54,9 @@ public class Player {
 
     @Override
     public String toString(){
-        return "Id: "+id+" Name: "+name+" Score: "+score;
+        if(playerHand.getCards().size==1)
+            return name+" "+playerHand.getCards().size+" card";
+        return name+" "+playerHand.getCards().size+" cards";
     }
 
     //get ids of hand and cards from fetchedPlayer and set them to this object

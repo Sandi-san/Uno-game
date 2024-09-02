@@ -5,8 +5,10 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.audio.Sound;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -55,6 +57,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
     private final GameManager manager;
 
     private OrthographicCamera camera;
+    private OrthographicCamera hudCamera;
     private Viewport viewport;
     private Viewport hudViewport;
 
@@ -179,9 +182,9 @@ public class GameSingleplayerScreen extends ScreenAdapter {
     public void show() {
         camera = new OrthographicCamera();
         viewport = new FitViewport(GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT, camera);
-        hudViewport = new FitViewport(GameConfig.HUD_WIDTH, GameConfig.HUD_HEIGHT);
+        hudCamera = new OrthographicCamera();
+        hudViewport = new FitViewport(GameConfig.HUD_WIDTH, GameConfig.HUD_HEIGHT, hudCamera);
         stage = new Stage(hudViewport, game.getBatch());
-
 
         //nastavi pozicijo kamere
         camera.position.set(GameConfig.WORLD_WIDTH / 2f,
@@ -221,6 +224,13 @@ public class GameSingleplayerScreen extends ScreenAdapter {
         draw();
         batch.end();
 
+        // Apply HUD viewport
+        hudViewport.apply();
+        batch.setProjectionMatrix(hudViewport.getCamera().combined);
+        batch.begin();
+        drawHud();
+        batch.end();
+
         if (state == State.Over) {
             if (manager.getMusicPref())
                 game.stopMusic();
@@ -230,9 +240,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
         }
     }
 
-    public void draw() {
-        //TODO HUD
-
+    private void draw() {
         //VELIKOST kart (v WORLD UNITS)
         float sizeX = GameConfig.CARD_WIDTH;
         float sizeY = GameConfig.CARD_HEIGHT;
@@ -258,14 +266,16 @@ public class GameSingleplayerScreen extends ScreenAdapter {
             drawColorWheel();
         }
 
-        //DRAW PLAYER in COMPUTER HANDS
-        Hand playerHand = player.getHand();
-        playerHand.setArrowRegions(gameplayAtlas.findRegion(RegionNames.arrow));
-        drawHand(playerHand, 0,
-                sizeX, sizeY, true);
-        Hand computerHand = computer.getHand();
-        drawHand(computerHand, (GameConfig.WORLD_HEIGHT - sizeY),
-                sizeX, sizeY, false);
+        if (state == State.Running || state==State.Over) {
+            //DRAW PLAYER in COMPUTER HANDS
+            Hand playerHand = player.getHand();
+            playerHand.setArrowRegions(gameplayAtlas.findRegion(RegionNames.arrow));
+            drawHand(playerHand, 0,
+                    sizeX, sizeY, true);
+            Hand computerHand = computer.getHand();
+            drawHand(computerHand, (GameConfig.WORLD_HEIGHT - sizeY),
+                    sizeX, sizeY, false);
+        }
 
         //DRAW EXIT BUTTON
         //drawExitButton();
@@ -401,6 +411,99 @@ public class GameSingleplayerScreen extends ScreenAdapter {
             hand.renderArrowRight(batch);
         }
     }
+
+    private void drawHud(){
+        if(state== State.Running) {
+            // Set the font to a smaller scale for the player's text
+            font.getData().setScale(0.8f);  // Scale down to 80% of the original size
+
+            float startX = 10f; //width left + margin
+            float startY = GameConfig.HUD_HEIGHT-10f; //top + margin
+
+            //height of each line of font + spacing
+            float lineHeight = font.getXHeight();
+
+            // Define outline offsets and outline color
+            float outlineOffset = 1.8f;  // The offset for the outline
+            Color outlineColor = Color.BLACK;  // Outline color
+
+            for (int i = 0; i < playersData.size(); ++i) {
+                Player player = playersData.get(i);
+                if (player != null) {
+                    String position = "Bottom";
+                    switch (i){
+                        case 1:
+                            position = "Right";
+                            break;
+                        case 2:
+                            position = "Top";
+                            break;
+                        case 3:
+                            position = "Left";
+                    }
+                    String playerText = position + ": " + player;
+                    //get vertical start of each new player
+                    float playerY = startY - i * lineHeight;
+
+                    // Set the outline color
+                    font.setColor(outlineColor);
+
+                    // Draw the text multiple times to create an outline effect (up, down, left, right)
+                    font.draw(batch, playerText, startX + outlineOffset, playerY + outlineOffset);  // Top-right
+                    font.draw(batch, playerText, startX - outlineOffset, playerY + outlineOffset);  // Top-left
+                    font.draw(batch, playerText, startX + outlineOffset, playerY - outlineOffset);  // Bottom-right
+                    font.draw(batch, playerText, startX - outlineOffset, playerY - outlineOffset);  // Bottom-left
+
+                    // Draw the original text in its normal color
+                    font.setColor(Color.WHITE);  // Set the font color to the main color (e.g., white)
+                    font.draw(batch, playerText, startX, playerY);
+
+                    //display player's data
+                    font.draw(batch, playerText, startX, playerY);
+                }
+            }
+
+            // Reset the font scale back to its original size after drawing the player's text
+            font.getData().setScale(1f, 1f);
+        }
+        else if (state == State.Paused) {
+            //set text and get size to correctly draw the text in the center of the screen
+            String waitText = "Waiting for players";
+            GlyphLayout waitLayout = new GlyphLayout();
+            waitLayout.setText(font,waitText);
+            float waitX = GameConfig.HUD_WIDTH/2f - waitLayout.width/2f;
+            float waitY = GameConfig.HUD_HEIGHT/2f + waitLayout.height/2f;
+            font.draw(batch, waitText, waitX,waitY);
+        }
+        else if(state == State.Over){
+            //set text and get size to correctly draw the text in the center of the screen
+            String wonText = "Winner is: ";
+            if(winner!=Winner.None) {
+                switch (winner){
+                    case Player1:
+                        wonText = wonText+playersData.get(0).getName();
+                        break;
+                    case Player2:
+                        wonText = wonText+playersData.get(1).getName();
+                        break;
+                    case Player3:
+                        wonText = wonText+playersData.get(2).getName();
+                        break;
+                    case Player4:
+                        wonText = wonText+playersData.get(3).getName();
+                        break;
+                }
+            }
+            else
+                wonText = "No winner.";
+            GlyphLayout waitLayout = new GlyphLayout();
+            waitLayout.setText(font,wonText);
+            float waitX = GameConfig.HUD_WIDTH/2f - waitLayout.width/2f;
+            float waitY = GameConfig.HUD_HEIGHT/2f + waitLayout.height/2f;
+            font.draw(batch, wonText, waitX,waitY);
+        }
+    }
+
     /*
     public void drawExitButton(){
         float width=GameConfig.BUTTON_WIDTH;

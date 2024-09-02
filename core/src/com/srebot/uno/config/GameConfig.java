@@ -2,8 +2,8 @@ package com.srebot.uno.config;
 
 public class GameConfig {
     //GAME WINDOW
-    public static final float WIDTH = 800f;
-    public static final float HEIGHT = 600f;
+    public static final float WIDTH = 1000f;
+    public static final float HEIGHT = 750f;
     //GAME HUD
     public static final float HUD_WIDTH = 800f;
     public static final float HUD_HEIGHT = 600f;
