@@ -76,6 +76,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     private Viewport hudViewport;
 
     private Stage stage;
+    private Stage stageHud;
     private SpriteBatch batch; //batch le en
 
     private Skin skin;
@@ -838,6 +839,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         hudCamera = new OrthographicCamera();
         hudViewport = new FitViewport(GameConfig.HUD_WIDTH, GameConfig.HUD_HEIGHT, hudCamera);
         stage = new Stage(hudViewport, game.getBatch());
+        stageHud = new Stage(hudViewport, game.getBatch());
 
         //nastavi pozicijo kamere
         camera.position.set(GameConfig.WORLD_WIDTH / 2f,
@@ -847,7 +849,8 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         skin = assetManager.get(AssetDescriptors.UI_SKIN);
         gameplayAtlas = assetManager.get(AssetDescriptors.GAMEPLAY);
 
-        stage.addActor(createExitButton());
+        stage.addActor(createExitButton(State.Over));
+        stageHud.addActor(createExitButton(State.Running));
     }
 
     @Override
@@ -887,6 +890,14 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         float b = 100 / 255f;
         float a = 0.7f; //prosojnost
         ScreenUtils.clear(r, g, b, a);
+
+        if (state != State.Over) {
+            if (manager.getMusicPref())
+                game.stopMusic();
+            stageHud.act(delta);
+            stageHud.draw();
+            Gdx.input.setInputProcessor(stageHud);
+        }
 
         //Game not yet finished creating in DB
         if (state == State.Initializing)
@@ -1656,6 +1667,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             //put their cards back into the drawDeck
             deckDraw.setCards(currentPlayer.getHand().getCards());
         }
+        stopScheduler();
         updateGameRemovePlayer(currentPlayer, currentGameId, new GameUpdateCallback() {
             @Override
             public void onGameFetched(GameData updatedGame) {
@@ -1670,15 +1682,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     }
 
     //z scene2d
-    public Actor createExitButton() {
-        Table table = new Table();
-        table.defaults().pad(20);
-        /*
-        //BACKGROUND
-        TextureRegion backgroundRegion = gameplayAtlas.findRegion(RegionNames.background3);
-        table.setBackground(new TextureRegionDrawable(backgroundRegion));
-        */
-
+    public Actor createExitButton(State state) {
         TextButton exitButton = new TextButton("Exit", skin);
         exitButton.addListener(new ClickListener() {
             @Override
@@ -1692,14 +1696,16 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         Table buttonTable = new Table();
         buttonTable.defaults();
 
-        buttonTable.add(exitButton).padBottom(15).expandX().fill().row();
-        buttonTable.center();
+        buttonTable.add(exitButton);
 
-        table.add(buttonTable);
-        table.center();
-        table.setFillParent(true);
-        table.pack();
+        if (state == State.Over) {
+            buttonTable.center().padTop(100); // Center the button during game over
+        } else {
+            buttonTable.top().right().pad(2); // Position it in the top-right for HUD
+        }
 
-        return table;
+        buttonTable.setFillParent(true);
+
+        return buttonTable;
     }
 }
