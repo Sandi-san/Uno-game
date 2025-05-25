@@ -22,16 +22,16 @@ model Game {
 model Deck {
   id     Int    @id @default(autoincrement())
   gameId Int?
-  game   Game?  @relation(fields: [gameId], references: [id])
+  game   Game?  @relation(fields: [gameId], references: [id], onDelete: Cascade)
   size   Int
   cards  Card[]
 }
 
 model Player {
-  id        Int      @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   gameId    Int?
-  game      Game?    @relation(fields: [gameId], references: [id])
-  createdAt DateTime @default(now())
+  game      Game?     @relation(fields: [gameId], references: [id])
+  createdAt DateTime  @default(now())
   joinedAt  DateTime?
   name      String
   score     Int
@@ -41,7 +41,7 @@ model Player {
 model Hand {
   id         Int    @id @default(autoincrement())
   playerId   Int    @unique
-  player     Player @relation(fields: [playerId], references: [id])
+  player     Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
   indexFirst Int
   indexLast  Int
   cards      Card[]
@@ -50,7 +50,7 @@ model Hand {
 model Card {
   id       Int    @id @default(autoincrement())
   handId   Int?
-  hand     Hand?  @relation(fields: [handId], references: [id])
+  hand     Hand?  @relation(fields: [handId], references: [id], onDelete: Cascade)
   priority Int
   value    Int
   color    String

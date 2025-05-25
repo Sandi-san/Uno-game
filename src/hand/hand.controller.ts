@@ -8,9 +8,9 @@ export class HandController {
     constructor(private readonly handService: HandService) {}
 
     @Post()
-    async createHand(@Body() data: CreateHandDto, id: number): Promise<Hand> {
+    async createHand(@Body() data: CreateHandDto, playerId: number): Promise<Hand> {
       console.log("HAND CREATE:",data)
-      return this.handService.create(data, id);
+      return this.handService.create(data, playerId);
     }
   
     @Get(':id')

@@ -21,6 +21,7 @@ export class PlayerService {
         score: data.score,
         //hand can be null (set hand as null if not passed)
         hand: data.hand != null ? {
+          //TODO: create hand
           create: {
             indexFirst: data.hand.indexFirst,
             indexLast: data.hand.indexLast,
@@ -47,6 +48,7 @@ export class PlayerService {
     return player
   }
 
+  //get player and hand and cards
   async get(id: number): Promise<Player &
   {
     hand: (Hand & { cards: Card[] })
@@ -64,6 +66,7 @@ export class PlayerService {
     })
   }
 
+  //get player by name and return hand
   async getByName(name: string): Promise<Player | null> {
     const player = await this.prisma.player.findFirst({
       where: { name },
@@ -140,11 +143,11 @@ export class PlayerService {
 
     const updateData: any = {}
 
-    if (dto.gameId == -1){
+    if (dto.gameId == -1) {
       updateData.joinedAt = null
       updateData.gameId = null
     }
-    else{
+    else {
       updateData.joinedAt = new Date()
       updateData.gameId = gameId
     }
@@ -197,8 +200,14 @@ export class PlayerService {
   }
 
   async delete(id: number): Promise<Player> {
-    return this.prisma.player.delete({
-      where: { id },
+    const player = await this.get(id)
+    return await this.prisma.$transaction(async (prisma) => {
+      //delete cards
+      await this.cardService.deleteManyFromHand(player.hand.id)
+      //delete deck
+      return this.prisma.player.delete({
+        where: { id },
+      });
     })
   }
 }

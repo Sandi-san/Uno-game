@@ -12,6 +12,7 @@ import { CreatePlayerDto } from 'src/player/dto/create-player.dto';
 import { UpdatePlayerDto } from 'src/player/dto/update-player.dto';
 import { UpdateDeckDto } from 'src/deck/dto/update-deck.dto';
 import { CardService } from 'src/card/card.service';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class GameService {
@@ -24,6 +25,7 @@ export class GameService {
   ) { }
 
   async create(data: CreateGameDto): Promise<Game> {
+    //TODO: transaction this
     const game = await this.prisma.game.create({
       data: {
         decks: {
@@ -207,7 +209,7 @@ export class GameService {
     if (!game)
       throw new NotFoundException(`Game with id ${id} not found!`);
 
-    const topCard = game.decks[1].cards[game.decks[1].cards.length-1]
+    const topCard = game.decks[1].cards[game.decks[1].cards.length - 1]
     console.log(`TURN: ${game.currentTurn} TOPCARD: ${topCard.texture} STATE: ${game.gameState}`)
     return game
   }
@@ -245,30 +247,6 @@ export class GameService {
     const gameToUpdate = await this.getIds(id);
     if (!gameToUpdate)
       throw new NotFoundException(`Game with id ${id} not found!`)
-
-    /*
-    // Update Decks
-    if (dto.decks) {
-      await Promise.all(dto.decks.map(async (deckDto) => {
-        const deckToUpdate = gameToUpdate.decks.find(d => d.id === deckDto.id);
-        if (!deckToUpdate) throw new BadRequestException(`Deck with id ${deckDto.id} not found`);
-
-        // Call your service to update decks
-        await this.deckService.updateForGame(id, [deckDto], [deckToUpdate]);
-      }));
-    }
-
-    // Update Hands
-    if (dto.players) {
-      await Promise.all(dto.players.map(async (playerDto) => {
-        const playerToUpdate = gameToUpdate.players.find(p => p.id === playerDto.id);
-        if (!playerToUpdate) throw new BadRequestException(`Player with id ${playerDto.id} not found`);
-
-        // Call your service to update hands
-        await this.handService.updateForGame(id, [playerDto], [playerToUpdate]);
-      }));
-    }
-    */
 
     //run all updates as a transaction
     return await this.prisma.$transaction(async (prisma) => {
@@ -350,7 +328,7 @@ export class GameService {
   //REMOVE PLAYER FROM GAME
   async updatePlayerRemove(gameId: number, playerId: number, dto: UpdatePlayerDto): Promise<Game | null> {
     //run update as transaction
-    return await this.prisma.$transaction(async (prisma) => {
+    await this.prisma.$transaction(async (prisma) => {
       //get ids of objects connected to game
       const game = await this.getIds(gameId)
       if (!game) throw new NotFoundException(`Game with id ${gameId} is invalid!`);
@@ -374,7 +352,7 @@ export class GameService {
       }
 
       //remove player from game
-      const updatedGame = await this.prisma.game.update({
+      await this.prisma.game.update({
         where: { id: gameId },
         data: {
           players: {
@@ -395,25 +373,40 @@ export class GameService {
       };
 
       await this.playerService.update(updatedPlayerDto, gameId)
-
-      //check if game has no more active players and is over
-      //in this case, delete game and all its connected ids (player is not deleted)
-      if (updatedGame.players.length == 0 && updatedGame.gameState == "Over") {
-        await this.delete(gameId)
-        return null
-      }
-
-      //return the game
-      return this.get(gameId)
     })
+
+    //check game state after the fact
+    const returnedPlayers = await this.getPlayers(gameId)
+
+    //one player remains, change state to Paused
+    if (returnedPlayers.length == 1) {
+      console.log("ONLY 1 PLAYER LEFT, CHANGE GAMESTATE")
+      //use class-transformer to pass dto with only gameState variable
+      const stateDto = plainToInstance(UpdateGameDto, {
+        gameState: "Paused",
+      });
+      return await this.update(gameId, stateDto)
+    }
+
+    //check if game has no more active players and is over
+    //in this case, delete game and all its connected ids (player is not deleted)
+    if (returnedPlayers.length == 0) {
+      console.log("NO PLAYERS, GAME SHOULD BE DELETED")
+      await this.delete(gameId)
+      return null
+    }
+
+    return await this.get(gameId)
   }
 
   async delete(id: number): Promise<Game> {
     return await this.prisma.$transaction(async (prisma) => {
       //delete cards
-      await this.cardService.deleteManyFromDeck(id)
+      await this.cardService.deleteManyFromGame(id)
       //delete decks
-      await this.deckService.deleteMany(id)
+      await this.deckService.deleteManyFromGame(id)
+
+      //TODO?: delete hands?
 
       console.log("Deleting Game", id)
       return this.prisma.game.delete({

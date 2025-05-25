@@ -4,10 +4,14 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateDeckDto } from './dto/create-deck.dto';
 import { CreateCardDto } from 'src/card/dto/create-card.dto';
 import { UpdateDeckDto } from './dto/update-deck.dto';
+import { CardService } from 'src/card/card.service';
 
 @Injectable()
 export class DeckService {
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private cardService: CardService,
+  ) { }
 
   async create(data: CreateDeckDto): Promise<Deck> {
     return this.prisma.deck.create({
@@ -78,7 +82,7 @@ export class DeckService {
           connect: cardIds, // Connect the player's hand cards to the draw deck
         },
       },
-      include: {cards: true}
+      include: { cards: true }
     });
 
     console.log(`DECK ${updatedDeck.id} ADD: `, cardIds)
@@ -87,7 +91,7 @@ export class DeckService {
 
   //update decks for specific game 
   async updateForGame(gameId: number, dtoDecks: UpdateDeckDto[], gameDecks: (Deck & { cards: Card[] })[]): Promise<void> {
-    console.log(`Update Deck Discard ${dtoDecks[1].id}`,dtoDecks[1].cards)
+    console.log(`Update Deck Discard ${dtoDecks[1].id}`, dtoDecks[1].cards)
     for (const deckDto of dtoDecks) {
       const deck = gameDecks.find(d => d.id === deckDto.id);
       if (!deck) throw new BadRequestException(`Deck with id ${deckDto.id} not found`);
@@ -124,16 +128,21 @@ export class DeckService {
   }
 
   async delete(id: number): Promise<Deck> {
-    return this.prisma.deck.delete({
-      where: { id },
-    });
-  }
+    return await this.prisma.$transaction(async (prisma) => {
+      //delete cards
+      await this.cardService.deleteManyFromDeck(id)
+      //delete deck
+      return this.prisma.deck.delete({
+        where: { id },
+      });
+  })
+}
 
-  
-  async deleteMany(gameId: number): Promise<void> {
-    console.log("Deleting Decks of Game:",gameId)
+  //delete all decks when deleting game
+  async deleteManyFromGame(gameId: number): Promise < void> {
+  console.log("Deleting Decks of Game:", gameId)
     await this.prisma.deck.deleteMany({
-      where: {gameId: gameId}
-    });
-  }
+    where: { gameId: gameId }
+  });
+}
 }

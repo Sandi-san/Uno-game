@@ -39,14 +39,28 @@ export class CardService {
     });
   }
 
-  //delete many cards connected to deck 
-  async deleteManyFromDeck(gameId: number): Promise<void> {
+  //delete many cards connected to game 
+  async deleteManyFromGame(gameId: number): Promise<void> {
     console.log("Deleting Cards of Game:", gameId)
     await this.prisma.card.deleteMany({
       where: {
         Deck: {
           some: {
             gameId: gameId
+          }
+        }
+      }
+    })
+  }
+
+  //delete many cards connected to deck 
+  async deleteManyFromDeck(deckId: number): Promise<void> {
+    console.log("Deleting Cards of Deck:", deckId)
+    await this.prisma.card.deleteMany({
+      where: {
+        Deck: {
+          some: {
+            id: deckId
           }
         }
       }
