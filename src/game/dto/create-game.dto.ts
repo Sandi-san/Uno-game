@@ -2,6 +2,7 @@
 
 import { Card } from '@prisma/client';
 import { IsArray, IsNumber, IsObject, IsOptional, IsString } from 'class-validator';
+import { CreateCardDto } from 'src/card/dto/create-card.dto';
 import { CreateDeckDto } from 'src/deck/dto/create-deck.dto';
 import { CreatePlayerDto } from 'src/player/dto/create-player.dto';
 
@@ -20,6 +21,10 @@ export class CreateGameDto {
 
   @IsArray()
   players: CreatePlayerDto[];
+
+  @IsObject()
+  @IsOptional()
+  topCard: CreateCardDto;
 
   @IsNumber()
   @IsOptional()

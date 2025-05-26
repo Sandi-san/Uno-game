@@ -13,6 +13,7 @@ import { UpdatePlayerDto } from 'src/player/dto/update-player.dto';
 import { UpdateDeckDto } from 'src/deck/dto/update-deck.dto';
 import { CardService } from 'src/card/card.service';
 import { plainToInstance } from 'class-transformer';
+import { connect } from 'http2';
 
 @Injectable()
 export class GameService {
@@ -26,40 +27,78 @@ export class GameService {
 
   async create(data: CreateGameDto): Promise<Game> {
     //TODO: transaction this
-    const game = await this.prisma.game.create({
-      data: {
-        decks: {
-          create: data.decks.map((deck: CreateDeckDto) => ({
-            size: deck.size,
-            cards: {
-              create: deck.cards
-                .filter((card: CreateCardDto | null) => card !== null)
-                .map((card: CreateCardDto) => ({
-                  priority: card.priority,
-                  value: card.value,
-                  color: card.color,
-                  texture: card.texture,
-                })),
-            },
-          })),
-        },
-        players: {
-          connectOrCreate: data.players
-            .filter((player: CreatePlayerDto | null) => player !== null)
-            .map((player: CreatePlayerDto) => ({
-              where: { id: player.id || 0 }, // Ensure player.id is valid
-              create: {
-                name: player.name,
-                score: player.score
+    const game = await this.prisma.$transaction(async (tx) => {
+      // 1. Create the Game and related decks/cards
+      const game = await tx.game.create({
+        data: {
+          decks: {
+            create: data.decks.map(deck => ({
+              size: deck.size,
+              cards: {
+                create: deck.cards
+                  .filter(card => card !== null)
+                  .map(card => ({
+                    priority: card!.priority,
+                    value: card!.value,
+                    color: card!.color,
+                    texture: card!.texture,
+                  })),
               },
             })),
+          },
+          players: {
+            connectOrCreate: data.players
+              .filter(player => player !== null)
+              .map(player => ({
+                where: { id: player.id || 0 },
+                create: {
+                  name: player.name,
+                  score: player.score,
+                },
+              })),
+          },
+          maxPlayers: data.maxPlayers,
+          gameState: data.gameState,
+          currentTurn: data.currentTurn,
+          turnOrder: data.turnOrder,
         },
-        maxPlayers: data.maxPlayers,
-        gameState: data.gameState,
-        currentTurn: data.currentTurn,
-        turnOrder: data.turnOrder,
-      },
-    });
+        include: {
+          decks: {
+            include: {
+              cards: true,
+            },
+          },
+        },
+      });
+
+      // 2. Get last card from first created deck
+      const firstDeck = game.decks[0];
+      const cards = firstDeck.cards;
+      const lastCard = cards[cards.length - 1];
+
+      if (!lastCard) {
+        throw new Error('No card found in the first deck to set as topCard');
+      }
+
+      // 3. Update game with topCard
+      const updatedGame = await tx.game.update({
+        where: { id: game.id },
+        data: {
+          topCard: {
+            connect: { id: lastCard.id },
+          },
+        },
+        include: {
+          topCard: true,
+          decks: { include: { cards: true } },
+          players: true,
+        },
+      });
+
+      return updatedGame;
+    })
+
+    //TODO: transaction tuki
 
     // After creating the game, update the gameId and hand for each player
     for (const player of data.players) {
@@ -171,6 +210,8 @@ export class GameService {
       },
     })
     console.log("GAME:", game)
+    console.log("GAME decks 0:", game.decks[0])
+    console.log("GAME decks 1:", game.decks[1])
     return game
   }
 
@@ -267,11 +308,32 @@ export class GameService {
 
       const updateData: any = {};
 
+      /*
+      //update topCard
+      if (dto.topCard !== undefined || dto.decks) {
+        // Re-fetch decks and cards to get latest state
+        const updatedDecks = await prisma.deck.findMany({
+          where: { gameId: id },
+          include: { cards: true },
+          orderBy: { id: 'asc' }, // assuming deck 0 = lowest ID
+        });
+
+        const firstDeck = updatedDecks[0];
+        const cards = firstDeck?.cards;
+
+        if (cards && cards.length > 0) {
+          const lastCard = cards[cards.length - 1];
+          updateData.topCard = { connect: { id: lastCard.id } };
+        }
+      }
+      */
+
       // Other updates
       if (dto.maxPlayers !== undefined) updateData.maxPlayers = dto.maxPlayers;
       if (dto.gameState !== undefined) updateData.gameState = dto.gameState;
       if (dto.currentTurn !== undefined) updateData.currentTurn = dto.currentTurn;
       if (dto.turnOrder !== undefined) updateData.turnOrder = dto.turnOrder;
+      if (dto.topCard.id !== undefined && dto.topCard?.id) updateData.topCard = {connect: {id: dto.topCard.id}}
 
       const game = await this.prisma.game.update({
         where: { id },
@@ -319,6 +381,8 @@ export class GameService {
         //remove cards from the decks that are now in player's hand
         await this.deckService.updateRemoveCards(deckDto)
       }
+
+      //TODO: update game state to running if 2+ players
 
       //return the game
       return this.get(id)

@@ -17,6 +17,8 @@ model Game {
   gameState   String   @default("Paused")
   currentTurn Int      @default(1) //currentPlayer's turn
   turnOrder   String   @default("Clockwise")
+  topCardId   Int?
+  topCard     Card?    @relation(fields: [topCardId], references: [id], onDelete: SetNull)
 }
 
 model Deck {
@@ -57,4 +59,5 @@ model Card {
   texture  String
 
   Deck Deck[]
+  Game Game[]
 }
