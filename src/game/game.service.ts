@@ -72,9 +72,9 @@ export class GameService {
       });
 
       // 2. Get last card from first created deck
-      const firstDeck = game.decks[0];
-      const cards = firstDeck.cards;
-      const lastCard = cards[cards.length - 1];
+      const discardDeck = game.decks[1].cards.filter(card => card !== null);  //discard deck
+      //console.log("CARDS: ",discardDeck)
+      const lastCard = discardDeck[discardDeck.length - 1];
 
       if (!lastCard) {
         throw new Error('No card found in the first deck to set as topCard');
@@ -202,6 +202,7 @@ export class GameService {
             joinedAt: 'asc',
           }
         },
+        topCard: true,
         /*
         gameState: true,
         currentTurn: true,
@@ -210,8 +211,9 @@ export class GameService {
       },
     })
     console.log("GAME:", game)
-    console.log("GAME decks 0:", game.decks[0])
-    console.log("GAME decks 1:", game.decks[1])
+    console.log("TopCard:", game.topCard)
+    //console.log("GAME decks draw:", game.decks[0])
+    //console.log("GAME decks discard:", game.decks[1])
     return game
   }
 
@@ -239,19 +241,19 @@ export class GameService {
     return players
   }
 
-  //TODO: get 2nd Deck of game (discard Deck and return)
-  async getTurnAndDiscardDeck(id: number): Promise<
+  async getTurnAndTopCard(id: number): Promise<
     Game | null> {
     const game = await this.prisma.game.findUnique({
       where: { id },
-      include: { decks: { include: { cards: true } } }
+      include: {
+        topCard: true,
+      }
     })
 
     if (!game)
       throw new NotFoundException(`Game with id ${id} not found!`);
 
-    const topCard = game.decks[1].cards[game.decks[1].cards.length - 1]
-    console.log(`TURN: ${game.currentTurn} TOPCARD: ${topCard.texture} STATE: ${game.gameState}`)
+    console.log(`TURN: ${game.currentTurn} TOPCARD: ${game.topCard.texture} STATE: ${game.gameState}`)
     return game
   }
 
@@ -291,6 +293,24 @@ export class GameService {
 
     //run all updates as a transaction
     return await this.prisma.$transaction(async (prisma) => {
+      //IF TOP CARD IS RAINBOW: UPDATE TO SELECTED DEFAULT VALUE
+      const discardDeck = dto.decks[1].cards.filter(card => card !== null);  //discard deck
+      console.log("CARDS: ",discardDeck)
+      const lastCard = discardDeck[discardDeck.length - 1];
+      const newColor = dto.topCard.color
+      const newTexture = dto.topCard.texture
+
+      console.log("Top Card: ",dto.topCard)
+      console.log("dicard card: ",lastCard)
+
+      if(lastCard.color=="-" && lastCard.texture=="rainbow"){
+        const updatedCard = await this.cardService.update(lastCard.id,{color: newColor, texture: newTexture})
+        dto.topCard = updatedCard
+      }
+      console.log("Updated top card: ",dto.topCard)
+
+      //HANDS/DECKS SE DESINHRONIZIRAJO SKOZI IGRO (SE POSEBI/ONLY? KO VRZES RAINBOW CARD)
+
       //first Update Decks
       if (dto.decks) {
         await this.deckService.updateForGame(id, dto.decks, gameToUpdate.decks)
@@ -333,7 +353,7 @@ export class GameService {
       if (dto.gameState !== undefined) updateData.gameState = dto.gameState;
       if (dto.currentTurn !== undefined) updateData.currentTurn = dto.currentTurn;
       if (dto.turnOrder !== undefined) updateData.turnOrder = dto.turnOrder;
-      if (dto.topCard.id !== undefined && dto.topCard?.id) updateData.topCard = {connect: {id: dto.topCard.id}}
+      if (dto.topCard !== undefined && dto.topCard?.id) updateData.topCard = { connect: { id: dto.topCard.id } }
 
       const game = await this.prisma.game.update({
         where: { id },
@@ -358,6 +378,7 @@ export class GameService {
 
   //ADD PLAYER TO GAME
   async updatePlayerAdd(id: number, dto: UpdatePlayerDto): Promise<Game> {
+    console.log("ADDING PLAYER WITH HAND: ",dto.hand.cards)
     //run update as transaction
     return await this.prisma.$transaction(async (prisma) => {
       //check if player data sent: update player's gameId
@@ -381,8 +402,22 @@ export class GameService {
         //remove cards from the decks that are now in player's hand
         await this.deckService.updateRemoveCards(deckDto)
       }
+      /*
+      //check game state after the fact
+      const game = await this.getIds(id)
+      //at least two players, change state to Running
+      if (game.players.length > 1 && game.gameState != "Running"){
+        console.log("MORE THAN 1 PLAYER, CHANGE GAMESTATE")
+        //use class-transformer to pass dto with only gameState variable
+        const stateDto = plainToInstance(UpdateGameDto, {
+          gameState: "Running",
+        });
+        await this.update(id, stateDto)
+      }
+      */
 
-      //TODO: update game state to running if 2+ players
+      //TODO: nekje tuki je problem ko spremeni topCard z card v handu od joined playerja!!
+      //mogoc ne update draw deck ko se connecta new player?
 
       //return the game
       return this.get(id)

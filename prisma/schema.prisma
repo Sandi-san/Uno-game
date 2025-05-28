@@ -19,6 +19,8 @@ model Game {
   turnOrder   String   @default("Clockwise")
   topCardId   Int?
   topCard     Card?    @relation(fields: [topCardId], references: [id], onDelete: SetNull)
+
+  //SOLUTION?: add discardDeckId in drawDeckId explicitno
 }
 
 model Deck {
@@ -51,13 +53,15 @@ model Hand {
 
 model Card {
   id       Int    @id @default(autoincrement())
-  handId   Int?
-  hand     Hand?  @relation(fields: [handId], references: [id], onDelete: Cascade)
   priority Int
   value    Int
   color    String
   texture  String
+  
+  handId   Int?
+  hand     Hand?  @relation(fields: [handId], references: [id], onDelete: Cascade)
+  deckId   Int?
+  deck     Deck?  @relation(fields: [deckId], references: [id], onDelete: Cascade)
 
-  Deck Deck[]
-  Game Game[]
+  Game Game[] //topCard
 }

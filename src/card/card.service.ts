@@ -44,10 +44,8 @@ export class CardService {
     console.log("Deleting Cards of Game:", gameId)
     await this.prisma.card.deleteMany({
       where: {
-        Deck: {
-          some: {
-            gameId: gameId
-          }
+        deck: {
+          gameId
         }
       }
     })
@@ -58,10 +56,8 @@ export class CardService {
     console.log("Deleting Cards of Deck:", deckId)
     await this.prisma.card.deleteMany({
       where: {
-        Deck: {
-          some: {
-            id: deckId
-          }
+        deck: {
+          id: deckId
         }
       }
     })

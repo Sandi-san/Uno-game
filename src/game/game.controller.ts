@@ -37,7 +37,7 @@ export class GameController {
   @Get(':id/turn')
   async getGameTurn(@Param('id', ParseIntPipe) id: number): Promise<Game> {
     //console.log("FETCH TURN OF GAME:", id);
-    return this.gameService.getTurnAndDiscardDeck(id);
+    return this.gameService.getTurnAndTopCard(id);
   }
 
   //Update game data
