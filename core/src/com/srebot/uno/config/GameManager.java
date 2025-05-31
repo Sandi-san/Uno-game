@@ -34,6 +34,7 @@ public class GameManager {
     private boolean musicPref;
     private float soundVPref;
     private float musicVPref;
+    //TODO: add PlayIntroPref?
 
     private Player playersData;
 
@@ -135,7 +136,7 @@ public class GameManager {
     }
 
     //zdruzi playerje iz json z playerje trenutne igre
-    public List<Player>  mergeJson(List<Player> playerList) {
+    public List<Player> mergeJson(List<Player> playerList) {
         List<Player> playersFromJson = loadFromJson();
         //iteriraj skozi playersFromJson in zdruzi s playerDataList
         for (Player playerJson : playersFromJson) {

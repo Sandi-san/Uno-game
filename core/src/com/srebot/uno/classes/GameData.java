@@ -28,7 +28,7 @@ public class GameData {
     }
     */
     public GameData(
-            List<Player> playersList, Deck deckDraw, Deck deckDiscard, int maxPlayers,
+            List<Player> playersList, Deck deckDraw, Deck deckDiscard, Card topCard, int maxPlayers,
             String gameState, int currentTurn, String turnOrder){
         this.players = new Player[playersList.size()];
         for(int i=0; i<this.players.length;++i){
@@ -36,12 +36,13 @@ public class GameData {
         }
         this.decks = new Deck[2];
         this.decks[0] = deckDraw;
-        this.decks[1]=deckDiscard;
-        this.maxPlayers=maxPlayers;
-        this.topCard=deckDiscard.getTopCard();
-        this.gameState=gameState;
-        this.currentTurn=currentTurn;
-        this.turnOrder=turnOrder;
+        this.decks[1] = deckDiscard;
+        this.maxPlayers = maxPlayers;
+        //this.topCard = deckDiscard.getTopCard();
+        this.topCard = topCard;
+        this.gameState = gameState;
+        this.currentTurn = currentTurn;
+        this.turnOrder = turnOrder;
     }
 
     public int getId() {

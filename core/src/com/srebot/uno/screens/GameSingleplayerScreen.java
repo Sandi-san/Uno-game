@@ -204,6 +204,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
     public void resize(int width, int height) {
         viewport.update(width, height, true);
         hudViewport.update(width, height, true);
+        //TODO: scaleable background
     }
 
     @Override
@@ -302,7 +303,6 @@ public class GameSingleplayerScreen extends ScreenAdapter {
             if (i >= GameConfig.MAX_CARDS_SHOW) break;
             overlap += 0.1f;
         }
-        //overlap = sizeX*overlap;
         overlap = sizeX * (1 - overlap);
         float startX;
         float spacing = sizeX;
@@ -379,6 +379,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
         if (!hand.getCards().isEmpty())
             endX = (GameConfig.WORLD_WIDTH - (sizeX * 0.7f));
         //endX = (hand.getCards().get(lastIndex).getPosition().x+sizeX);
+        //TODO: start/endX glede na var first/last posX pri card render (zgoraj)
 
         if (isPlayer)
             Gdx.app.log("PLAYER", "size: " + size + " | indexes: " + firstIndex + " , " + lastIndex);
@@ -456,6 +457,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
                     // Set the outline color
                     font.setColor(outlineColor);
 
+                    //TODO: malce boljse da zgleda
                     // Draw the text multiple times to create an outline effect (up, down, left, right)
                     font.draw(batch, playerText, startX + outlineOffset, playerY + outlineOffset);  // Top-right
                     font.draw(batch, playerText, startX - outlineOffset, playerY + outlineOffset);  // Top-left
@@ -464,8 +466,6 @@ public class GameSingleplayerScreen extends ScreenAdapter {
 
                     // Draw the original text in its normal color
                     font.setColor(Color.WHITE);  // Set the font color to the main color (e.g., white)
-                    font.draw(batch, playerText, startX, playerY);
-
                     //display player's data
                     font.draw(batch, playerText, startX, playerY);
                 }
@@ -509,6 +509,8 @@ public class GameSingleplayerScreen extends ScreenAdapter {
             float waitX = GameConfig.HUD_WIDTH/2f - waitLayout.width/2f;
             float waitY = GameConfig.HUD_HEIGHT/2f + waitLayout.height/2f;
             font.draw(batch, wonText, waitX,waitY);
+
+            //TODO: tvoj final score
         }
     }
 
@@ -635,7 +637,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
         if (state == State.Running) {
             //arrow button click cycle
             Player currentPlayer = playersData.get(playerTurn - 1);
-            //TODO: get actual player turn-a
+            //TODO: get actual player turn-a (complete?)
             Hand currentHand = currentPlayer.getHand();
             if (isClickedOnArrowButtonLeft(worldCoords.x, worldCoords.y, currentHand)) {
                 if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT) && showLeftArrow) {
@@ -667,7 +669,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
                             handArrowRightClicked(currentPlayer.getHand());
                         }
                     }
-                    //TODO: get actual current player
+
                     //kliknil na card - kateri card v roki
                     for (Card card : player.getHand().getCards()) {
                         if (isClickedOnCard(worldCoords.x, worldCoords.y, card)) {
@@ -697,10 +699,13 @@ public class GameSingleplayerScreen extends ScreenAdapter {
                         case 1:
                             //random select kart
                             //cardAIrandom();
+                            cardAIpriority();
                             break;
                         case 3:
                             //gleda od playerjev karte
+                            //hint: less priority on symbols/colors player has
                             //cardAIcheater();
+                            cardAIpriority();
                             break;
                         default:
                             //gleda prioritete svojih kart
@@ -823,6 +828,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
             if (phantomHand.getCards().isEmpty()) {
                 computer.getHand().pickCard(deckDraw);
                 //copy ampak samo zadnji card (redundanca)
+                //for the logic when the AI doesn't have any valid cards in the hand and then draws a card from the deck
                 phantomHand = new Hand(computer.getHand().getLastCard());
                 //ce hocemo da vlece le eno karto, nato player poteza
                 playerPerformedAction = true;
@@ -852,9 +858,11 @@ public class GameSingleplayerScreen extends ScreenAdapter {
         if (difficultyAI == 1) {
             String color = hand.getRandomColor();
             changeTopDeckCard(color);
-        } else {
+        } else if(difficultyAI == 2) {
             String color = hand.getHighestUsedCardColor();
             changeTopDeckCard(color);
+        } else {
+            //TODO: choose color which player has LEAST of
         }
     }
 
@@ -862,7 +870,6 @@ public class GameSingleplayerScreen extends ScreenAdapter {
         topCard = Card.switchCard(deckDiscard.getSecondTopCard(), color);
     }
 
-    //TODO: computer card num v Hand ko hoveras
     //SPREMINJANJE INDEXOV CARD ELEMENTOV KI SE PRIKAZEJO V PLAYER HAND-U
     private void handArrowLeftClicked(Hand currentHand) {
         currentHand.firstIndexDecrement();

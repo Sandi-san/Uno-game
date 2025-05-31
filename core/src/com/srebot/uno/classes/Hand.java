@@ -73,9 +73,12 @@ public class Hand {
     }
 
     public void setArrowRegions(TextureAtlas.AtlasRegion region){
-        this.arrowRegionRight = new TextureRegion(region);
-        this.arrowRegionLeft = new TextureRegion(region);
-        this.arrowRegionLeft.flip(true,false);
+        if(this.arrowRegionRight==null)
+            this.arrowRegionRight = new TextureRegion(region);
+        if(this.arrowRegionLeft==null) {
+            this.arrowRegionLeft = new TextureRegion(region);
+            this.arrowRegionLeft.flip(true, false);
+        }
     }
     public void setArrowRegionLeft(float x,float y,
                                    float sizeX, float sizeY){
@@ -203,9 +206,6 @@ public class Hand {
                 ++nums[2];
                 ++nums[3];
             }*/
-        }
-        if(nums.length==0 || nums==null){
-            throw new IllegalArgumentException("Array is null or empty");
         }
         int max=0;
         int index=-1;

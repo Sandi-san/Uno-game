@@ -86,14 +86,6 @@ public class RegionNames {
     public static final String arrow = "Arrow";
 
     /*
-    //sounds
-    public static final String PLAYERSHOOT = "playerShoot.wav";
-    public static final String PLAYERHIT = "playerHit.wav";
-    public static final String CREDITCOLLECT = "creditCollect.wav";
-    public static final String HEALTHCOLLECT = "healthCollect.wav";
-    public static final String MINEEXPLODE = "mineExplode.wav";
-    public static final String POWERUPCOLLECT = "powerupCollect.wav";
-
     //particles
     public static final String TRAIL = "shipTrail.pe";
     public static final String LIGHT = "shipLight.pe";

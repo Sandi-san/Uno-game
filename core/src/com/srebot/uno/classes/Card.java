@@ -22,6 +22,10 @@ public class Card {
 
     //default costructor
     public Card() {
+        id = 0;
+        handId = 0;
+        priority = 0;
+        value = 0;
         color = "";
         texture = "";
         position = new Vector2();
@@ -202,8 +206,6 @@ public class Card {
         if (this.texture.contains("plus4"))
             return "P4";
         //preveri rainbow karte
-        //if(this.texture.contains("rainbow"))
-        //    return "-";
         return "-";
     }
 

@@ -317,6 +317,8 @@ public class MenuScreen extends ScreenAdapter {
             }
         });
 
+        //TODO: izpisi error text nekje na screenu
+
         TextButton joinGameButton = new TextButton("Join Game", skin);
         joinGameButton.addListener(new ClickListener() {
             @Override
@@ -448,7 +450,6 @@ public class MenuScreen extends ScreenAdapter {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 Gdx.app.log("CLOSING", "CLOSING");
-                // Handle join game action
                 showMultiplayerDialog();
                 dialog.remove();
             }

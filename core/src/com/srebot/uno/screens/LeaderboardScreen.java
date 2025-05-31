@@ -106,6 +106,8 @@ public class LeaderboardScreen extends ScreenAdapter {
         stage.dispose();
     }
 
+    //TODO: posebi dobi Singleplayer in Multiplayer leaderboard data
+
     private Actor createLeaderboard() {
         //TABELA
         final Table table = new Table();
