@@ -41,6 +41,18 @@ export class DeckService {
     });
   }
 
+
+  async getForGame(gameId: number): Promise<(Deck & { cards: Card[] })[]> {
+    return this.prisma.deck.findMany({
+      where: { 
+        gameId
+      },
+      include: {
+        cards: true,
+      }
+    });
+  }
+
   async update(id: number, dto: UpdateDeckDto): Promise<Deck> {
     return this.prisma.deck.update({
       where: { id },
@@ -103,27 +115,23 @@ export class DeckService {
         .filter(card => card && card.id !== undefined)
         .map(card => card.id);
 
-      // Disconnect removed cards
-      await this.prisma.deck.update({
-        where: { id: deck.id },
-        data: {
-          cards: {
-            disconnect: existingCardIds
-              .filter(id => !newCardIds.includes(id)).map(id => ({ id })),
-          },
-        },
-      });
+      // Cards removed from this deck - set deckId to null
+      const toRemove = existingCardIds.filter(id => !newCardIds.includes(id));
+      if (toRemove.length > 0) {
+        await this.prisma.card.updateMany({
+          where: { id: { in: toRemove } },
+          data: { deckId: null },
+        });
+      }
 
-      // Connect new cards
-      await this.prisma.deck.update({
-        where: { id: deck.id },
-        data: {
-          cards: {
-            connect: newCardIds
-              .filter(id => !existingCardIds.includes(id)).map(id => ({ id })),
-          },
-        },
-      });
+      // Cards newly added to this deck - set their deckId
+      const toAdd = newCardIds.filter(id => !existingCardIds.includes(id));
+      if (toAdd.length > 0) {
+        await this.prisma.card.updateMany({
+          where: { id: { in: toAdd } },
+          data: { deckId: deck.id, handId: null }, // Important: remove from Hand
+        });
+      }
     }
   }
 
@@ -135,14 +143,14 @@ export class DeckService {
       return this.prisma.deck.delete({
         where: { id },
       });
-  })
-}
+    })
+  }
 
   //delete all decks when deleting game
-  async deleteManyFromGame(gameId: number): Promise < void> {
-  console.log("Deleting Decks of Game:", gameId)
+  async deleteManyFromGame(gameId: number): Promise<void> {
+    console.log("Deleting Decks of Game:", gameId)
     await this.prisma.deck.deleteMany({
-    where: { gameId: gameId }
-  });
-}
+      where: { gameId: gameId }
+    });
+  }
 }

@@ -66,6 +66,19 @@ export class PlayerService {
     })
   }
 
+  async getForGame(gameId: number): Promise<(Player & { hand: Hand & { cards: Card[] } })[]> { //array return syntax
+    return this.prisma.player.findMany({
+      where: { gameId },
+      include: {
+        hand: {
+          include: {
+            cards: true
+          }
+        }
+      }
+    })
+  }
+
   //get player by name and return hand
   async getByName(name: string): Promise<Player | null> {
     const player = await this.prisma.player.findFirst({

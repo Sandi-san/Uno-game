@@ -56,6 +56,9 @@ export class HandService {
       const player = gamePlayers.find(p => p.id === playerDto.id);
       if (!player) throw new BadRequestException(`Player with id ${playerDto.id} not found`);
 
+      //skip current player if no hand update is provided (prevents unlawful deletion of Cards within Hand)
+      if (!playerDto.hand || !Array.isArray(playerDto.hand.cards)) continue;
+
       const newCardIds = playerDto.hand.cards
         .filter(card => card && card.id !== undefined)
         .map(card => card.id);
@@ -63,27 +66,27 @@ export class HandService {
         .filter(card => card && card.id !== undefined)
         .map(card => card.id);
 
-      // Disconnect removed cards
-      await this.prisma.hand.update({
-        where: { id: player.hand.id },
-        data: {
-          cards: {
-            disconnect: existingCardIds
-              .filter(id => !newCardIds.includes(id)).map(id => ({ id })),
-          },
-        },
-      });
+        
+      console.log(`PLAYER HAND: ${playerDto.id} | ${playerDto.hand.cards}`)
+      console.log(`HAND NEW: ${newCardIds} | EXISTING: ${existingCardIds}`)
 
-      // Connect new cards
-      await this.prisma.hand.update({
-        where: { id: player.hand.id },
-        data: {
-          cards: {
-            connect: newCardIds
-              .filter(id => !existingCardIds.includes(id)).map(id => ({ id })),
-          },
-        },
-      });
+      // Cards removed from this hand - set handId to null
+      const toRemove = existingCardIds.filter(id => !newCardIds.includes(id));
+      if (toRemove.length > 0) {
+        await this.prisma.card.updateMany({
+          where: { id: { in: toRemove } },
+          data: { handId: null },
+        });
+      }
+
+      // Cards newly added to this hand - set their handId and remove from deck
+      const toAdd = newCardIds.filter(id => !existingCardIds.includes(id));
+      if (toAdd.length > 0) {
+        await this.prisma.card.updateMany({
+          where: { id: { in: toAdd } },
+          data: { handId: player.hand.id, deckId: null },
+        });
+      }
     }
   }
 
