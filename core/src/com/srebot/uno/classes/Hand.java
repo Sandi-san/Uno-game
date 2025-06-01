@@ -263,9 +263,8 @@ public class Hand {
             deck.setCard(card);
         //odstrani iz hand
         int cardIndex = cards.indexOf(card,true);
-        if(cardIndex != -1){
+        if(cardIndex != -1)
             cards.removeIndex(cardIndex);
-        }
         //if(cards.size<indexLast)
         //    setIndexLast();
     }

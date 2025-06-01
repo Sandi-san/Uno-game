@@ -6,7 +6,9 @@ import com.badlogic.gdx.utils.Array;
 import com.srebot.uno.Uno;
 import com.srebot.uno.config.GameManager;
 
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 public class Deck {
     private GameManager manager;
@@ -267,4 +269,24 @@ public class Deck {
 
     public int getId() {return id;}
     public void setId(int id) {this.id = id;}
+
+    //remove specific cards from deck
+    public void removeCards(Array<Card> cards) {
+        // Step 1: Create a set of IDs to remove (faster implementation)
+        Set<Integer> cardsToRemove = new HashSet<>();
+        for (Card card : cards) {
+            cardsToRemove.add(card.getId());
+        }
+        int iters = 0;
+        // Step 2: Iterate through the deck in reverse and remove matching cards
+        for (int i = this.cards.size - 1; i >= 0; i--) {
+            if (cardsToRemove.contains(this.cards.get(i).getId())) {
+                this.cards.removeIndex(i);
+                ++iters;
+            }
+            //prevent checking all cards when necessary ones are removed
+            if(iters>=cards.size)
+                break;
+        }
+    }
 }

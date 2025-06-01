@@ -249,6 +249,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                                     if (fetchedGame != null) {
                                         Gdx.app.log("GAME", "Game fetched: " + fetchedGame.getId());
                                         setGameData(fetchedGame);
+                                        //TODO: check null on each BE return, if returned null, display Server Connection error text
                                     } else {
                                         Gdx.app.log("ERROR", "Failed to update game with player.");
                                     }
@@ -341,6 +342,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                             if (!checkPlayersChanged(updatedGame.getPlayers()))
                                 startScheduler();
                             //update game State before fetching from DB
+                            //TODO: check current turn (if its you) and THEN run wait for turn checker
                             waitForPlayers();
                         }
 
@@ -756,6 +758,10 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         else if(player.getHand().getCards().isEmpty()) {
             Player thisPlayer = new Player(player.getId(), player.getName(), 0, new Hand());
             thisPlayer.getHand().pickCards(deckDraw, 5);
+        }
+        else {
+            //player already has Hand data, but those cards must be removed from local Deck to prevent duplication
+            deckDraw.removeCards(player.getHand().getCards());
         }
         return player;
     }
@@ -1305,7 +1311,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
             // Reset the font scale back to its original size after drawing the player's text
             font.getData().setScale(1f, 1f);
-        }
+        }   //TODO: also draw cards but not decks
         else if (state == State.Paused) {
             //set text and get size to correctly draw the text in the center of the screen
             String waitText = "Waiting for players";
