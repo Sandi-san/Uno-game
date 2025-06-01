@@ -315,13 +315,13 @@ export class GameService {
       //first Update Decks
       if (dto.decks) {
         const gameDecks = await this.deckService.getForGame(id)
-        await this.deckService.updateForGame(id, dto.decks, gameDecks)
+        await this.deckService.updateForGame(dto.decks, gameDecks)
       }
       //second Update Players' Hands
       if (dto.players) {
         //refetch before updating (important for first game turn else unsynchronized behaviour)
         const gamePlayers = await this.playerService.getForGame(id)
-        await this.handService.updateForGame(id, dto.players, gamePlayers)
+        await this.handService.updateForGame(dto.players, gamePlayers)
       }
 
       //if the game is over, update all connected players' scores
@@ -356,6 +356,16 @@ export class GameService {
         },
       });
 
+      /*
+      console.log("PLAYER 0: ")
+      for (const player of game.players[0].hand.cards)
+        console.log(`${player.id} ${player.color} ${player.value} ${player.texture}`)
+
+      console.log("PLAYER 1: ")
+      for (const player of game.players[1].hand.cards)
+        console.log(`${player.id} ${player.color} ${player.value} ${player.texture}`)
+      */
+
       return game;
     })
   }
@@ -386,13 +396,22 @@ export class GameService {
         //console.log("DECK:", deckDto)
         //remove cards from the decks that are now in player's hand
         await this.deckService.updateRemoveCards(deckDto)
+
+        //get updated game
+        const updatedGamePlayers = await this.getPlayers(id)
+
+        //one player remains, change state to Paused
+        if (updatedGamePlayers.length >= 2) {
+          console.log("2 OR MORE PLAYERS, CHANGE GAMESTATE")
+          //use class-transformer to pass dto with only gameState variable
+          const stateDto = plainToInstance(UpdateGameDto, {
+            gameState: "Running",
+          });
+          return await this.update(id, stateDto)
+        }
       }
 
-      //TODO: nekje tuki je problem ko spremeni topCard z card v handu od joined playerja!!
-      //mogoc ne update draw deck ko se connecta new player?
-
-      //return the game
-      return this.get(id)
+      return await this.get(id)
     })
   }
 

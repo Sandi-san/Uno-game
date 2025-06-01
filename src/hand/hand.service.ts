@@ -50,8 +50,10 @@ export class HandService {
   }
 
   //update hands for specific game 
-  async updateForGame(gameId: number, dtoPlayers: UpdatePlayerDto[],
-    gamePlayers: (Player & { hand: Hand & { cards: Card[] } })[]): Promise<void> {
+  async updateForGame(
+    dtoPlayers: UpdatePlayerDto[],
+    gamePlayers: (Player & { hand: Hand & { cards: Card[] } })[],
+  ): Promise<void> {
     for (const playerDto of dtoPlayers) {
       const player = gamePlayers.find(p => p.id === playerDto.id);
       if (!player) throw new BadRequestException(`Player with id ${playerDto.id} not found`);

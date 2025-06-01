@@ -102,7 +102,7 @@ export class DeckService {
   }
 
   //update decks for specific game 
-  async updateForGame(gameId: number, dtoDecks: UpdateDeckDto[], gameDecks: (Deck & { cards: Card[] })[]): Promise<void> {
+  async updateForGame(dtoDecks: UpdateDeckDto[], gameDecks: (Deck & { cards: Card[] })[]): Promise<void> {
     console.log(`Update Deck Discard ${dtoDecks[1].id}`, dtoDecks[1].cards)
     for (const deckDto of dtoDecks) {
       const deck = gameDecks.find(d => d.id === deckDto.id);
