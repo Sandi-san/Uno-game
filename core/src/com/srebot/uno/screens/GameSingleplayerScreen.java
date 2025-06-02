@@ -102,7 +102,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
 
     private Array<Card> choosingCards = new Array<Card>();
 
-    public GameSingleplayerScreen(Uno game) {
+    public GameSingleplayerScreen(Uno game, Array<String> args) {
         this.game = game;
         assetManager = game.getAssetManager();
         manager = game.getManager();

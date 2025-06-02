@@ -158,7 +158,7 @@ public class MenuScreen extends ScreenAdapter {
         playSPButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                game.setScreen(new GameSingleplayerScreen(game));
+                showCreateGameSingleplayerDialog();
             }
         });
 
@@ -309,15 +309,14 @@ public class MenuScreen extends ScreenAdapter {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 if (serverConnected.get()) {
-                    showCreateGameDialog();
+                    showCreateGameMultiplayerDialog();
                     dialog.remove();
                 } else {
                     Gdx.app.log("CANNOT CONNECT TO SERVER", "CANNOT CREATE GAME");
+                    showMessageDialog("Cannot connect to server!");
                 }
             }
         });
-
-        //TODO: izpisi error text nekje na screenu
 
         TextButton joinGameButton = new TextButton("Join Game", skin);
         joinGameButton.addListener(new ClickListener() {
@@ -330,12 +329,14 @@ public class MenuScreen extends ScreenAdapter {
                         if(gamePlayers.length>=selectedGame.getMaxPlayers()){
                             Gdx.app.log("ERROR", "CANNOT JOIN GAME: " + selectedGame.getId()
                             +". PLAYER SLOTS ARE FULL.");
+                            showMessageDialog("Player slots are full.");
                             return;
                         }
                         for(Player player : gamePlayers){
                             if(Objects.equals(player.getName(), manager.getNamePref())) {
                                 Gdx.app.log("ERROR", "CANNOT JOIN GAME: " + selectedGame.getId()
                                         + ". PLAYER WITH SAME NAME IS ALREADY PLAYING.");
+                                showMessageDialog("Player with same name is already playing.");
                                 return;
                             }
                         }
@@ -345,6 +346,7 @@ public class MenuScreen extends ScreenAdapter {
                     }
                 } else {
                     Gdx.app.log("CANNOT JOIN GAME", "NO GAME SELECTED");
+                    showMessageDialog("No game selected.");
                 }
             }
         });
@@ -380,7 +382,7 @@ public class MenuScreen extends ScreenAdapter {
         dialog.setPosition((stage.getWidth() - dialog.getWidth()) / 2, (stage.getHeight() - dialog.getHeight()) / 2);
     }
 
-    private void showCreateGameDialog() {
+    private void showCreateGameMultiplayerDialog() {
         // Create a dialog
         Dialog dialog = new Dialog("", skin) {
             @Override
@@ -471,6 +473,113 @@ public class MenuScreen extends ScreenAdapter {
         // Set the size of the dialog (changes when adding background image)
         dialog.setSize(GameConfig.WIDTH*0.6f, GameConfig.HEIGHT*0.6f);
         // Center the dialog
+        dialog.setPosition((stage.getWidth() - dialog.getWidth()) / 2, (stage.getHeight() - dialog.getHeight()) / 2);
+    }
+
+    private void showCreateGameSingleplayerDialog() {
+        // Create a dialog
+        Dialog dialog = new Dialog("", skin) {
+            @Override
+            protected void result(Object object) {
+                // Handle dialog result here if needed
+            }
+        };
+        Label titleLabel = new Label("Game settings", fontSkin);
+        dialog.getContentTable().add(titleLabel).padTop(20).center().expand().row();
+
+        final Table settingsTable = new Table(skin);
+        settingsTable.defaults();
+
+        //PRIPRAVI SEZNAME ZA BOX
+        Integer[] numPlayerValues = new Integer[]{1,2,3};
+        Integer[] deckSizeValues = new Integer[]{52,104,208};
+        String[] presetValues = new String[]{"All", "Numbers only"};
+        String[] orderValues = new String[]{"Clockwise", "Counter Clockwise"};
+
+        //USTVARI WIDGETE
+        //NAPOLNI SEZNAM IN NASTAVI PRIKAZAN ELEMENT
+        final SelectBox<Integer> numPlayerBox = new SelectBox<Integer>(skin);
+        numPlayerBox.setItems(numPlayerValues);
+        numPlayerBox.setSelected(numPlayerValues[0]);
+        final SelectBox<Integer> deckSizeBox = new SelectBox<Integer>(skin);
+        deckSizeBox.setItems(deckSizeValues);
+        deckSizeBox.setSelected(deckSizeValues[1]);
+        final SelectBox<String> presetBox = new SelectBox<String>(skin);
+        presetBox.setItems(presetValues);
+        final SelectBox<String> orderBox = new SelectBox<String>(skin);
+        orderBox.setItems(orderValues);
+        orderBox.setSelected(orderValues[0]);
+
+        Label numPlayerLabel = new Label("Number of AIs: ",skin);
+        Label deskSizeLabel = new Label("Deck size: ",skin);
+        Label presetLabel = new Label("Card preset: ",skin);
+        Label orderLabel = new Label("Turn order: ",skin);
+
+        //STYLING
+        float boxWidth = (float) Math.floor(GameConfig.WIDTH/5.3f);
+        settingsTable.add(numPlayerLabel).pad(10);
+        settingsTable.add(numPlayerBox).pad(10).width(boxWidth).row();
+        settingsTable.add(deskSizeLabel).pad(10);
+        settingsTable.add(deckSizeBox).pad(10).width(boxWidth).row();
+        settingsTable.add(presetLabel).pad(10);
+        settingsTable.add(presetBox).pad(10).width(boxWidth).row();
+        settingsTable.add(orderLabel).pad(10);
+        settingsTable.add(orderBox).pad(10).width(boxWidth).row();
+
+        dialog.getContentTable().add(settingsTable).row();
+
+        // Create buttons
+        TextButton createGameButton = new TextButton("Start Game", skin);
+        createGameButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                Gdx.app.log("STARTING GAME", "STARTING GAME");
+                final Array<String> args = new Array<String>();
+                args.add(String.valueOf(numPlayerBox.getSelected()),String.valueOf(deckSizeBox.getSelected()),
+                        presetBox.getSelected(),orderBox.getSelected());
+                game.setScreen(new GameSingleplayerScreen(game,args));
+            }
+        });
+
+        TextButton closeButton = new TextButton("Close", skin);
+        closeButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                Gdx.app.log("CLOSING", "CLOSING");
+                dialog.remove();
+            }
+        });
+
+        // Add buttons to the dialog
+        Table buttonTable = new Table(skin);
+        buttonTable.add(createGameButton).left().padBottom(15);
+        buttonTable.add(closeButton).right().padBottom(15);
+        dialog.getContentTable().add(buttonTable);
+
+        NinePatch patch = new NinePatch(gameplayAtlas.findRegion(RegionNames.backgroundPane1));
+        NinePatchDrawable dialogBackground = new NinePatchDrawable(patch);
+        dialog.setBackground(dialogBackground);
+
+        dialog.show(stage);
+        // Set the size of the dialog (changes when adding background image)
+        dialog.setSize(GameConfig.WIDTH*0.6f, GameConfig.HEIGHT*0.6f);
+        // Center the dialog
+        dialog.setPosition((stage.getWidth() - dialog.getWidth()) / 2, (stage.getHeight() - dialog.getHeight()) / 2);
+    }
+
+    private void showMessageDialog(String messageText){
+        Dialog dialog = new Dialog("",skin);
+        Label labelText = new Label(messageText,fontSkin);
+        dialog.getContentTable().add(labelText).padTop(20).center().expand().row();
+        //background
+        NinePatch patch = new NinePatch(gameplayAtlas.findRegion(RegionNames.backgroundPane1));
+        NinePatchDrawable dialogBackground = new NinePatchDrawable(patch);
+        dialog.setBackground(dialogBackground);
+        //button
+        dialog.button("OK");
+        dialog.show(stage);
+        //size & center
+        dialog.setSize(labelText.getWidth()+20f, GameConfig.HEIGHT*0.2f);
         dialog.setPosition((stage.getWidth() - dialog.getWidth()) / 2, (stage.getHeight() - dialog.getHeight()) / 2);
     }
 }

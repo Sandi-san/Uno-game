@@ -115,6 +115,8 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
     private int localPlayerId = 0;
     private int currentGameId = 0;
+    private boolean isWaiting = false;
+    private Player playerWaiting = null;
 
     //player hand arrow button display
     private boolean showLeftArrow;
@@ -237,8 +239,9 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                         else if (Objects.equals(fetchedTurnAndDeck.getGameState(), "Paused")) {
                             state = State.Paused;
                         }
-                        //TODO: add to HUD: waiting for which player
                         Gdx.app.log("TURN FETCH", "Player: " + localPlayerId + " is waiting for turn...");
+                        playerWaiting = playersData.get(fetchedTurn-1);
+                        Gdx.app.log("TURN FETCH", "Waiting for player: " + playerWaiting.getName());
                         //fetched turn is valid
                         if (fetchedTurn != 0 && fetchedTopCard != null) {
                             topCard = fetchedTopCard;
@@ -247,6 +250,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                                 //get full data of database
                                 fetchGameFromBackend(currentGameId, fetchedGame -> {
                                     if (fetchedGame != null) {
+                                        isWaiting = false;
                                         Gdx.app.log("GAME", "Game fetched: " + fetchedGame.getId());
                                         setGameData(fetchedGame);
                                         //TODO: check null on each BE return, if returned null, display Server Connection error text
@@ -259,6 +263,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                     }
                 });
             }
+            isWaiting = false;
             Gdx.app.log("TURN FETCH", "Player: " + localPlayerId + " is not waiting.");
         }, 0, 5, TimeUnit.SECONDS); // Check every 3 seconds (completes within 3s)
     }
@@ -399,8 +404,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             }
         }
         //else, players already changed in checkPlayersChanged function
-
-        //playersData = Arrays.asList(fetchedGame.getPlayers());
 
         state = State.valueOf(fetchedGame.getGameState());
         playerTurn = fetchedGame.getCurrentTurn();
@@ -750,7 +753,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     private Player createPlayerAndDraw(Player player) {
         //note, do not draw from deck again if player has already drawed
         if(player.getHand() == null) {
-            //TODO: lahko samo new Hand?
             Player thisPlayer = new Player(player.getId(), player.getName(), 0, new Hand());
             thisPlayer.getHand().pickCards(deckDraw, 5);
             return thisPlayer;
@@ -898,8 +900,10 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
     //check scheduler for retrieving turn
     public boolean waitForTurn() {
-        if (playerTurn != getIndexOfCurrentPlayer() + 1)
+        if (playerTurn != getIndexOfCurrentPlayer() + 1) {
+            isWaiting = true;
             return true;
+        }
         return false;
     }
 
@@ -1269,6 +1273,8 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             float outlineOffset = 1.8f;  // The offset for the outline
             Color outlineColor = Color.BLACK;  // Outline color
 
+            float waitingY = 0;
+
             for (int i = 0; i < playersData.size(); ++i) {
                 Player player = playersData.get(i);
                 if (player != null) {
@@ -1291,7 +1297,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                     }
                     String playerText = position + ": " + player;
                     //get vertical start of each new player
-                    float playerY = startY - i * lineHeight;
+                    float playerY = startY - i * lineHeight + 1.5f; //new line + slight gap
 
                     // Set the outline color
                     font.setColor(outlineColor);
@@ -1306,7 +1312,30 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                     font.setColor(Color.WHITE);  // Set the font color to the main color (e.g., white)
                     //display player's data
                     font.draw(batch, playerText, startX, playerY);
+
+                    if(isWaiting)
+                        waitingY = playerY;
                 }
+            }
+
+            //draw waiting for player if
+            if(isWaiting && playerWaiting!=null){
+                waitingY = waitingY - lineHeight;
+                font.getData().setScale(1f);
+                outlineColor = Color.YELLOW;
+                String waitingText = "Waiting for: " + playerWaiting.getName();
+
+                font.setColor(outlineColor);
+
+                //outline effect
+                font.draw(batch, waitingText, startX + outlineOffset, waitingY + outlineOffset);  // Top-right
+                font.draw(batch, waitingText, startX - outlineOffset, waitingY + outlineOffset);  // Top-left
+                font.draw(batch, waitingText, startX + outlineOffset, waitingY - outlineOffset);  // Bottom-right
+                font.draw(batch, waitingText, startX - outlineOffset, waitingY - outlineOffset);  // Bottom-left
+
+                //text
+                font.setColor(Color.WHITE);
+                font.draw(batch, waitingText, startX, waitingY);
             }
 
             // Reset the font scale back to its original size after drawing the player's text
@@ -1321,7 +1350,9 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             float waitY = GameConfig.HUD_HEIGHT/2f + waitLayout.height/2f;
             font.draw(batch, waitText, waitX,waitY);
         }
+        //TODO: also draw HUD
         else if(state == State.Over){
+            checkGamestate();
             //set text and get size to correctly draw the text in the center of the screen
             String wonText = "Winner is: ";
             if(winner!=Winner.None) {
@@ -1610,7 +1641,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             winner = Winner.None;
         }
         for (int i = 0; i < playersData.size(); ++i) {
-            if (state == State.Over) break;
             Player player = playersData.get(i);
             if (player != null) {
                 if (player.getHand().getCards().isEmpty()) {
