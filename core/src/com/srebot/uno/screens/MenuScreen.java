@@ -417,7 +417,7 @@ public class MenuScreen extends ScreenAdapter {
         orderBox.setSelected(orderValues[0]);
 
         Label numPlayerLabel = new Label("Maximum players: ",skin);
-        Label deskSizeLabel = new Label("Deck size: ",skin);
+        Label deckSizeLabel = new Label("Deck size: ",skin);
         Label presetLabel = new Label("Card preset: ",skin);
         Label orderLabel = new Label("Turn order: ",skin);
 
@@ -425,7 +425,7 @@ public class MenuScreen extends ScreenAdapter {
         float boxWidth = (float) Math.floor(GameConfig.WIDTH/5.3f);
         settingsTable.add(numPlayerLabel).pad(10);
         settingsTable.add(numPlayerBox).pad(10).width(boxWidth).row();
-        settingsTable.add(deskSizeLabel).pad(10);
+        settingsTable.add(deckSizeLabel).pad(10);
         settingsTable.add(deckSizeBox).pad(10).width(boxWidth).row();
         settingsTable.add(presetLabel).pad(10);
         settingsTable.add(presetBox).pad(10).width(boxWidth).row();
@@ -491,16 +491,17 @@ public class MenuScreen extends ScreenAdapter {
         settingsTable.defaults();
 
         //PRIPRAVI SEZNAME ZA BOX
-        Integer[] numPlayerValues = new Integer[]{1,2,3};
+        Integer[] numComputerValues = new Integer[]{1,2,3};
         Integer[] deckSizeValues = new Integer[]{52,104,208};
         String[] presetValues = new String[]{"All", "Numbers only"};
         String[] orderValues = new String[]{"Clockwise", "Counter Clockwise"};
+        Integer[] AIDiffValues = new Integer[]{1,2,3};
 
         //USTVARI WIDGETE
         //NAPOLNI SEZNAM IN NASTAVI PRIKAZAN ELEMENT
-        final SelectBox<Integer> numPlayerBox = new SelectBox<Integer>(skin);
-        numPlayerBox.setItems(numPlayerValues);
-        numPlayerBox.setSelected(numPlayerValues[0]);
+        final SelectBox<Integer> numComputerBox = new SelectBox<Integer>(skin);
+        numComputerBox.setItems(numComputerValues);
+        numComputerBox.setSelected(numComputerValues[0]);
         final SelectBox<Integer> deckSizeBox = new SelectBox<Integer>(skin);
         deckSizeBox.setItems(deckSizeValues);
         deckSizeBox.setSelected(deckSizeValues[1]);
@@ -509,17 +510,24 @@ public class MenuScreen extends ScreenAdapter {
         final SelectBox<String> orderBox = new SelectBox<String>(skin);
         orderBox.setItems(orderValues);
         orderBox.setSelected(orderValues[0]);
+        final SelectBox<Integer> AIDiffBox = new SelectBox<Integer>(skin);
+        AIDiffBox.setItems(AIDiffValues);
+        AIDiffBox.setSelected(AIDiffValues[1]);
 
-        Label numPlayerLabel = new Label("Number of AIs: ",skin);
-        Label deskSizeLabel = new Label("Deck size: ",skin);
+        Label numComputerLabel = new Label("Number of AIs: ",skin);
+        Label AIDiffLabel = new Label("AI difficulty: ",skin);
+        Label deckSizeLabel = new Label("Deck size: ",skin);
         Label presetLabel = new Label("Card preset: ",skin);
         Label orderLabel = new Label("Turn order: ",skin);
+        //TODO?: add card preset - by number, random, etc.
 
         //STYLING
         float boxWidth = (float) Math.floor(GameConfig.WIDTH/5.3f);
-        settingsTable.add(numPlayerLabel).pad(10);
-        settingsTable.add(numPlayerBox).pad(10).width(boxWidth).row();
-        settingsTable.add(deskSizeLabel).pad(10);
+        settingsTable.add(numComputerLabel).pad(10);
+        settingsTable.add(numComputerBox).pad(10).width(boxWidth).row();
+        settingsTable.add(AIDiffLabel).pad(10);
+        settingsTable.add(AIDiffBox).pad(10).width(boxWidth).row();
+        settingsTable.add(deckSizeLabel).pad(10);
         settingsTable.add(deckSizeBox).pad(10).width(boxWidth).row();
         settingsTable.add(presetLabel).pad(10);
         settingsTable.add(presetBox).pad(10).width(boxWidth).row();
@@ -535,8 +543,8 @@ public class MenuScreen extends ScreenAdapter {
             public void clicked(InputEvent event, float x, float y) {
                 Gdx.app.log("STARTING GAME", "STARTING GAME");
                 final Array<String> args = new Array<String>();
-                args.add(String.valueOf(numPlayerBox.getSelected()),String.valueOf(deckSizeBox.getSelected()),
-                        presetBox.getSelected(),orderBox.getSelected());
+                args.add(String.valueOf(numComputerBox.getSelected()),String.valueOf(AIDiffBox.getSelected()));
+                args.add(String.valueOf(deckSizeBox.getSelected()),presetBox.getSelected(),orderBox.getSelected());
                 game.setScreen(new GameSingleplayerScreen(game,args));
             }
         });

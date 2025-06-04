@@ -647,6 +647,19 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         return index;
     }
 
+    //get the maximum amount of cards to render in player's hand during game
+    private int getMaxCardsShow(){
+        int maxCardsShow = 7;
+        if(getPlayersSize()==2){
+            maxCardsShow = GameConfig.MAX_CARDS_SHOW;
+        }
+        //small size if 3 or 4 players
+        else {
+            maxCardsShow = GameConfig.MAX_CARDS_SHOW_SM;
+        }
+        return maxCardsShow;
+    }
+
     private boolean isPlayerAlreadyInArray(Player player){
         for(Player arrayPlayer : playersData){
             if(arrayPlayer!=null && player!=null) {
@@ -973,8 +986,18 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
     private void draw() {
         //VELIKOST kart (v WORLD UNITS)
-        float sizeX = GameConfig.CARD_WIDTH_SM;
-        float sizeY = GameConfig.CARD_HEIGHT_SM;
+        float sizeX = 11.2f;
+        float sizeY = 16f;
+        //regular size if 2 players
+        if(getPlayersSize()==2){
+            sizeX = GameConfig.CARD_WIDTH;
+            sizeY = GameConfig.CARD_HEIGHT;
+        }
+        //small size if 3 or 4 players
+        else {
+            sizeX = GameConfig.CARD_WIDTH_SM;
+            sizeY = GameConfig.CARD_HEIGHT_SM;
+        }
 
         if (state == State.Running) {
             //MIDDLE DECK
@@ -1016,7 +1039,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                             sizeX, sizeY, isCurrentPlayer);
                 }
             }
-
         } else if (state == State.Choosing) {
             drawColorWheel();
         }
@@ -1028,9 +1050,10 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     private void drawHand(Hand hand, int index, float sizeX, float sizeY, boolean isPlayer) {
         Array<Card> cards = hand.getCards();
         int size = cards.size;
+        int maxCardsShow = getMaxCardsShow();
         //hand.setIndexLast();
         int firstIndex = hand.getIndexFirst();
-        int lastIndex = hand.getIndexLast(GameConfig.MAX_CARDS_SHOW_SM);
+        int lastIndex = hand.getIndexLast(maxCardsShow);
 
         float startX = 0; //start at bottom
 
@@ -1068,7 +1091,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         float overlap = 0f;
         float spacing = 0f;
         //for showing less cards than MaxCardsShow on left/right
-        int verticalShow = GameConfig.MAX_CARDS_SHOW_SM - 4;
+        int verticalShow = maxCardsShow - 4;
         //drawing left/right sides of screen
         if (startX == 1 || startX == 3) {
             //if (startX == 0 || startX == 2){
@@ -1079,8 +1102,8 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         }
         //drawing top/bottom sides of screen
         else {
-            for (int i = GameConfig.MAX_CARDS_SHOW_SM - 2; i < size; ++i) {
-                if (i >= GameConfig.MAX_CARDS_SHOW_SM) break;
+            for (int i = maxCardsShow - 2; i < size; ++i) {
+                if (i >= maxCardsShow) break;
                 overlap += 0.1f;
             }
         }
@@ -1091,13 +1114,13 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         if (startX == 0 || startX == 2) {
             //if (startX == 1 || startX == 3) {
             //brez spacing
-            if (size <= GameConfig.MAX_CARDS_SHOW_SM - 2) {
+            if (size <= maxCardsShow - 2) {
                 hand.setIndexLast();
                 lastIndex = hand.getIndexLast();
                 startX = (GameConfig.WORLD_WIDTH - size * sizeX) / 2f;
             }
             //spacing le dokler ne reachas MaxCardsToShow
-            else if (size <= GameConfig.MAX_CARDS_SHOW_SM) {
+            else if (size <= maxCardsShow) {
                 hand.setIndexLast();
                 lastIndex = hand.getIndexLast();
                 spacing = overlap;
@@ -1106,12 +1129,20 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             //ne vec spacingat ko imas vec kart kot MaxCardsToShow
             else {
                 spacing = overlap;
-                startX = (GameConfig.WORLD_WIDTH - GameConfig.MAX_CARDS_SHOW_SM * sizeX) / 2f;
+                startX = (GameConfig.WORLD_WIDTH - maxCardsShow * sizeX) / 2f;
             }
 
+            //koliko prostora ostane na horizontali ki ni pokrita z karti
+            //deli polovicno za risanje arrow-jev
+            //TODO: DELUJE, lahko odstranis startX v above if-ih
+            float sizeLeft = GameConfig.WORLD_WIDTH - ((size - firstIndex) * spacing);
+            startX = sizeLeft / 2f;
+
+            /*
             //LIMIT RENDER CARDS LEVO (plac vmes je 70% card width)
             if (startX < (sizeX * 0.7f))
                 startX = (sizeX * 0.7f);
+             */
 
             //IZRISI CARDE
             Array<Integer> indexHover = new Array<Integer>();
@@ -1185,7 +1216,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             }
 
             //render button left
-            if (size >= GameConfig.MAX_CARDS_SHOW_SM && isPlayer && showLeftArrow) {
+            if (size >= maxCardsShow && isPlayer && showLeftArrow) {
                 float arrowX = startX - sizeX / 2 - (sizeX * 0.1f);
                 //float arrowY = startY + arrowRegion.getRegionHeight() / 2;
                 float arrowY = startY + (sizeY * 0.2f);
@@ -1193,7 +1224,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 hand.renderArrowLeft(batch);
             }
             //render button right
-            if (size >= GameConfig.MAX_CARDS_SHOW_SM && isPlayer && showRightArrow) {
+            if (size >= maxCardsShow && isPlayer && showRightArrow) {
                 float arrowX = endX + (sizeX * 0.1f);
                 //float arrowY = startY + arrowRegion.getRegionHeight() / 2;
                 float arrowY = startY + (sizeY * 0.2f);
@@ -1201,7 +1232,8 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 hand.setArrowRegionRight(arrowX, arrowY, sizeX / 2, sizeY / 2);
                 hand.renderArrowRight(batch);
             }
-        } else if (startX == 1 || startX == 3) {
+        }
+        else if (startX == 1 || startX == 3) {
             //else if (startX == 0 || startX == 2) {
             //for rotating Card 90deg (far left) or -90deg (far right)
             int rotationScalar = 1;
@@ -1225,7 +1257,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             //ne vec spacingat ko imas vec kart kot MaxCardsToShow
             else {
                 spacing = overlap; //lastIndex=maxcards
-                startY = (GameConfig.WORLD_HEIGHT - GameConfig.MAX_CARDS_SHOW_SM * sizeY) / 2f;
+                startY = (GameConfig.WORLD_HEIGHT - maxCardsShow * sizeY) / 2f;
             }
 
             //LIMIT RENDER CARDS DOL
@@ -1274,6 +1306,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             Color outlineColor = Color.BLACK;  // Outline color
 
             float waitingY = 0;
+            float playerY = startY;
 
             for (int i = 0; i < playersData.size(); ++i) {
                 Player player = playersData.get(i);
@@ -1297,7 +1330,8 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                     }
                     String playerText = position + ": " + player;
                     //get vertical start of each new player
-                    float playerY = startY - i * lineHeight + 1.5f; //new line + slight gap
+                    if(i!=0)
+                        playerY = playerY - (lineHeight*2);
 
                     // Set the outline color
                     font.setColor(outlineColor);
@@ -1483,6 +1517,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     private void specialCardAction(Card card, Hand hand) {
         int index;
         String special = card.getSpecial();
+        int maxCardsShow = getMaxCardsShow();
         switch (special) {
             //Stop
             case "S":
@@ -1504,7 +1539,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 //naslednji player picka 2x karti
                 playersData.get(index - 1).getHand().pickCards(deckDraw, 2);
                 //inkrementiraj lastIndex
-                playersData.get(index - 1).getHand().lastIndexIncrement(2);
+                playersData.get(index - 1).getHand().lastIndexIncrement(2,maxCardsShow);
                 break;
             //Plus 4
             case "P4":
@@ -1512,7 +1547,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 //naj vlecejo +4
                 index = getNextTurn(playerTurn);
                 playersData.get(index - 1).getHand().pickCards(deckDraw, 4);
-                playersData.get(index - 1).getHand().lastIndexIncrement(4);
+                playersData.get(index - 1).getHand().lastIndexIncrement(4,maxCardsShow);
                 break;
             //Rainbow
             default:
@@ -1525,14 +1560,16 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     //SPREMINJANJE INDEXOV CARD ELEMENTOV KI SE PRIKAZEJO V PLAYER HAND-U
     private void handArrowLeftClicked(Hand currentHand) {
         currentHand.firstIndexDecrement();
-        currentHand.lastIndexDecrement();
+        int maxCardsShow = getMaxCardsShow();
+        currentHand.lastIndexDecrement(maxCardsShow);
         int indexFirst = currentHand.getIndexFirst();
         int indexLast = currentHand.getIndexLast();
         Gdx.app.log("ARROW CLICK LEFT", "Index first: " + indexFirst + " | Index last: " + indexLast);
     }
 
     private void handArrowRightClicked(Hand currentHand) {
-        currentHand.firstIndexIncrement();
+        int maxCardsShow = getMaxCardsShow();
+        currentHand.firstIndexIncrement(maxCardsShow);
         currentHand.lastIndexIncrement();
         int indexFirst = currentHand.getIndexFirst();
         int indexLast = currentHand.getIndexLast();

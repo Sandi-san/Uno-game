@@ -93,7 +93,9 @@ public class GameSingleplayerScreen extends ScreenAdapter {
 
     //playerji
     private Player player;
-    private Player computer;
+    private Player computer1;
+    private Player computer2;
+    private Player computer3;
     private List<Player> playersData;
 
     //player hand arrow button display
@@ -108,6 +110,86 @@ public class GameSingleplayerScreen extends ScreenAdapter {
         manager = game.getManager();
         state = State.Running;
 
+        setMusicAndSounds();
+
+        font = assetManager.get(AssetDescriptors.UI_FONT);
+        batch = new SpriteBatch();
+        initGame(args);
+    }
+
+    //pripravi igro (init globals)
+    public void initGame(Array<String> args) {
+        //0-numComputers,1-AIdiff,2-deckSize,3-presetBox,4-orderBox,
+        int numComputers = Integer.parseInt(args.get(0));
+        difficultyAI = Integer.parseInt(args.get(1));
+        deckSize = Integer.parseInt(args.get(2));
+        String preset = args.get(3);
+        clockwiseOrder = Objects.equals(args.get(4), "Clockwise");
+
+        //USTVARI DECKE
+        //ustvari main deck
+        deckDraw = new Deck(deckSize, game);
+        //deckDraw.generateRandom();
+        //deckDraw.generateByRules(2, 2, 2);
+        deckDraw.generateBySize(deckSize,preset);
+        deckDraw.shuffleDeck();
+        //vzemi eno karto iz deka
+        topCard = deckDraw.pickCard();
+
+        //ustvari discard dek in polozi to karto nanj
+        deckDiscard = new Deck(deckSize, game);
+        deckDiscard.setCard(topCard);
+
+        playersData = new ArrayList<>();
+        //USTVARI PLAYERJE
+        //dobi iz jsona ce obstaja
+        player = manager.getPlayerByName(manager.loadFromJson(), manager.getNamePref());
+        Hand playerHand = new Hand();
+        if (player == null) {
+            player = new Player(manager.getNamePref(), 0, playerHand);
+        } else {
+            player.setHand(playerHand);
+        }
+        player.getHand().pickCards(deckDraw, 5);
+        //playerHand.initIndexes();
+
+        //ZA VSE OSTALE PLAYERJE
+
+        //for each player dodaj v playerData
+        //Pomembni order: bottom->left->top->right
+        computer1 = new Player("Computer", 0, new Hand());
+        computer1.getHand().pickCards(deckDraw, 5);
+        //1 AI
+        if(numComputers==1) {
+            playersData.add(player); //bottom
+            playersData.add(null);  //right
+            playersData.add(computer1); //top
+            playersData.add(null);  //left
+        }
+        //2 AIs
+        else {
+            computer2 = new Player("Computer", 0, new Hand());
+            computer2.getHand().pickCards(deckDraw, 5);
+
+            playersData.add(player);
+            playersData.add(computer1);
+            playersData.add(computer2);
+            //3 AIs
+            if (numComputers == 3) {
+                computer3 = new Player("Computer", 0, new Hand());
+                computer3.getHand().pickCards(deckDraw, 5);
+                playersData.add(computer3);
+            }
+            else
+                playersData.add(null);
+        }
+
+        //pripravi globale
+        getFirstTurn();
+        playerPerformedAction = false;
+    }
+
+    private void setMusicAndSounds() {
         //music on?
         if (manager.getMusicPref()) {
             game.stopMusic();
@@ -122,61 +204,6 @@ public class GameSingleplayerScreen extends ScreenAdapter {
             sfxPickup = assetManager.get(AssetDescriptors.PICK_SOUND);
             sfxCollect = assetManager.get(AssetDescriptors.SET_SOUND);
         }
-
-        font = assetManager.get(AssetDescriptors.UI_FONT);
-        batch = new SpriteBatch();
-        initGame();
-    }
-
-    //pripravi igro (init globals)
-    public void initGame() {
-        playersData = new ArrayList<>();
-        //USTVARI DECKE
-        //ustvari main deck
-        deckDraw = new Deck(deckSize, game);
-        //deckDraw.generateRandom();
-        deckDraw.generateByRules(2, 2, 2);
-        deckDraw.shuffleDeck();
-
-        //vzemi eno karto iz deka
-        topCard = deckDraw.pickCard();
-
-        //ustvari discard dek in polozi to karto nanj
-        deckDiscard = new Deck(deckSize, game);
-        deckDiscard.setCard(topCard);
-
-        //USTVARI PLAYERJE
-        //dobi iz jsona ce obstaja
-        player = manager.getPlayerByName(manager.loadFromJson(), manager.getNamePref());
-        Hand playerHand = new Hand();
-        if (player == null) {
-            player = new Player(manager.getNamePref(), 0, playerHand);
-        } else {
-            player.setHand(playerHand);
-        }
-        player.getHand().pickCards(deckDraw, 5);
-        //playerHand.initIndexes();
-
-        //computer
-        Hand computerHand = new Hand();
-        computer = new Player("Computer", 0, computerHand);
-        computer.getHand().pickCards(deckDraw, 5);
-        //computerHand.initIndexes();
-
-        //ZA VSE OSTALE PLAYERJE
-
-        //for each player dodaj v playerData
-        //Pomembni order: bottom->left->top->right
-        playersData.add(player); //bottom
-        playersData.add(null);  //left
-        playersData.add(computer); //top
-        playersData.add(null);  //right
-
-        //pripravi globale
-        getFirstTurn();
-        getFirstRotation();
-        playerPerformedAction = false;
-        difficultyAI = manager.getDifficultyPref();
     }
 
     @Override
@@ -251,8 +278,20 @@ public class GameSingleplayerScreen extends ScreenAdapter {
 
     private void draw() {
         //VELIKOST kart (v WORLD UNITS)
-        float sizeX = GameConfig.CARD_WIDTH;
-        float sizeY = GameConfig.CARD_HEIGHT;
+        float sizeX = 11.2f;
+        float sizeY = 16f;
+        //regular size if 2 players
+        if(getPlayersSize()==2){
+            sizeX = GameConfig.CARD_WIDTH;
+            sizeY = GameConfig.CARD_HEIGHT;
+        }
+        //small size if 3 or 4 players
+        else {
+            sizeX = GameConfig.CARD_WIDTH_SM;
+            sizeY = GameConfig.CARD_HEIGHT_SM;
+        }
+
+        int numPlayers = getPlayersSize();
 
         if (state == State.Running) {
             //MIDDLE DECK
@@ -268,156 +307,278 @@ public class GameSingleplayerScreen extends ScreenAdapter {
             TextureRegion drawDeckRegion = gameplayAtlas.findRegion(RegionNames.back);
             //FAR RIGHT
             float drawX = (GameConfig.WORLD_WIDTH - sizeX);
+            //or slightly right of draw deck but not covering left player cards
+            if(numPlayers>2)
+                drawX = drawX - (topX / 2f);
             float drawY = (GameConfig.WORLD_HEIGHT - sizeY) / 2f;
             deckDraw.setPositionAndBounds(drawX, drawY, sizeX, sizeY);
             Card.render(batch, drawDeckRegion, drawX, drawY, sizeX, sizeY);
-        } else if (state == State.Choosing) {
-            drawColorWheel();
         }
-
         if (state == State.Running || state==State.Over) {
-            //DRAW PLAYER in COMPUTER HANDS
+            //DRAW PLAYER
             Hand playerHand = player.getHand();
             playerHand.setArrowRegions(gameplayAtlas.findRegion(RegionNames.arrow));
             drawHand(playerHand, 0,
-                    sizeX, sizeY, true);
-            Hand computerHand = computer.getHand();
-            drawHand(computerHand, (GameConfig.WORLD_HEIGHT - sizeY),
-                    sizeX, sizeY, false);
+                    sizeX, sizeY, numPlayers,true);
+
+            //DRAW COMPUTERS
+            //if 1 computer
+            if(numPlayers==2) {
+                Hand computerHand = computer1.getHand();
+                drawHand(computerHand, 1,
+                        sizeX, sizeY, numPlayers,false);
+            }
+            //if more than 1 computer
+            else{
+                for(int i=1; i<numPlayers;++i){
+                    Hand computerHand = playersData.get(i).getHand();
+                    drawHand(computerHand, i,
+                            sizeX, sizeY, numPlayers,false);
+                }
+            }
+        }
+        else if (state == State.Choosing) {
+            drawColorWheel();
         }
 
         //DRAW EXIT BUTTON
         //drawExitButton();
     }
 
-    private void drawHand(Hand hand, float startY, float sizeX, float sizeY, boolean isPlayer) {
+    private void drawHand(Hand hand, int index, float sizeX, float sizeY, int numPlayers, boolean isPlayer) {
         Array<Card> cards = hand.getCards();
         int size = cards.size;
+        int maxCardsShow = getMaxCardsShow();
         //hand.setIndexLast();
         int firstIndex = hand.getIndexFirst();
-        int lastIndex = hand.getIndexLast();
+        int lastIndex = hand.getIndexLast(maxCardsShow);
 
-        //OVERLAP CARD KO IMAS VEC KOT 5
+        float startX = 0; //start at bottom
+        //Y-axis: where to draw cards depending on current player
+        //bottom
+        float startY = 0;
+        //0-P1, 1-P2, 2-P3, 3-P4
+        switch (index) {
+            //right or top
+            case 1:
+                if (numPlayers == 2) {
+                    //top
+                    startY = GameConfig.WORLD_HEIGHT - sizeY;
+                } else {
+                    //right
+                    startY = sizeX;
+                    startX = 1; //start at right
+                }
+                break;
+            //top
+            case 2:
+                //ce maxPlayers=>3: draw P1
+                startY = GameConfig.WORLD_HEIGHT - GameConfig.CARD_HEIGHT_SM; //top
+                startX = 2; //start at top
+                break;
+            //left
+            case 3:
+                startY = sizeX; //left
+                startX = 3; //start at left
+                break;
+        }
+
         float overlap = 0f;
-        for (int i = GameConfig.MAX_CARDS_SHOW-2; i < size; ++i) {
-            if (i >= GameConfig.MAX_CARDS_SHOW) break;
-            overlap += 0.1f;
+        float spacing = 0f;
+        //for showing less cards than MaxCardsShow on left/right
+        int verticalShow = maxCardsShow - 4;
+        //drawing left/right sides of screen
+        if (startX == 1 || startX == 3) {
+            //if (startX == 0 || startX == 2){
+            for (int i = verticalShow; i < size; ++i) {
+                if (i >= verticalShow + 3) break;
+                overlap += 0.1f;
+            }
+        }
+        //drawing top/bottom sides of screen
+        else {
+            for (int i = maxCardsShow - 2; i < size; ++i) {
+                if (i >= maxCardsShow) break;
+                overlap += 0.1f;
+            }
         }
         overlap = sizeX * (1 - overlap);
-        float startX;
-        float spacing = sizeX;
+        spacing = sizeX;
 
-        //brez spacing
-        if (size <= GameConfig.MAX_CARDS_SHOW-2) {
-            hand.setIndexLast();
-            lastIndex = hand.getIndexLast();
-            startX = (GameConfig.WORLD_WIDTH - size * sizeX) / 2f;
-        }
-        //spacing le dokler ne reachas MaxCardsToShow
-        else if (size <= GameConfig.MAX_CARDS_SHOW) {
-            hand.setIndexLast();
-            lastIndex = hand.getIndexLast();
-            spacing = overlap;
-            startX = (GameConfig.WORLD_WIDTH - size * sizeX) / 2f;
-        }
-        //ne vec spacingat ko je imas card kot MaxCardsToShow
-        else {
-            spacing = overlap;
-            startX = (GameConfig.WORLD_WIDTH - GameConfig.MAX_CARDS_SHOW * sizeX) / 2f;
-        }
-
-        //LIMIT RENDER CARDS LEVO (plac vmes je 70% card width)
-        if (startX < (sizeX * 0.7f))
-            startX = (sizeX * 0.7f);
-
-        //IZRISI CARDE
-        Array<Integer> indexHover = new Array<Integer>();
-        for (int i = firstIndex; i < size; ++i) {
-            //==i<=lastIndex razen ko settamo Card (izogni index izven array)
-            if (i > lastIndex)
-                break;
-            Card card = cards.get(i);
-            String texture;
-            TextureRegion region;
-            if (!card.getHighlight()) {
-                if (isPlayer || state == State.Over)
-                    texture = card.getTexture();
-                else
-                    texture = RegionNames.back;
-                region = gameplayAtlas.findRegion(texture);
-                float posX = startX + (i - firstIndex) * spacing;
-                float posY = startY;
-                card.setPositionAndBounds(posX, posY, sizeX, sizeY);
-                Card.render(batch, region, card);
-            } else {
-                indexHover.add(i);
+        //0-bottom, 2-top
+        if (startX == 0 || startX == 2) {
+            //brez spacing
+            if (size <= maxCardsShow - 2) {
+                hand.setIndexLast();
+                lastIndex = hand.getIndexLast();
+                startX = (GameConfig.WORLD_WIDTH - size * sizeX) / 2f;
             }
-        }
+            //spacing le dokler ne reachas MaxCardsToShow
+            else if (size <= maxCardsShow) {
+                hand.setIndexLast();
+                lastIndex = hand.getIndexLast();
+                spacing = overlap;
+                startX = (GameConfig.WORLD_WIDTH - size * sizeX) / 2f;
+            }
+            //ne vec spacingat ko imas vec kart kot MaxCardsToShow
+            else {
+                spacing = overlap;
+                startX = (GameConfig.WORLD_WIDTH - maxCardsShow * sizeX) / 2f;
+            }
 
-        //IZRISI CARDE KI SO HOVERANE
-        if (!indexHover.isEmpty()) {
-            for (int j : indexHover) {
-                Card card = cards.get(j);
+            //koliko prostora ostane na horizontali ki ni pokrita z karti
+            //deli polovicno za risanje arrow-jev
+            //TODO: DELUJE, lahko odstranis startX v above if-ih
+            float sizeLeft = GameConfig.WORLD_WIDTH - ((size - firstIndex) * spacing);
+            startX = sizeLeft / 2f;
+
+            /*
+            //LIMIT RENDER CARDS LEVO (plac vmes je 70% card width)
+            if (startX < (sizeX * 0.7f))
+                startX = (sizeX * 0.7f);
+             */
+
+            //IZRISI CARDE
+            Array<Integer> indexHover = new Array<Integer>();
+            for (int i = firstIndex; i < size; ++i) {
+                //==i<=lastIndex razen ko settamo Card (izogni index izven array)
+                if (i > lastIndex)
+                    break;
+                Card card = cards.get(i);
                 String texture;
                 TextureRegion region;
-                if (isPlayer || state == State.Over) {
-                    texture = card.getTexture();
+                if (!card.getHighlight()) {
+                    if (isPlayer || state == State.Over)
+                        texture = card.getTexture();
+                    else
+                        texture = RegionNames.back;
                     region = gameplayAtlas.findRegion(texture);
+                    float posX = startX + (i - firstIndex) * spacing;
+                    float posY = startY;
+                    card.setPositionAndBounds(posX, posY, sizeX, sizeY);
+                    Card.render(batch, region, card);
                 } else {
-                    region = gameplayAtlas.findRegion(RegionNames.back);
+                    indexHover.add(i);
                 }
-                float posX = startX + (j - firstIndex) * spacing;
-                float posY = startY + 2f; //slightly gor
-                card.setPositionAndBounds(posX, posY, sizeX, sizeY);
-                Card.render(batch, region, card);
+            }
+
+            //IZRISI CARDE KI SO HOVERANE
+            if (!indexHover.isEmpty()) {
+                for (int j : indexHover) {
+                    Card card = cards.get(j);
+                    String texture;
+                    TextureRegion region;
+                    if (isPlayer || state == State.Over)
+                        texture = card.getTexture();
+                    else
+                        texture = RegionNames.back;
+                    region = gameplayAtlas.findRegion(texture);
+                    float posX = startX + (j - firstIndex) * spacing;
+                    float posY = startY + 2f; //slightly gor
+                    card.setPositionAndBounds(posX, posY, sizeX, sizeY);
+                    Card.render(batch, region, card);
+                }
+            }
+
+            //kakuliraj kje se bo koncala zadnja karta
+            //float endX = GameConfig.MAX_CARDS_SHOW_SM*sizeX-overlap;
+            float endX = 0;
+            if (!hand.getCards().isEmpty())
+                endX = (GameConfig.WORLD_WIDTH - (sizeX * 0.7f));
+            //endX = (hand.getCards().get(lastIndex).getPosition().x+sizeX);
+
+            if (isPlayer)
+                Gdx.app.log("PLAYER", "size: " + size + " | indexes: " + firstIndex + " , " + lastIndex);
+            //else
+            //    Gdx.app.log("COMPUTER", "size: " + size + " | indexes: " + firstIndex + " , " + lastIndex);
+
+            //LIMIT RENDER CARDS DESNO (plac vmes je 70% card width)
+            if (endX > GameConfig.WORLD_WIDTH - (sizeX * 0.7f))
+                endX = (GameConfig.WORLD_WIDTH - (sizeX * 0.7f));
+            //TODO: render arrow pri MAX_CARDS_SHOW in ne risi overflow
+
+            //preveri ce so arrowi prikazani
+            if (isPlayer) {
+                if (firstIndex != 0 && state != State.Over)
+                    showLeftArrow = true;
+                else
+                    showLeftArrow = false;
+                if (lastIndex != cards.size - 1 && state != State.Over)
+                    showRightArrow = true;
+                else
+                    showRightArrow = false;
+            }
+
+            //render button left
+            if (size >= maxCardsShow && isPlayer && showLeftArrow) {
+                float arrowX = startX - sizeX / 2 - (sizeX * 0.1f);
+                //float arrowY = startY + arrowRegion.getRegionHeight() / 2;
+                float arrowY = startY + (sizeY * 0.2f);
+                hand.setArrowRegionLeft(arrowX, arrowY, sizeX / 2, sizeY / 2);
+                hand.renderArrowLeft(batch);
+            }
+            //render button right
+            if (size >= maxCardsShow && isPlayer && showRightArrow) {
+                float arrowX = endX + (sizeX * 0.1f);
+                //float arrowY = startY + arrowRegion.getRegionHeight() / 2;
+                float arrowY = startY + (sizeY * 0.2f);
+                //batch.draw(arrowRegion, arrowX, arrowY);
+                hand.setArrowRegionRight(arrowX, arrowY, sizeX / 2, sizeY / 2);
+                hand.renderArrowRight(batch);
             }
         }
+        else if (startX == 1 || startX == 3) {
+            //else if (startX == 0 || startX == 2) {
+            //for rotating Card 90deg (far left) or -90deg (far right)
+            int rotationScalar = 1;
+            //if(startX==2)
+            if (startX == 3)
+                rotationScalar = -1;
 
-        //kakuliraj kje se bo koncala zadnja karta
-        //float endX = GameConfig.MAX_CARDS_SHOW*sizeX-overlap;
-        float endX = 0;
-        if (!hand.getCards().isEmpty())
-            endX = (GameConfig.WORLD_WIDTH - (sizeX * 0.7f));
-        //endX = (hand.getCards().get(lastIndex).getPosition().x+sizeX);
-        //TODO: start/endX glede na var first/last posX pri card render (zgoraj)
+            //brez spacing
+            if (size <= verticalShow + 1) {
+                hand.setIndexLast();
+                startY = (GameConfig.WORLD_HEIGHT - size * sizeY) / 2f;
+            }
+            //spacing le dokler ne reachas MaxCardsToShow
+            else if (size <= verticalShow + 3) {
+                hand.setIndexLast();
+                spacing = overlap;
+                startY = (GameConfig.WORLD_HEIGHT - size * sizeY) / 2f;
+            }
+            //ne vec spacingat ko imas vec kart kot MaxCardsToShow
+            else {
+                spacing = overlap; //lastIndex=maxcards
+                startY = (GameConfig.WORLD_HEIGHT - maxCardsShow * sizeY) / 2f;
+            }
 
-        if (isPlayer)
-            Gdx.app.log("PLAYER", "size: " + size + " | indexes: " + firstIndex + " , " + lastIndex);
-        else
-            Gdx.app.log("COMPUTER", "size: " + size + " | indexes: " + firstIndex + " , " + lastIndex);
+            //LIMIT RENDER CARDS DOL
+            if (startY < (sizeY * 0.8f))
+                startY = (sizeY * 0.8f);
 
-        //LIMIT RENDER CARDS DESNO (plac vmes je 70% card width)
-        if (endX > GameConfig.WORLD_WIDTH - (sizeX * 0.7f))
-            endX = (GameConfig.WORLD_WIDTH - (sizeX * 0.7f));
-
-        //preveri ce so arrowi prikazani
-        if (isPlayer) {
-            if (firstIndex != 0 && state!=State.Over)
-                showLeftArrow = true;
+            //set x-axis based on hand location (left/right)
+            if (startX == 1)
+                startX = GameConfig.WORLD_WIDTH - (GameConfig.CARD_WIDTH_SM + GameConfig.CARD_HEIGHT * 0.1f); //malce levo
             else
-                showLeftArrow = false;
-            if (lastIndex != cards.size - 1 && state!=State.Over)
-                showRightArrow = true;
-            else
-                showRightArrow = false;
-        }
+                startX = GameConfig.CARD_HEIGHT * 0.1f; //malce desno
 
-        //render button left
-        if (size >= GameConfig.MAX_CARDS_SHOW && isPlayer && showLeftArrow) {
-            float arrowX = startX - sizeX / 2 - (sizeX * 0.1f);
-            //float arrowY = startY + arrowRegion.getRegionHeight() / 2;
-            float arrowY = startY + (sizeY * 0.2f);
-            hand.setArrowRegionLeft(arrowX, arrowY, sizeX / 2, sizeY / 2);
-            hand.renderArrowLeft(batch);
-        }
-        //render button right
-        if (size >= GameConfig.MAX_CARDS_SHOW && isPlayer && showRightArrow) {
-            float arrowX = endX + (sizeX * 0.1f);
-            //float arrowY = startY + arrowRegion.getRegionHeight() / 2;
-            float arrowY = startY + (sizeY * 0.2f);
-            //batch.draw(arrowRegion, arrowX, arrowY);
-            hand.setArrowRegionRight(arrowX, arrowY, sizeX / 2, sizeY / 2);
-            hand.renderArrowRight(batch);
+            // Render vertically
+            for (int i = firstIndex; i < size; ++i) {
+                if (i > verticalShow) break;
+
+                Card card = cards.get(i);
+                String texture;
+                TextureRegion region;
+
+                texture = (isPlayer || state == State.Over) ? card.getTexture() : RegionNames.back;
+                region = gameplayAtlas.findRegion(texture);
+
+                float posX = startX; // X stays constant (left or right)
+                float posY = startY + (i - firstIndex) * spacing; // Adjust along the y-axis
+
+                card.setPositionAndBounds(posX, posY, sizeX, sizeY);
+                Card.renderFlipped(batch, region, card, rotationScalar);
+            }
         }
     }
 
@@ -436,6 +597,8 @@ public class GameSingleplayerScreen extends ScreenAdapter {
             float outlineOffset = 1.8f;  // The offset for the outline
             Color outlineColor = Color.BLACK;  // Outline color
 
+            float playerY = startY;
+
             for (int i = 0; i < playersData.size(); ++i) {
                 Player player = playersData.get(i);
                 if (player != null) {
@@ -452,7 +615,8 @@ public class GameSingleplayerScreen extends ScreenAdapter {
                     }
                     String playerText = position + ": " + player;
                     //get vertical start of each new player
-                    float playerY = startY - i * lineHeight;
+                    if(i!=0)
+                        playerY = playerY - (lineHeight*2);
 
                     // Set the outline color
                     font.setColor(outlineColor);
@@ -473,15 +637,6 @@ public class GameSingleplayerScreen extends ScreenAdapter {
 
             // Reset the font scale back to its original size after drawing the player's text
             font.getData().setScale(1f, 1f);
-        }
-        else if (state == State.Paused) {
-            //set text and get size to correctly draw the text in the center of the screen
-            String waitText = "Waiting for players";
-            GlyphLayout waitLayout = new GlyphLayout();
-            waitLayout.setText(font,waitText);
-            float waitX = GameConfig.HUD_WIDTH/2f - waitLayout.width/2f;
-            float waitY = GameConfig.HUD_HEIGHT/2f + waitLayout.height/2f;
-            font.draw(batch, waitText, waitX,waitY);
         }
         else if(state == State.Over){
             //set text and get size to correctly draw the text in the center of the screen
@@ -637,7 +792,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
         if (state == State.Running) {
             //arrow button click cycle
             Player currentPlayer = playersData.get(playerTurn - 1);
-            //TODO: get actual player turn-a (complete?)
+            //TODO: ko klikas na arrowje - problem spreminjanje indeksov rok - nimajo vec razlike maxCards
             Hand currentHand = currentPlayer.getHand();
             if (isClickedOnArrowButtonLeft(worldCoords.x, worldCoords.y, currentHand)) {
                 if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT) && showLeftArrow) {
@@ -761,6 +916,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
     private void specialCardAction(Card card, Hand hand, boolean isPlayer) {
         int index;
         String special = card.getSpecial();
+        int maxCardsShow = getMaxCardsShow();
         switch (special) {
             //Stop
             case "S":
@@ -782,7 +938,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
                 //naslednji player pick-a 2x karti
                 playersData.get(index - 1).getHand().pickCards(deckDraw, 2);
                 //inkrementiraj lastIndex
-                playersData.get(index - 1).getHand().lastIndexIncrement(2);
+                playersData.get(index - 1).getHand().lastIndexIncrement(2,maxCardsShow);
                 break;
             //Plus 4
             case "P4":
@@ -790,7 +946,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
                 //naj vlecejo +4
                 index = getNextTurn(playerTurn);
                 playersData.get(index - 1).getHand().pickCards(deckDraw, 4);
-                playersData.get(index - 1).getHand().lastIndexIncrement(4);
+                playersData.get(index - 1).getHand().lastIndexIncrement(4, maxCardsShow);
                 break;
             //Rainbow
             default:
@@ -806,7 +962,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
     //AI difficulty 2:
     private void cardAIpriority() {
         //kopija roke (copy ker noces spreminjat original Hand v loopu)
-        Hand phantomHand = new Hand(computer.getHand());
+        Hand phantomHand = new Hand(computer1.getHand());
         Card card = null;
         while (true) {
             //dobi karto iz roke z najvecjo prioriteto
@@ -814,37 +970,37 @@ public class GameSingleplayerScreen extends ScreenAdapter {
             phantomHand.setCard(card, null);
             //karta je validna
             if (topCard.containsColor(card) || topCard.containsSymbol(card)) {
-                computer.getHand().setCard(card, deckDiscard);
+                computer1.getHand().setCard(card, deckDiscard);
                 topCard = deckDiscard.getTopCard();
                 if (card.isSpecial()) {
-                    specialCardAction(card, computer.getHand(), false);
+                    specialCardAction(card, computer1.getHand(), false);
                 }
                 //move hand index left (removed card)
-                handArrowLeftClicked(computer.getHand());
+                handArrowLeftClicked(computer1.getHand());
                 playerPerformedAction = true;
                 break;
             }
             //computer nima validnih kart v roki, draw new card
             if (phantomHand.getCards().isEmpty()) {
-                computer.getHand().pickCard(deckDraw);
+                computer1.getHand().pickCard(deckDraw);
                 //copy ampak samo zadnji card (redundanca)
                 //for the logic when the AI doesn't have any valid cards in the hand and then draws a card from the deck
-                phantomHand = new Hand(computer.getHand().getLastCard());
+                phantomHand = new Hand(computer1.getHand().getLastCard());
                 //ce hocemo da vlece le eno karto, nato player poteza
                 playerPerformedAction = true;
                 //move hand index right (draw card)
-                handArrowRightClicked(computer.getHand());
+                handArrowRightClicked(computer1.getHand());
                 break;
             }
         }
         //computer oddal zadnjo karto in zmagal
-        if (computer.getHand().getCards().isEmpty()) {
+        if (computer1.getHand().getCards().isEmpty()) {
             playerPerformedAction = true;
             return;
         }
         //computer nima ustreznih kart, vleci iz deckDraw
         if (phantomHand.getCards().isEmpty()) {
-            computer.getHand().pickCard(deckDraw);
+            computer1.getHand().pickCard(deckDraw);
             playerPerformedAction = true;
         }
         //computer odpravil potezo, next turn
@@ -873,14 +1029,16 @@ public class GameSingleplayerScreen extends ScreenAdapter {
     //SPREMINJANJE INDEXOV CARD ELEMENTOV KI SE PRIKAZEJO V PLAYER HAND-U
     private void handArrowLeftClicked(Hand currentHand) {
         currentHand.firstIndexDecrement();
-        currentHand.lastIndexDecrement();
+        int maxCardsShow = getMaxCardsShow();
+        currentHand.lastIndexDecrement(maxCardsShow);
         int indexFirst = currentHand.getIndexFirst();
         int indexLast = currentHand.getIndexLast();
         Gdx.app.log("ARROW CLICK LEFT", "Index first: " + indexFirst + " | Index last: " + indexLast);
     }
 
     private void handArrowRightClicked(Hand currentHand) {
-        currentHand.firstIndexIncrement();
+        int maxCardsShow = getMaxCardsShow();
+        currentHand.firstIndexIncrement(maxCardsShow);
         currentHand.lastIndexIncrement();
         int indexFirst = currentHand.getIndexFirst();
         int indexLast = currentHand.getIndexLast();
@@ -1017,13 +1175,27 @@ public class GameSingleplayerScreen extends ScreenAdapter {
         return index;
     }
 
-    //dobi rotacijo
-    private void getFirstRotation() {
-        if (Objects.equals(manager.getOrderPref(), "Clockwise")) {
-            clockwiseOrder = true;
-        } else if (Objects.equals(manager.getOrderPref(), "Counter Clockwise")) {
-            clockwiseOrder = false;
+    //Get local playersData size (without null elements)
+    private int getPlayersSize() {
+        int count = 0;
+        for (Player player : playersData) {
+            if (player != null)
+                count++;
         }
+        return count;
+    }
+
+    //get the maximum amount of cards to render in player's hand during game
+    private int getMaxCardsShow(){
+        int maxCardsShow = 7;
+        if(getPlayersSize()==2){
+            maxCardsShow = GameConfig.MAX_CARDS_SHOW;
+        }
+        //small size if 3 or 4 players
+        else {
+            maxCardsShow = GameConfig.MAX_CARDS_SHOW_SM;
+        }
+        return maxCardsShow;
     }
 
     //PREKRITE (STATIC) METODE

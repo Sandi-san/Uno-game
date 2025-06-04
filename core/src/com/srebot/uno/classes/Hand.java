@@ -147,9 +147,9 @@ public class Hand {
     }
 
     //actual set
-    public void firstIndexIncrement(){
+    public void firstIndexIncrement(int maxCardsShow){
         //da ne bo inkrementiral firstIndex ko imamo manj kot MaxCards v roki
-        if(indexDiffValid())
+        if(indexDiffValid(maxCardsShow))
             this.indexFirst++;
     }
     public void firstIndexDecrement(){
@@ -161,23 +161,23 @@ public class Hand {
         if(this.indexLast+1<=this.cards.size-1)
             this.indexLast++;
     }
-    public void lastIndexDecrement(){
+    public void lastIndexDecrement(int maxCardsShow){
         this.indexLast--;
-        if(!indexDiffValid())
+        if(!indexDiffValid(maxCardsShow))
             this.indexLast++;
     }
 
-    public void lastIndexIncrement(int num){
+    public void lastIndexIncrement(int num, int maxCardsShow){
         int newLast = this.indexLast+num;
         this.indexLast=newLast;
         //ustrezno premikanje first/last index ko ti opponent vrze +2/+4 card
-        if(newLast>=GameConfig.MAX_CARDS_SHOW) {
-            this.indexFirst = indexLast - (GameConfig.MAX_CARDS_SHOW-1);
+        if(newLast>=maxCardsShow) {
+            this.indexFirst = indexLast - (maxCardsShow-1);
         }
     }
     //ne spreminjaj indekse ce difference med first in last index (za show) ni vec kot st. card ki prikazujes
-    private boolean indexDiffValid(){
-        if((this.indexLast+this.indexFirst)>=GameConfig.MAX_CARDS_SHOW-1)
+    private boolean indexDiffValid(int maxCardsShow){
+        if((this.indexLast+this.indexFirst)>=maxCardsShow-1)
             return true;
         return false;
     }
