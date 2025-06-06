@@ -147,37 +147,61 @@ public class Hand {
     }
 
     //actual set
-    public void firstIndexIncrement(int maxCardsShow){
+    public void indexIncrement(int maxCardsShow){
         //da ne bo inkrementiral firstIndex ko imamo manj kot MaxCards v roki
-        if(indexDiffValid(maxCardsShow))
-            this.indexFirst++;
+        if(indexDiffValid(this.indexFirst,this.indexLast+1,maxCardsShow)) {
+            //last index
+            if(this.indexLast+1<=this.cards.size-1)
+                this.indexLast++;
+            //first index (if needed)
+            if(!indexDiffValid(this.indexFirst,this.indexLast,maxCardsShow)){
+                this.indexFirst++;
+            }
+        }
+        else{
+            if(!indexDiffValid(this.indexFirst,this.indexLast+1,maxCardsShow)){
+                this.indexFirst++;
+                //last index
+                if(this.indexLast+1<=this.cards.size-1)
+                    this.indexLast++;
+            }
+        }
     }
-    public void firstIndexDecrement(){
-        if(this.indexFirst-1>=0)
-            this.indexFirst--;
-    }
-    //actual set
-    public void lastIndexIncrement(){
-        if(this.indexLast+1<=this.cards.size-1)
-            this.indexLast++;
-    }
-    public void lastIndexDecrement(int maxCardsShow){
-        this.indexLast--;
-        if(!indexDiffValid(maxCardsShow))
-            this.indexLast++;
+
+    public void indexDecrement(int maxCardsShow){
+        if(indexDiffValid(this.indexFirst,this.indexLast-1,maxCardsShow)) {
+            //last index
+            this.indexLast--;
+
+            //first index (if needed)
+            if(!indexDiffValid(this.indexFirst,this.indexLast,maxCardsShow)){
+                //first index
+                if (this.indexFirst - 1 >= 0)
+                    this.indexFirst--;
+            }
+        }
+        else {
+            if(!indexDiffValid(this.indexFirst,this.indexLast-1,maxCardsShow)){
+                //first index
+                if (this.indexFirst - 1 >= 0)
+                    this.indexFirst--;
+                //last index
+                this.indexLast--;
+            }
+        }
     }
 
     public void lastIndexIncrement(int num, int maxCardsShow){
-        int newLast = this.indexLast+num;
-        this.indexLast=newLast;
+        this.indexLast = this.indexLast+num;
+        int diff = this.indexLast-this.indexFirst;
         //ustrezno premikanje first/last index ko ti opponent vrze +2/+4 card
-        if(newLast>=maxCardsShow) {
-            this.indexFirst = indexLast - (maxCardsShow-1);
+        if(diff>=maxCardsShow) {
+            this.indexFirst = this.indexLast - maxCardsShow + 1;
         }
     }
     //ne spreminjaj indekse ce difference med first in last index (za show) ni vec kot st. card ki prikazujes
-    private boolean indexDiffValid(int maxCardsShow){
-        if((this.indexLast+this.indexFirst)>=maxCardsShow-1)
+    private boolean indexDiffValid(int first, int last, int maxCardsShow){
+        if((last+first)<=maxCardsShow-1)
             return true;
         return false;
     }

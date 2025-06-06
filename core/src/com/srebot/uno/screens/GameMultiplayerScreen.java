@@ -1053,7 +1053,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         int maxCardsShow = getMaxCardsShow();
         //hand.setIndexLast();
         int firstIndex = hand.getIndexFirst();
-        int lastIndex = hand.getIndexLast(maxCardsShow);
+        int lastIndex = hand.getIndexLast();
 
         float startX = 0; //start at bottom
 
@@ -1117,32 +1117,22 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             if (size <= maxCardsShow - 2) {
                 hand.setIndexLast();
                 lastIndex = hand.getIndexLast();
-                startX = (GameConfig.WORLD_WIDTH - size * sizeX) / 2f;
             }
             //spacing le dokler ne reachas MaxCardsToShow
             else if (size <= maxCardsShow) {
                 hand.setIndexLast();
                 lastIndex = hand.getIndexLast();
                 spacing = overlap;
-                startX = (GameConfig.WORLD_WIDTH - size * sizeX) / 2f;
             }
             //ne vec spacingat ko imas vec kart kot MaxCardsToShow
             else {
                 spacing = overlap;
-                startX = (GameConfig.WORLD_WIDTH - maxCardsShow * sizeX) / 2f;
             }
 
             //koliko prostora ostane na horizontali ki ni pokrita z karti
             //deli polovicno za risanje arrow-jev
-            //TODO: DELUJE, lahko odstranis startX v above if-ih
-            float sizeLeft = GameConfig.WORLD_WIDTH - ((size - firstIndex) * spacing);
+            float sizeLeft = GameConfig.WORLD_WIDTH - ((lastIndex+1 - firstIndex) * spacing);
             startX = sizeLeft / 2f;
-
-            /*
-            //LIMIT RENDER CARDS LEVO (plac vmes je 70% card width)
-            if (startX < (sizeX * 0.7f))
-                startX = (sizeX * 0.7f);
-             */
 
             //IZRISI CARDE
             Array<Integer> indexHover = new Array<Integer>();
@@ -1159,7 +1149,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                     else
                         texture = RegionNames.back;
                     region = gameplayAtlas.findRegion(texture);
-                    float posX = startX + (i - firstIndex) * spacing;
+                    float posX = (startX + (i - firstIndex) * spacing) - 1f;
                     float posY = startY;
                     card.setPositionAndBounds(posX, posY, sizeX, sizeY);
                     Card.render(batch, region, card);
@@ -1179,29 +1169,20 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                     else
                         texture = RegionNames.back;
                     region = gameplayAtlas.findRegion(texture);
-                    float posX = startX + (j - firstIndex) * spacing;
+                    float posX = (startX + (j - firstIndex) * spacing) - 1f;
                     float posY = startY + 2f; //slightly gor
                     card.setPositionAndBounds(posX, posY, sizeX, sizeY);
                     Card.render(batch, region, card);
                 }
             }
 
-            //kakuliraj kje se bo koncala zadnja karta
-            //float endX = GameConfig.MAX_CARDS_SHOW_SM*sizeX-overlap;
-            float endX = 0;
-            if (!hand.getCards().isEmpty())
-                endX = (GameConfig.WORLD_WIDTH - (sizeX * 0.7f));
-            //endX = (hand.getCards().get(lastIndex).getPosition().x+sizeX);
-
         /*
         if (isPlayer)
             Gdx.app.log("PLAYER", "size: " + size + " | indexes: " + firstIndex + " , " + lastIndex);
         */
+            float sizeRight = ((lastIndex+1 - firstIndex) * spacing);
+            float endX = sizeRight + (sizeLeft/2f);
 
-            //LIMIT RENDER CARDS DESNO (plac vmes je 70% card width)
-            if (endX > GameConfig.WORLD_WIDTH - (sizeX * 0.7f))
-                endX = (GameConfig.WORLD_WIDTH - (sizeX * 0.7f));
-            //TODO: render arrow pri MAX_CARDS_SHOW in ne risi overflow
             //ali pa risi v normalnem MAX_CARDS_SHOW ko sta samo 2 playerja
             //preveri ce so arrowi prikazani
             if (isPlayer) {
@@ -1559,9 +1540,8 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
     //SPREMINJANJE INDEXOV CARD ELEMENTOV KI SE PRIKAZEJO V PLAYER HAND-U
     private void handArrowLeftClicked(Hand currentHand) {
-        currentHand.firstIndexDecrement();
         int maxCardsShow = getMaxCardsShow();
-        currentHand.lastIndexDecrement(maxCardsShow);
+        currentHand.indexDecrement(maxCardsShow);
         int indexFirst = currentHand.getIndexFirst();
         int indexLast = currentHand.getIndexLast();
         Gdx.app.log("ARROW CLICK LEFT", "Index first: " + indexFirst + " | Index last: " + indexLast);
@@ -1569,8 +1549,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
     private void handArrowRightClicked(Hand currentHand) {
         int maxCardsShow = getMaxCardsShow();
-        currentHand.firstIndexIncrement(maxCardsShow);
-        currentHand.lastIndexIncrement();
+        currentHand.indexIncrement(maxCardsShow);
         int indexFirst = currentHand.getIndexFirst();
         int indexLast = currentHand.getIndexLast();
         Gdx.app.log("ARROW CLICK RIGHT", "Index first: " + indexFirst + " | Index last: " + indexLast);
