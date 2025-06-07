@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
+import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -24,6 +25,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.StretchViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.srebot.uno.Uno;
 import com.srebot.uno.assets.AssetDescriptors;
@@ -72,8 +74,11 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
     private OrthographicCamera camera;
     private OrthographicCamera hudCamera;
+    private OrthographicCamera backgroundCamera;
     private Viewport viewport;
     private Viewport hudViewport;
+    private Viewport backgroundViewport; //viewport for background
+    private Sprite background;
 
     private Stage stage;
     private Stage stageHud;
@@ -874,6 +879,8 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         viewport = new FitViewport(GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT, camera);
         hudCamera = new OrthographicCamera();
         hudViewport = new FitViewport(GameConfig.HUD_WIDTH, GameConfig.HUD_HEIGHT, hudCamera);
+        backgroundCamera = new OrthographicCamera();
+        backgroundViewport = new StretchViewport(GameConfig.HUD_WIDTH, GameConfig.HUD_HEIGHT, backgroundCamera);
         stage = new Stage(hudViewport, game.getBatch());
         stageHud = new Stage(hudViewport, game.getBatch());
 
@@ -885,6 +892,11 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         skin = assetManager.get(AssetDescriptors.UI_SKIN);
         gameplayAtlas = assetManager.get(AssetDescriptors.GAMEPLAY);
 
+        TextureRegion backgroundRegion = gameplayAtlas.findRegion(RegionNames.background1);
+        background = new Sprite(backgroundRegion);
+        background.setSize(viewport.getWorldWidth(), viewport.getWorldHeight());
+        background.setPosition(0, 0);
+
         stage.addActor(createExitButton(State.Over));
         stageHud.addActor(createExitButton(State.Running));
     }
@@ -893,6 +905,10 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     public void resize(int width, int height) {
         viewport.update(width, height, true);
         hudViewport.update(width, height, true);
+
+        backgroundViewport.update(width, height, true);
+        background.setSize(backgroundViewport.getWorldWidth(), backgroundViewport.getWorldHeight());
+        background.setPosition(0, 0);
     }
 
     //check scheduler for retrieving players
@@ -928,6 +944,12 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         float b = 100 / 255f;
         float a = 0.7f; //prosojnost
         ScreenUtils.clear(r, g, b, a);
+
+        backgroundViewport.apply();
+        batch.setProjectionMatrix(backgroundCamera.combined);
+        batch.begin();
+        background.draw(batch);
+        batch.end();
 
         //stage here so can exit during initialization or pause state
         if (state != State.Over) {

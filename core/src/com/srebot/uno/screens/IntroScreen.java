@@ -20,7 +20,6 @@ import com.srebot.uno.assets.RegionNames;
 import com.srebot.uno.config.GameConfig;
 
 public class IntroScreen extends ScreenAdapter {
-
     //DOLZINA INTRO V SEKUNDIH
     public static final float INTRO_DURATION = 4f; //4f
 
