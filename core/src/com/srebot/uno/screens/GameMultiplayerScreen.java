@@ -449,7 +449,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
     //pripravi igro (init globals)
     private void initGame(Array<String> args) {
-        //0-numPlayers,1-deckSize,2-presetBox,3-orderBox
+        //0-numPlayers, 1-deckSize, 2-presetBox, 3-orderBox
         maxPlayers = Integer.parseInt(args.get(0));
         deckSize = Integer.parseInt(args.get(1));
         String preset = args.get(2);
@@ -1112,14 +1112,11 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
         float overlap = 0f;
         float spacing = 0f;
-        //for showing less cards than MaxCardsShow on left/right
-        int verticalShow = maxCardsShow - 4;
         //drawing left/right sides of screen
         if (startX == 1 || startX == 3) {
-            //if (startX == 0 || startX == 2){
-            for (int i = verticalShow; i < size; ++i) {
-                if (i >= verticalShow + 3) break;
-                overlap += 0.1f;
+            for (int i = 5; i < size; ++i) {    //max cards before spacing
+                if (i >= 7) break;              //max cards before no more spacing
+                overlap += 0.15f;
             }
         }
         //drawing top/bottom sides of screen
@@ -1245,22 +1242,20 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 rotationScalar = -1;
 
             //brez spacing
-            if (size <= verticalShow + 1) {
+            if (size <= 5) {
                 hand.setIndexLast();
-                lastIndex = hand.getIndexLast();
-                startY = (GameConfig.WORLD_HEIGHT - size * sizeY) / 2f;
+                startY = (GameConfig.WORLD_HEIGHT - size * sizeX) / 2f;
             }
             //spacing le dokler ne reachas MaxCardsToShow
-            else if (size <= verticalShow + 3) {
+            else if (size <= 7) {
                 hand.setIndexLast();
-                lastIndex = hand.getIndexLast();
                 spacing = overlap;
-                startY = (GameConfig.WORLD_HEIGHT - size * sizeY) / 2f;
+                startY = (GameConfig.WORLD_HEIGHT - size * sizeX) / 2f;
             }
             //ne vec spacingat ko imas vec kart kot MaxCardsToShow
             else {
-                spacing = overlap; //lastIndex=maxcards
-                startY = (GameConfig.WORLD_HEIGHT - maxCardsShow * sizeY) / 2f;
+                spacing = overlap;
+                startY = (GameConfig.WORLD_HEIGHT - maxCardsShow * sizeX) / 2f;
             }
 
             //LIMIT RENDER CARDS DOL
@@ -1269,13 +1264,14 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
             //set x-axis based on hand location (left/right)
             if (startX == 1)
-                startX = GameConfig.WORLD_WIDTH - (GameConfig.CARD_WIDTH_SM + GameConfig.CARD_HEIGHT * 0.1f); //malce levo
+                startX = GameConfig.WORLD_WIDTH - (GameConfig.CARD_WIDTH_SM + GameConfig.CARD_HEIGHT_SM * 0.1f); //malce levo
             else
-                startX = GameConfig.CARD_HEIGHT * 0.1f; //malce desno
+                startX = GameConfig.CARD_HEIGHT_SM * 0.1f; //malce desno
 
             // Render vertically
             for (int i = firstIndex; i < size; ++i) {
-                if (i > verticalShow) break;
+                //show 7 cards max
+                if (i >= 7) break;
 
                 Card card = cards.get(i);
                 String texture;
@@ -1410,11 +1406,16 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             }
             else
                 wonText = "No winner.";
-            GlyphLayout waitLayout = new GlyphLayout();
-            waitLayout.setText(font,wonText);
-            float waitX = GameConfig.HUD_WIDTH/2f - waitLayout.width/2f;
-            float waitY = GameConfig.HUD_HEIGHT/2f + waitLayout.height/2f;
-            font.draw(batch, wonText, waitX,waitY);
+            GlyphLayout wonLayout = new GlyphLayout();
+            wonLayout.setText(font,wonText);
+            float waitX = GameConfig.HUD_WIDTH/2f - wonLayout.width/2f;
+            float waitY = GameConfig.HUD_HEIGHT/2f + wonLayout.height/2f;
+            font.draw(batch, wonText, waitX,waitY+(font.getXHeight()*2));
+
+            int playerScore = playersData.get(getIndexOfCurrentPlayer()).getScore();
+            String scoreText = "Your score: "+playerScore;
+            wonLayout.setText(font,scoreText);
+            font.draw(batch,scoreText,waitX,waitY);
         }
     }
 
@@ -1487,7 +1488,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                         sfxCollect.play();
                     }
                     topCard = card;
-                    //TODO: poglej ce je topCard default AMPAK je zadnja karta v discardDeck Rainbow
                     state = State.Running;
                     choosingCards.clear();
                     playerTurn = getNextTurn(playerTurn);

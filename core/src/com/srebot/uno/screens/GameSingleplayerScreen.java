@@ -410,14 +410,11 @@ public class GameSingleplayerScreen extends ScreenAdapter {
 
         float overlap = 0f;
         float spacing = 0f;
-        //for showing less cards than MaxCardsShow on left/right
-        int verticalShow = maxCardsShow - 4;
         //drawing left/right sides of screen
         if (startX == 1 || startX == 3) {
-            //if (startX == 0 || startX == 2){
-            for (int i = verticalShow; i < size; ++i) {
-                if (i >= verticalShow + 3) break;
-                overlap += 0.1f;
+            for (int i = 5; i < size; ++i) {    //max cards before spacing
+                if (i >= 7) break;              //max cards before no more spacing
+                overlap += 0.15f;
             }
         }
         //drawing top/bottom sides of screen
@@ -538,7 +535,8 @@ public class GameSingleplayerScreen extends ScreenAdapter {
             }
         }
         else if (startX == 1 || startX == 3) {
-            //else if (startX == 0 || startX == 2) {
+            //TODO: dont draw more than 5 cards
+
             //for rotating Card 90deg (far left) or -90deg (far right)
             int rotationScalar = 1;
             //if(startX==2)
@@ -546,20 +544,20 @@ public class GameSingleplayerScreen extends ScreenAdapter {
                 rotationScalar = -1;
 
             //brez spacing
-            if (size <= verticalShow + 1) {
+            if (size <= 5) {
                 hand.setIndexLast();
-                startY = (GameConfig.WORLD_HEIGHT - size * sizeY) / 2f;
+                startY = (GameConfig.WORLD_HEIGHT - size * sizeX) / 2f;
             }
             //spacing le dokler ne reachas MaxCardsToShow
-            else if (size <= verticalShow + 3) {
+            else if (size <= 7) {
                 hand.setIndexLast();
                 spacing = overlap;
-                startY = (GameConfig.WORLD_HEIGHT - size * sizeY) / 2f;
+                startY = (GameConfig.WORLD_HEIGHT - size * sizeX) / 2f;
             }
             //ne vec spacingat ko imas vec kart kot MaxCardsToShow
             else {
-                spacing = overlap; //lastIndex=maxcards
-                startY = (GameConfig.WORLD_HEIGHT - maxCardsShow * sizeY) / 2f;
+                spacing = overlap;
+                startY = (GameConfig.WORLD_HEIGHT - maxCardsShow * sizeX) / 2f;
             }
 
             //LIMIT RENDER CARDS DOL
@@ -568,13 +566,13 @@ public class GameSingleplayerScreen extends ScreenAdapter {
 
             //set x-axis based on hand location (left/right)
             if (startX == 1)
-                startX = GameConfig.WORLD_WIDTH - (GameConfig.CARD_WIDTH_SM + GameConfig.CARD_HEIGHT * 0.1f); //malce levo
+                startX = GameConfig.WORLD_WIDTH - (GameConfig.CARD_WIDTH_SM + GameConfig.CARD_HEIGHT_SM * 0.1f); //malce levo
             else
-                startX = GameConfig.CARD_HEIGHT * 0.1f; //malce desno
+                startX = GameConfig.CARD_HEIGHT_SM * 0.1f; //malce desno
 
             // Render vertically
             for (int i = firstIndex; i < size; ++i) {
-                if (i > verticalShow) break;
+                if (i >= 7) break;
 
                 Card card = cards.get(i);
                 String texture;
@@ -669,57 +667,18 @@ public class GameSingleplayerScreen extends ScreenAdapter {
             }
             else
                 wonText = "No winner.";
-            GlyphLayout waitLayout = new GlyphLayout();
-            waitLayout.setText(font,wonText);
-            float waitX = GameConfig.HUD_WIDTH/2f - waitLayout.width/2f;
-            float waitY = GameConfig.HUD_HEIGHT/2f + waitLayout.height/2f;
-            font.draw(batch, wonText, waitX,waitY);
+            GlyphLayout wonLayout = new GlyphLayout();
+            wonLayout.setText(font,wonText);
+            float waitX = GameConfig.HUD_WIDTH/2f - wonLayout.width/2f;
+            float waitY = GameConfig.HUD_HEIGHT/2f + wonLayout.height/2f;
+            font.draw(batch, wonText, waitX,waitY+(font.getXHeight()*2));
 
-            //TODO: tvoj final score
+            int playerScore = playersData.get(0).getScore();
+            String scoreText = "Your score: "+playerScore;
+            wonLayout.setText(font,scoreText);
+            font.draw(batch,scoreText,waitX,waitY);
         }
     }
-
-    /*
-    public void drawExitButton(){
-        float width=GameConfig.BUTTON_WIDTH;
-        float height=GameConfig.BUTTON_HEIGHT;
-        exitButton.setSize(width,height);
-        exitButton.x=0;
-        exitButton.y=0;
-        exitButton.setPosition((GameConfig.WORLD_WIDTH - exitButton.width) / 2f,
-                (GameConfig.WORLD_HEIGHT - exitButton.height) / 2f);
-
-        //setProjectionMatirx - uporabi viewport za prikaz sveta (WORLD UNITS)
-        shapeRenderer.setProjectionMatrix(viewport.getCamera().combined);
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(Color.RED);
-        shapeRenderer.rect(exitButton.x,exitButton.y,exitButton.width,exitButton.height);
-        shapeRenderer.end();
-
-        //dodaj label na button
-        boolean wasBatchDrawing = batch.isDrawing();
-        if(wasBatchDrawing)
-            batch.end();
-        batch.begin();
-
-        // Use GlyphLayout to calculate the width and height of the text
-        GlyphLayout glyphLayout = new GlyphLayout();
-        glyphLayout.setText(font, "Exit");
-
-        // Scale the font to fit within the button bounds
-        float textScaleX = exitButton.width / glyphLayout.width;
-        float textScaleY = exitButton.height / glyphLayout.height;
-        font.getData().setScale(Math.min(textScaleX, textScaleY));
-
-        font.draw(batch,"Exit",exitButton.x,
-                exitButton.y);
-        // Reset the font scale to its original state
-        font.getData().setScale(1f);
-
-        if(!wasBatchDrawing)
-            batch.end();
-    }
-     */
 
     private void checkGamestate() {
         if (deckDraw.isEmpty()) {
@@ -788,9 +747,6 @@ public class GameSingleplayerScreen extends ScreenAdapter {
     }*/
 
     private void handleInput() {
-        //touch == phone touchscreen?
-        //if (Gdx.input.justTouched()) {
-
         //za mouse
         //if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
         float touchX = Gdx.input.getX();
@@ -863,17 +819,17 @@ public class GameSingleplayerScreen extends ScreenAdapter {
                         case 1:
                             //random select kart
                             //cardAIrandom();
-                            cardAIpriority();
+                            cardAIpriority(currentPlayer);
                             break;
                         case 3:
                             //gleda od playerjev karte
                             //hint: less priority on symbols/colors player has
                             //cardAIcheater();
-                            cardAIpriority();
+                            cardAIpriority(currentPlayer);
                             break;
                         default:
                             //gleda prioritete svojih kart
-                            cardAIpriority();
+                            cardAIpriority(currentPlayer);
                     }
                 }
                 playerPerformedAction = false;
@@ -892,16 +848,6 @@ public class GameSingleplayerScreen extends ScreenAdapter {
                 }
             }
         }
-            /*
-            else if(state==State.Over) {
-                //je kliknil na exit button?
-                if (exitButton.contains(worldCoords)) {
-                    manager.appendToJson(playersData);
-                    game.setScreen(new MenuScreen(game));
-                    return;
-                }
-            }
-            */
     }
 
     private void gameControl(Card card, Hand hand) {
@@ -969,9 +915,9 @@ public class GameSingleplayerScreen extends ScreenAdapter {
 
     //COMPUTER AI
     //AI difficulty 2:
-    private void cardAIpriority() {
+    private void cardAIpriority(Player computer) {
         //kopija roke (copy ker noces spreminjat original Hand v loopu)
-        Hand phantomHand = new Hand(computer1.getHand());
+        Hand phantomHand = new Hand(computer.getHand());
         Card card = null;
         while (true) {
             //dobi karto iz roke z najvecjo prioriteto
@@ -979,37 +925,37 @@ public class GameSingleplayerScreen extends ScreenAdapter {
             phantomHand.setCard(card, null);
             //karta je validna
             if (topCard.containsColor(card) || topCard.containsSymbol(card)) {
-                computer1.getHand().setCard(card, deckDiscard);
+                computer.getHand().setCard(card, deckDiscard);
                 topCard = deckDiscard.getTopCard();
                 if (card.isSpecial()) {
-                    specialCardAction(card, computer1.getHand(), false);
+                    specialCardAction(card, computer.getHand(), false);
                 }
                 //move hand index left (removed card)
-                handArrowLeftClicked(computer1.getHand());
+                handArrowLeftClicked(computer.getHand());
                 playerPerformedAction = true;
                 break;
             }
             //computer nima validnih kart v roki, draw new card
             if (phantomHand.getCards().isEmpty()) {
-                computer1.getHand().pickCard(deckDraw);
+                computer.getHand().pickCard(deckDraw);
                 //copy ampak samo zadnji card (redundanca)
                 //for the logic when the AI doesn't have any valid cards in the hand and then draws a card from the deck
-                phantomHand = new Hand(computer1.getHand().getLastCard());
+                phantomHand = new Hand(computer.getHand().getLastCard());
                 //ce hocemo da vlece le eno karto, nato player poteza
                 playerPerformedAction = true;
                 //move hand index right (draw card)
-                handArrowRightClicked(computer1.getHand());
+                handArrowRightClicked(computer.getHand());
                 break;
             }
         }
         //computer oddal zadnjo karto in zmagal
-        if (computer1.getHand().getCards().isEmpty()) {
+        if (computer.getHand().getCards().isEmpty()) {
             playerPerformedAction = true;
             return;
         }
         //computer nima ustreznih kart, vleci iz deckDraw
         if (phantomHand.getCards().isEmpty()) {
-            computer1.getHand().pickCard(deckDraw);
+            computer.getHand().pickCard(deckDraw);
             playerPerformedAction = true;
         }
         //computer odpravil potezo, next turn
