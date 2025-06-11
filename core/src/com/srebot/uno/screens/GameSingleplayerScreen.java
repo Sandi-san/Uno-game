@@ -18,12 +18,10 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
-import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
@@ -42,6 +40,7 @@ import com.srebot.uno.config.GameManager;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Random;
 
 public class GameSingleplayerScreen extends ScreenAdapter {
     //status igre
@@ -377,6 +376,9 @@ public class GameSingleplayerScreen extends ScreenAdapter {
         //hand.setIndexLast();
         int firstIndex = hand.getIndexFirst();
         int lastIndex = hand.getIndexLast();
+        //fix indexes if needed for player
+        if(isPlayer)
+            lastIndex = hand.getIndexLast(maxCardsShow);
 
         float startX = 0; //start at bottom
         //Y-axis: where to draw cards depending on current player
@@ -535,8 +537,6 @@ public class GameSingleplayerScreen extends ScreenAdapter {
             }
         }
         else if (startX == 1 || startX == 3) {
-            //TODO: dont draw more than 5 cards
-
             //for rotating Card 90deg (far left) or -90deg (far right)
             int rotationScalar = 1;
             //if(startX==2)
@@ -814,23 +814,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
                 }
                 //current player je computer
                 else {
-                    //TODO ostala 2 difficulty-ja
-                    switch (difficultyAI) {
-                        case 1:
-                            //random select kart
-                            //cardAIrandom();
-                            cardAIpriority(currentPlayer);
-                            break;
-                        case 3:
-                            //gleda od playerjev karte
-                            //hint: less priority on symbols/colors player has
-                            //cardAIcheater();
-                            cardAIpriority(currentPlayer);
-                            break;
-                        default:
-                            //gleda prioritete svojih kart
-                            cardAIpriority(currentPlayer);
-                    }
+                    cardAIchoose(currentPlayer);
                 }
                 playerPerformedAction = false;
             }
@@ -914,14 +898,33 @@ public class GameSingleplayerScreen extends ScreenAdapter {
     }
 
     //COMPUTER AI
-    //AI difficulty 2:
-    private void cardAIpriority(Player computer) {
+    private void cardAIchoose(Player computer) {
         //kopija roke (copy ker noces spreminjat original Hand v loopu)
         Hand phantomHand = new Hand(computer.getHand());
         Card card = null;
         while (true) {
-            //dobi karto iz roke z najvecjo prioriteto
-            card = phantomHand.getHighestPriorityCard();
+            switch (difficultyAI) {
+                case 1:
+                    //10% chance da computer vlece karto iz drawDeck tudi ce ima valid Card za igrat
+                    Random rnd = new Random();
+                    //get random number between 1-10
+                    int rndNumber = rnd.nextInt(10) + 1;
+                    //clear phantomHand, simulating no cards to play
+                    if(rndNumber==1)
+                        phantomHand.getCards().clear();
+                    //dobi random card
+                    card = phantomHand.getRandomCard();
+                    break;
+                case 3:
+                    //gleda od playerjev karte
+                    //hint: less priority on symbols/colors player has
+                    card = cardAIcheater(phantomHand);
+                    break;
+                default:
+                    //dobi karto iz roke z najvecjo prioriteto
+                    card = phantomHand.getHighestPriorityCard();
+            }
+
             phantomHand.setCard(card, null);
             //karta je validna
             if (topCard.containsColor(card) || topCard.containsSymbol(card)) {
@@ -937,7 +940,14 @@ public class GameSingleplayerScreen extends ScreenAdapter {
             }
             //computer nima validnih kart v roki, draw new card
             if (phantomHand.getCards().isEmpty()) {
-                computer.getHand().pickCard(deckDraw);
+                Random rnd = new Random();
+                //get random number between 1-10
+                int rndNumber = rnd.nextInt(10) + 1;
+                //if 10% chance activates, computer cheats by drawing valid card from deck
+                if (rndNumber == 1 && difficultyAI == 3)
+                    computer.getHand().pickSpecificCard(deckDraw, topCard);
+                else
+                    computer.getHand().pickCard(deckDraw);
                 //copy ampak samo zadnji card (redundanca)
                 //for the logic when the AI doesn't have any valid cards in the hand and then draws a card from the deck
                 phantomHand = new Hand(computer.getHand().getLastCard());
@@ -963,17 +973,77 @@ public class GameSingleplayerScreen extends ScreenAdapter {
             playerTurn = getNextTurn(playerTurn);
     }
 
-    //AI funkcije
+    //priority glede least cards next player
+    private Card cardAIcheater(Hand hand){
+        //hand naslednjega playerja
+        int index = getNextTurn(playerTurn);
+        Hand nextHand = playersData.get(index - 1).getHand();
+        //if computer hand is bigger than next player, try playing special card (stop, reverse, +2/4)
+        if(hand.getCards().size>nextHand.getCards().size){
+            Array<Card> specials = hand.getSpecialCards();
+            if(!specials.isEmpty()) {
+                //if multiple special cards can be played, first sort by value, then by priority
+                if(specials.size>1) {
+                    specials.sort((o1, o2) -> Integer.compare(o1.getValue(), o2.getValue()));
+                    specials.sort((o1, o2) -> Integer.compare(o1.getPriority(), o2.getPriority()));
+                }
+                return specials.get(0);
+            }
+        }
+
+        //play non-special cards
+        //get least used color from next player
+        Array<String> colors = nextHand.getLeastUsedCardColors();
+        if(colors.isEmpty() || colors.size==4)
+            return hand.getHighestPriorityCard();
+        //check if any of those colors exist in hand and check only those Cards
+        Array<Card> parsedCards = hand.keepColors(colors);
+        if(!parsedCards.isEmpty()){
+            //create hand copy with parsed cards, because phantomHand must still contain those cards
+            Hand parsedHand = new Hand(hand);
+            parsedHand.setCards(parsedCards);
+            Card card = parsedHand.getLowestPrioritySpecialCard();
+            //card is null, meaning there is no Special Card in Hand
+            if(card==null){
+                //get highest valued regular card (numbered cards 1-9)
+                return parsedHand.getHighestValueCard();
+            }
+            return card;
+        }
+
+        //no colors have been parsed, see if any special cards are in Hand and play them
+        Card card = hand.getLowestPrioritySpecialCard();
+        if(card==null){
+            //if Hand has no special cards, play highest value regular card (values 1-9)
+            return hand.getHighestValueCard();
+        }
+        return card;
+    }
+
     //AI spremeni karto glede diff
     private void AIchooseColor(Hand hand) {
-        if (difficultyAI == 1) {
-            String color = hand.getRandomColor();
-            changeTopDeckCard(color);
-        } else if(difficultyAI == 2) {
-            String color = hand.getHighestUsedCardColor();
-            changeTopDeckCard(color);
-        } else {
-            //TODO: choose color which player has LEAST of
+        switch (difficultyAI) {
+            case 1:
+                changeTopDeckCard(hand.getRandomColor());
+                break;
+            case 3:
+                //hand naslednjega playerja
+                int index = getNextTurn(playerTurn);
+                Hand nextHand = playersData.get(index - 1).getHand();
+                //get colors nextPlayer has LEAST of
+                Array<String> colors = nextHand.getLeastUsedCardColors();
+                //no valid colors, get computer's most used colors
+                if(colors.isEmpty())
+                    changeTopDeckCard(hand.getMostUsedCardColor());
+                //valid color only one, choose this one
+                else if(colors.size==1)
+                    changeTopDeckCard(colors.get(0));
+                //multiple valid colors, use one that computer has most of
+                else
+                    changeTopDeckCard(hand.getMostValuedCardColor());
+                break;
+            default:
+                changeTopDeckCard(hand.getMostUsedCardColor());
         }
     }
 

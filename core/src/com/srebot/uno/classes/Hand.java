@@ -1,16 +1,14 @@
 package com.srebot.uno.classes;
 
-import com.badlogic.gdx.Game;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
-import com.srebot.uno.assets.RegionNames;
-import com.srebot.uno.config.GameConfig;
 
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Random;
 
 public class Hand {
@@ -123,18 +121,8 @@ public class Hand {
 
     public int getIndexLast(){return this.indexLast;}
     //Get last index: if last index is less
-    public int getIndexLast(int maxShow){
-        int diff = indexLast-indexFirst;
-        //diff ni neg (tj. indexLast ni -1)
-        if(diff>=0){
-            //v roki (cards) vec kart kot maximum to show?
-            if(cards.size>maxShow){
-                //ce diff ni isti kot maxShow vendar v roki vec kart kot maxShow
-                //last index dodaj razliko ki manka da bo prisel do maxShow
-                if(diff<maxShow)
-                    this.indexLast+=(maxShow-diff);
-            }
-        }
+    public int getIndexLast(int maxCardsShow){
+        fixIndexes(maxCardsShow);
         return this.indexLast;
     }
     //set default (v tem classu)
@@ -168,7 +156,20 @@ public class Hand {
         }
     }
 
+    //fix indexes if Hand has more cards in hand than maxCardsShow and
+    //player was not at max lastIndex when setting card, resulting in
+    //incorrect diffirence between first/last index (which should be maxCardsShow-1 on cards.size>maxCardsShow-1)
+    private void fixIndexes(int maxCardsShow){
+        if((this.indexLast-this.indexFirst==maxCardsShow-1) || (cards.size<=maxCardsShow-1))
+            return;
+        do {
+            this.indexLast = this.indexLast+1;
+        } while(this.indexLast-this.indexFirst!=maxCardsShow-1);
+    }
+
     public void indexDecrement(int maxCardsShow){
+        //over course game se lahko lastIndex unsync-a, popravi indekse
+        fixIndexes(maxCardsShow);
         if(indexDiffValid(this.indexFirst,this.indexLast-1,maxCardsShow)) {
             //last index
             this.indexLast--;
@@ -209,8 +210,11 @@ public class Hand {
     public Array<Card> getCards(){
         return cards;
     }
+    public void setCards(Array<Card> newCards){
+        this.cards=newCards;
+    }
 
-    public String getHighestUsedCardColor(){
+    public String getMostUsedCardColor(){
         //0-B, 1-R, 2-G, 3-Y
         Integer[] nums = new Integer[4];
         Arrays.fill(nums,0);
@@ -253,6 +257,105 @@ public class Hand {
         }
     }
 
+    public String getMostValuedCardColor(){
+        //0-B, 1-R, 2-G, 3-Y
+        Integer[] values = new Integer[4];
+        Arrays.fill(values,0);
+        for(Card card : cards){
+            if(card.getColor().contains("B"))
+                values[0] += card.getValue();
+            if(card.getColor().contains("R"))
+                values[1] += card.getValue();
+            if(card.getColor().contains("G"))
+                values[2] += card.getValue();
+            if(card.getColor().contains("Y"))
+                values[3] += card.getValue();
+        }
+        int max=0;
+        int index=-1;
+        for(int i=0; i<values.length;++i){
+            if(values[i]>max) {
+                max = values[i];
+                index = i;
+            }
+        }
+        switch(index){
+            case 0:
+                return "B";
+            case 1:
+                return "R";
+            case 2:
+                return "G";
+            case 3:
+                return "Y";
+            default:
+                return getRandomColor();
+        }
+    }
+
+    public Array<String> getLeastUsedCardColors(){
+        //0-B, 1-R, 2-G, 3-Y
+        Array<String> colors = new Array<>();
+        Integer[] nums = new Integer[4];
+        Arrays.fill(nums,0);
+        for(Card card : cards){
+            if(card.getColor().contains("B"))
+                ++nums[0];
+            if(card.getColor().contains("R"))
+                ++nums[1];
+            if(card.getColor().contains("G"))
+                ++nums[2];
+            if(card.getColor().contains("Y"))
+                ++nums[3];
+        }
+
+        //check which colors don't appear in Hand and add them to array
+        for(int i=0; i<nums.length;++i){
+            if(nums[i]==0){
+                switch(i){
+                    case 0:
+                        colors.add("B");
+                        break;
+                    case 1:
+                        colors.add("R");
+                        break;
+                    case 2:
+                        colors.add("G");
+                        break;
+                    case 3:
+                        colors.add("Y");
+                        break;
+                }
+            }
+        }
+        //if any colors don't appear (0 appearances) return this array
+        if(!colors.isEmpty())
+            return colors;
+
+        //all colors appear, check least appeared: multiple if same number
+        int min=cards.size;
+        for(int i=0; i<nums.length;++i){
+            if(nums[i]<=min) {
+                min = nums[i];
+                switch(i){
+                    case 0:
+                        colors.add("B");
+                        break;
+                    case 1:
+                        colors.add("R");
+                        break;
+                    case 2:
+                        colors.add("G");
+                        break;
+                    case 3:
+                        colors.add("Y");
+                        break;
+                }
+            }
+        }
+        return colors;
+    }
+
     public String getRandomColor(){
         String[] colors = new String[4];
         colors[0] = "B";
@@ -262,6 +365,23 @@ public class Hand {
         Random rnd = new Random();
         int rndIndex = rnd.nextInt(colors.length);
         return colors[rndIndex];
+    }
+
+    //remove all cards except those defined in colors array
+    public Array<Card> keepColors(Array<String> colors){
+        Array<Card> parsedCards = new Array<Card>();
+        //go through all cards
+        for(int i=0;i<cards.size;++i){
+            //go through each color
+            for(int j=0;j<colors.size;++j){
+                //if current card has same color as any set in colors array
+                if(Objects.equals(cards.get(i).getColor(), colors.get(j))){
+                    //add to parsedCards array
+                    parsedCards.add(cards.get(i));
+                }
+            }
+        }
+        return parsedCards;
     }
 
     public void pickCard(Deck deck){
@@ -281,6 +401,27 @@ public class Hand {
         //first draw?: set lastIndex
         if(indexLast==-1)
             setIndexLast();
+    }
+    //get first valid card from deck depending on color/value
+    public void pickSpecificCard(Deck deck, Card validCard){
+        if(!deck.isEmpty()) {
+            Array<Card> deckCards = deck.getCards();
+            //go through each card of deck
+            for (int i = 0; i < deckCards.size; ++i) {
+                Card card = deckCards.get(i);
+                //if current card is valid
+                if (validCard.containsColor(card) || validCard.containsSymbol(card)) {
+                    //remove card from deck
+                    deck.getCards().removeIndex(i);
+                    //add card to Hand
+                    cards.add(card);
+                    //stop after first valid card
+                    return;
+                }
+            }
+        }
+        //if no card was added, no valid cards in deck, pick top instead
+        pickCard(deck);
     }
     public void setCard(Card card,Deck deck){
         if(deck!=null)
@@ -306,6 +447,57 @@ public class Hand {
         }
         return card;
     }
+    public Card getHighestValueCard(){
+        int value = 0;
+        Card card = null;
+        if(!cards.isEmpty()) {
+            for (Card c : cards) {
+                if (c.getValue() > value) {
+                    value = c.getValue();
+                    card=c;
+                }
+            }
+        }
+        return card;
+    }
+
+    public Card getLowestPrioritySpecialCard(){
+        int priority = 7;
+        Card card = null;
+        if(!cards.isEmpty()) {
+            for (Card c : cards) {
+                int cardPriority = c.getPriority();
+                if (cardPriority < priority && cardPriority>1) {
+                    priority = c.getPriority();
+                    card=c;
+                }
+            }
+        }
+        return card;
+    }
+
+    public Card getRandomCard(){
+        Card card = null;
+        if(!cards.isEmpty()){
+            Random rnd = new Random();
+            int rndIndex = rnd.nextInt(cards.size);
+            card = cards.get(rndIndex);
+        }
+        return card;
+    }
+
+    //get all special cards from hand
+    public Array<Card> getSpecialCards() {
+        Array<Card> specials = new Array<>();
+        for(int i = 0; i<this.cards.size; ++i){
+            Card currentCard = this.cards.get(i);
+            if(currentCard.isSpecial()) {
+                specials.add(currentCard);
+            }
+        }
+        return specials;
+    }
+
     public Card getLastCard(){
         if(!cards.isEmpty()){
             return cards.get(cards.size-1);

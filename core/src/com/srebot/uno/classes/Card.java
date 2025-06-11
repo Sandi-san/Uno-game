@@ -155,32 +155,36 @@ public class Card {
     }
 
     public boolean containsColor(Card card) {
-        String color = card.getColor();
-        //eden od card je anyColor
-        if (color.equals("-") || this.color.equals("-"))
-            return true;
-        //vsaj en vsebuje color
-        if (color.contains(this.color) || this.color.contains(color))
-            return true;
+        if(card!=null) {
+            String color = card.getColor();
+            //eden od card je anyColor
+            if (color.equals("-") || this.color.equals("-"))
+                return true;
+            //vsaj en vsebuje color
+            if (color.contains(this.color) || this.color.contains(color))
+                return true;
+        }
         return false;
     }
 
     public boolean containsSymbol(Card card) {
-        //preveri karte z stevilkami
-        int value = card.getValue();
-        if (value < 10 && value == this.value)
-            return true;
+        if(card!=null) {
+            //preveri karte z stevilkami
+            int value = card.getValue();
+            if (value < 10 && value == this.value)
+                return true;
 
-        String texture = card.getTexture();
-        //preveri stop karte
-        if (texture.contains("stop") && this.texture.contains("stop"))
-            return true;
-        //preveri reverse karte
-        if (texture.contains("Reverse") && this.texture.contains("Reverse"))
-            return true;
-        //preveri plus2 karte
-        if (texture.contains("plus2") && this.texture.contains("plus2"))
-            return true;
+            String texture = card.getTexture();
+            //preveri stop karte
+            if (texture.contains("stop") && this.texture.contains("stop"))
+                return true;
+            //preveri reverse karte
+            if (texture.contains("Reverse") && this.texture.contains("Reverse"))
+                return true;
+            //preveri plus2 karte
+            if (texture.contains("plus2") && this.texture.contains("plus2"))
+                return true;
+        }
         return false;
     }
 
