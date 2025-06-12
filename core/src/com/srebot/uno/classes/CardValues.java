@@ -89,7 +89,6 @@ public enum CardValues {
         return textureName;
     }
 
-    //TODO: spremeni v switch card
     public static String switchTexture(Card oldCard, Card newCard){
         int oldValue = oldCard.getValue();
         String newColor = newCard.getColor();

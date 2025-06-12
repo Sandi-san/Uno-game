@@ -53,10 +53,9 @@ public class Uno extends Game {
                     mpScreen.stopScheduler();
                     int playerId = mpScreen.getPlayerId();
                     int gameId = mpScreen.getGameId();
-                    if (playerId != 0) {
+                    if (playerId != 0 && gameId != 0) {
                         Gdx.app.log("DISPOSE", "MultiplayerScreen closed with localPlayerId: " + playerId);
                         mpScreen.playerLeaveGame(playerId,gameId);
-                        //TODO: CALL DELETE GAME IN BACKEND
                         //BE: delete player's GameId from Game, if Game then has no players, delete game
                     }
                 }

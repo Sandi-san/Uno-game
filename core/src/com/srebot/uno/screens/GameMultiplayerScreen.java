@@ -1040,6 +1040,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             deckDraw.setPositionAndBounds(drawX, drawY, sizeX, sizeY);
             Card.render(batch, drawDeckRegion, drawX, drawY, sizeX, sizeY);
         }
+        //TODO: when Paused: also draw cards but not decks
         if(state==State.Running || state==State.Over){
             //DRAW PLAYER HANDS for each current player
             int currentPlayerIndex = getIndexOfCurrentPlayer();
@@ -1290,7 +1291,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     }
 
     private void drawHud(){
-        if(state== State.Running) {
+        if(state == State.Running || state == State.Over) {
             // Set the font to a smaller scale for the player's text
             font.getData().setScale(0.8f);  // Scale down to 80% of the original size
 
@@ -1301,7 +1302,8 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             float lineHeight = font.getXHeight();
 
             // Define outline offsets and outline color
-            float outlineOffset = 1.8f;  // The offset for the outline
+            float outlineOffset1 = 1.8f;  //offset for 1st outline (outer)
+            float outlineOffset2 = 1.2f;  //offset for 2nd outline (inner)
             Color outlineColor = Color.BLACK;  // Outline color
 
             float waitingY = 0;
@@ -1336,10 +1338,14 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                     font.setColor(outlineColor);
 
                     // Draw the text multiple times to create an outline effect (up, down, left, right)
-                    font.draw(batch, playerText, startX + outlineOffset, playerY + outlineOffset);  // Top-right
-                    font.draw(batch, playerText, startX - outlineOffset, playerY + outlineOffset);  // Top-left
-                    font.draw(batch, playerText, startX + outlineOffset, playerY - outlineOffset);  // Bottom-right
-                    font.draw(batch, playerText, startX - outlineOffset, playerY - outlineOffset);  // Bottom-left
+                    font.draw(batch, playerText, startX + outlineOffset1, playerY + outlineOffset1);
+                    font.draw(batch, playerText, startX + outlineOffset2, playerY + outlineOffset2);
+                    font.draw(batch, playerText, startX - outlineOffset1, playerY + outlineOffset1);
+                    font.draw(batch, playerText, startX - outlineOffset2, playerY + outlineOffset2);
+                    font.draw(batch, playerText, startX + outlineOffset1, playerY - outlineOffset1);
+                    font.draw(batch, playerText, startX + outlineOffset2, playerY - outlineOffset2);
+                    font.draw(batch, playerText, startX - outlineOffset1, playerY - outlineOffset1);
+                    font.draw(batch, playerText, startX - outlineOffset2, playerY - outlineOffset2);
 
                     // Draw the original text in its normal color
                     font.setColor(Color.WHITE);  // Set the font color to the main color (e.g., white)
@@ -1361,10 +1367,14 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 font.setColor(outlineColor);
 
                 //outline effect
-                font.draw(batch, waitingText, startX + outlineOffset, waitingY + outlineOffset);  // Top-right
-                font.draw(batch, waitingText, startX - outlineOffset, waitingY + outlineOffset);  // Top-left
-                font.draw(batch, waitingText, startX + outlineOffset, waitingY - outlineOffset);  // Bottom-right
-                font.draw(batch, waitingText, startX - outlineOffset, waitingY - outlineOffset);  // Bottom-left
+                font.draw(batch, waitingText, startX + outlineOffset1, playerY + outlineOffset1);
+                font.draw(batch, waitingText, startX + outlineOffset2, playerY + outlineOffset2);
+                font.draw(batch, waitingText, startX - outlineOffset1, playerY + outlineOffset1);
+                font.draw(batch, waitingText, startX - outlineOffset2, playerY + outlineOffset2);
+                font.draw(batch, waitingText, startX + outlineOffset1, playerY - outlineOffset1);
+                font.draw(batch, waitingText, startX + outlineOffset2, playerY - outlineOffset2);
+                font.draw(batch, waitingText, startX - outlineOffset1, playerY - outlineOffset1);
+                font.draw(batch, waitingText, startX - outlineOffset2, playerY - outlineOffset2);
 
                 //text
                 font.setColor(Color.WHITE);
@@ -1373,7 +1383,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
             // Reset the font scale back to its original size after drawing the player's text
             font.getData().setScale(1f, 1f);
-        }   //TODO: also draw cards but not decks
+        }
         else if (state == State.Paused) {
             //set text and get size to correctly draw the text in the center of the screen
             String waitText = "Waiting for players";
@@ -1383,8 +1393,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             float waitY = GameConfig.HUD_HEIGHT/2f + waitLayout.height/2f;
             font.draw(batch, waitText, waitX,waitY);
         }
-        //TODO: also draw HUD
-        else if(state == State.Over){
+        if(state == State.Over){
             checkGamestate();
             //set text and get size to correctly draw the text in the center of the screen
             String wonText = "Winner is: ";

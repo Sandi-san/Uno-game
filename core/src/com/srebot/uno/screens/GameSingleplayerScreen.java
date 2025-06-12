@@ -248,7 +248,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
         backgroundViewport.update(width, height, true);
         background.setSize(backgroundViewport.getWorldWidth(), backgroundViewport.getWorldHeight());
         background.setPosition(0, 0);
-        //TODO: scale for other Screens, re-position Hands (2+ player) / Deck
+        //TODO: scale for other Screens, re-position Hands (2+ player) / Deck and Hud text
     }
 
     @Override
@@ -452,7 +452,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
             //draw left arrow
             float sizeLeft = GameConfig.WORLD_WIDTH - ((lastIndex+1 - firstIndex) * spacing);
             startX = sizeLeft / 2f;
-            Gdx.app.log("SizeLeft:","StartX: " + startX);
+            //Gdx.app.log("SizeLeft:","StartX: " + startX);
 
             //IZRISI CARDE
             Array<Integer> indexHover = new Array<Integer>();
@@ -504,7 +504,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
             //calculate where to draw right arrow (after last drawn card)
             float sizeRight = ((lastIndex+1 - firstIndex) * spacing);
             float endX = sizeRight + (sizeLeft/2f);
-            Gdx.app.log("SizeRight:","EndX: " + endX);
+            //Gdx.app.log("SizeRight:","EndX: " + endX);
 
             //preveri ce so arrowi prikazani
             if (isPlayer) {
@@ -591,7 +591,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
     }
 
     private void drawHud(){
-        if(state== State.Running) {
+        if(state == State.Running || state == State.Over ) {
             // Set the font to a smaller scale for the player's text
             font.getData().setScale(0.8f);  // Scale down to 80% of the original size
 
@@ -601,8 +601,9 @@ public class GameSingleplayerScreen extends ScreenAdapter {
             //height of each line of font + spacing
             float lineHeight = font.getXHeight();
 
-            // Define outline offsets and outline color
-            float outlineOffset = 1.8f;  // The offset for the outline
+            // Define outline offsets and outline color (double outline = cleaner look)
+            float outlineOffset1 = 1.8f;  //offset for 1st outline (outer)
+            float outlineOffset2 = 1.2f;  //offset for 2nd outline (inner)
             Color outlineColor = Color.BLACK;  // Outline color
 
             float playerY = startY;
@@ -629,12 +630,15 @@ public class GameSingleplayerScreen extends ScreenAdapter {
                     // Set the outline color
                     font.setColor(outlineColor);
 
-                    //TODO: malce boljse da zgleda
                     // Draw the text multiple times to create an outline effect (up, down, left, right)
-                    font.draw(batch, playerText, startX + outlineOffset, playerY + outlineOffset);  // Top-right
-                    font.draw(batch, playerText, startX - outlineOffset, playerY + outlineOffset);  // Top-left
-                    font.draw(batch, playerText, startX + outlineOffset, playerY - outlineOffset);  // Bottom-right
-                    font.draw(batch, playerText, startX - outlineOffset, playerY - outlineOffset);  // Bottom-left
+                    font.draw(batch, playerText, startX + outlineOffset1, playerY + outlineOffset1);  // Top-right
+                    font.draw(batch, playerText, startX + outlineOffset2, playerY + outlineOffset2);  // Top-right
+                    font.draw(batch, playerText, startX - outlineOffset1, playerY + outlineOffset1);  // Top-left
+                    font.draw(batch, playerText, startX - outlineOffset2, playerY + outlineOffset2);  // Top-left
+                    font.draw(batch, playerText, startX + outlineOffset1, playerY - outlineOffset1);  // Bottom-right
+                    font.draw(batch, playerText, startX + outlineOffset2, playerY - outlineOffset2);  // Bottom-right
+                    font.draw(batch, playerText, startX - outlineOffset1, playerY - outlineOffset1);  // Bottom-left
+                    font.draw(batch, playerText, startX - outlineOffset2, playerY - outlineOffset2);  // Bottom-left
 
                     // Draw the original text in its normal color
                     font.setColor(Color.WHITE);  // Set the font color to the main color (e.g., white)
@@ -646,7 +650,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
             // Reset the font scale back to its original size after drawing the player's text
             font.getData().setScale(1f, 1f);
         }
-        else if(state == State.Over){
+        if(state == State.Over){
             //set text and get size to correctly draw the text in the center of the screen
             String wonText = "Winner is: ";
             if(winner!=Winner.None) {
