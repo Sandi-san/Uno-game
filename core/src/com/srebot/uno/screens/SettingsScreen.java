@@ -4,6 +4,9 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -25,6 +28,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.StretchViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.srebot.uno.Uno;
 import com.srebot.uno.assets.AssetDescriptors;
@@ -39,11 +43,13 @@ public class SettingsScreen extends ScreenAdapter {
 
     private Viewport viewport;
     private Stage stage;
+    private OrthographicCamera backgroundCamera;
+    private StretchViewport backgroundViewport;
+    private SpriteBatch batch;
 
     private Skin skin;
     private TextureAtlas gameplayAtlas;
-
-    private Music music;
+    private Sprite background;
 
     public SettingsScreen(Uno game) {
         this.game = game;
@@ -56,15 +62,23 @@ public class SettingsScreen extends ScreenAdapter {
         else{
             game.stopMusic();
         }
+        batch = new SpriteBatch();
     }
 
     @Override
     public void show(){
         viewport = new FitViewport(GameConfig.HUD_WIDTH,GameConfig.HUD_HEIGHT);
+        backgroundCamera = new OrthographicCamera();
+        backgroundViewport = new StretchViewport(GameConfig.HUD_WIDTH, GameConfig.HUD_HEIGHT, backgroundCamera);
         stage = new Stage(viewport, game.getBatch());
 
         skin = assetManager.get(AssetDescriptors.UI_SKIN);
         gameplayAtlas = assetManager.get(AssetDescriptors.GAMEPLAY);
+
+        TextureRegion backgroundRegion = gameplayAtlas.findRegion(RegionNames.background2);
+        background = new Sprite(backgroundRegion);
+        background.setSize(viewport.getWorldWidth(), viewport.getWorldHeight());
+        background.setPosition(0, 0);
 
         stage.addActor(createTable());
         Gdx.input.setInputProcessor(stage);
@@ -73,6 +87,11 @@ public class SettingsScreen extends ScreenAdapter {
     @Override
     public void resize(int width, int height){
         viewport.update(width,height,true);
+        stage.getViewport().update(width,height,true);
+
+        backgroundViewport.update(width, height, true);
+        background.setSize(backgroundViewport.getWorldWidth(), backgroundViewport.getWorldHeight());
+        background.setPosition(0, 0);
     }
 
     @Override
@@ -84,6 +103,13 @@ public class SettingsScreen extends ScreenAdapter {
         float a=0.7f; //prosojnost
         ScreenUtils.clear(r,g,b,a);
 
+        backgroundViewport.apply();
+        batch.setProjectionMatrix(backgroundCamera.combined);
+        batch.begin();
+        background.draw(batch);
+        batch.end();
+
+        viewport.apply();
         stage.act(delta);
         stage.draw();
     }
@@ -133,12 +159,8 @@ public class SettingsScreen extends ScreenAdapter {
         titleTable.center();
 
         //BACKGROUND
-        TextureRegion backgroundRegion = gameplayAtlas.findRegion(RegionNames.background4);
-        table.setBackground(new TextureRegionDrawable(backgroundRegion));
-
-
-        //TextureRegion menuBackgroundRegion = gameplayAtlas.findRegion(RegionNames.MENU_BACKGROUND);
-        //buttonTable.setBackground(new TextureRegionDrawable(menuBackgroundRegion));
+        //TextureRegion backgroundRegion = gameplayAtlas.findRegion(RegionNames.background4);
+        //table.setBackground(new TextureRegionDrawable(backgroundRegion));
 
         //DOBI VREDNOSTI IZ NASTAVITEV
         String namePref = manager.getNamePref();

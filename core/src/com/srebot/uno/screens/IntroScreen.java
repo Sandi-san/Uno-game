@@ -3,7 +3,10 @@ package com.srebot.uno.screens;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -13,6 +16,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.StretchViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.srebot.uno.Uno;
 import com.srebot.uno.assets.AssetDescriptors;
@@ -27,25 +31,30 @@ public class IntroScreen extends ScreenAdapter {
 
     private final Uno game;
     private final AssetManager assetManager;
-    private final Music music;
+    private TextureAtlas gameplayAtlas;
+    private Sprite background;
+    private Music music;
 
     private Viewport viewport;
-    private TextureAtlas gameplayAtlas;
+    private Stage stage;
+    private OrthographicCamera backgroundCamera;
+    private StretchViewport backgroundViewport;
+    private SpriteBatch batch;
 
     private float duration=0f;
-    private Stage stage;
-
-    private Image backgroundImage;
 
     public IntroScreen(Uno game) {
         this.game = game;
         assetManager = game.getAssetManager();
         music = game.getMusic();
+        batch = new SpriteBatch();
     }
 
     @Override
     public void show(){
         viewport = new FitViewport(GameConfig.HUD_WIDTH,GameConfig.HUD_HEIGHT);
+        backgroundCamera = new OrthographicCamera();
+        backgroundViewport = new StretchViewport(GameConfig.HUD_WIDTH, GameConfig.HUD_HEIGHT, backgroundCamera);
         stage = new Stage(viewport,game.getBatch());
 
         //NALOŽI VIRE
@@ -63,11 +72,11 @@ public class IntroScreen extends ScreenAdapter {
         //game.setMusicVolume(0.5f);
 
         gameplayAtlas = assetManager.get(AssetDescriptors.GAMEPLAY);
-        TextureRegion backgroundText = gameplayAtlas.findRegion(RegionNames.background1);
-        backgroundImage = new Image(backgroundText);
-
-        backgroundImage.setSize(stage.getWidth(),stage.getHeight());
-        stage.addActor(backgroundImage);
+        //create background image
+        TextureRegion backgroundRegion = gameplayAtlas.findRegion(RegionNames.background1);
+        background = new Sprite(backgroundRegion);
+        background.setSize(viewport.getWorldWidth(), viewport.getWorldHeight());
+        background.setPosition(0, 0);
 
         stage.addActor(createAnimation1());
         stage.addActor(createAnimation2());
@@ -80,7 +89,11 @@ public class IntroScreen extends ScreenAdapter {
     @Override
     public void resize(int width, int height){
         viewport.update(width,height,true);
-        backgroundImage.setSize(width,height);
+        stage.getViewport().update(width,height,true);
+        //scalable background
+        backgroundViewport.update(width, height, true);
+        background.setSize(backgroundViewport.getWorldWidth(), backgroundViewport.getWorldHeight());
+        background.setPosition(0, 0);
     }
 
     @Override
@@ -99,8 +112,14 @@ public class IntroScreen extends ScreenAdapter {
             game.setScreen(new MenuScreen(game));
         }
 
-        //TextureRegion background = gameplayAtlas.findRegion(RegionNames.background1);
+        //draw background
+        backgroundViewport.apply();
+        batch.setProjectionMatrix(backgroundCamera.combined);
+        batch.begin();
+        background.draw(batch);
+        batch.end();
 
+        viewport.apply();
         stage.act(delta);
         //stage.getBatch().begin();
         //stage.getBatch().draw(background,0,0,GameConfig.WIDTH,GameConfig.HEIGHT);

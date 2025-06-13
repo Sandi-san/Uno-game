@@ -4,8 +4,11 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.NinePatch;
+import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -28,6 +31,7 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.StretchViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.srebot.uno.Uno;
 import com.srebot.uno.assets.AssetDescriptors;
@@ -47,16 +51,18 @@ public class MenuScreen extends ScreenAdapter {
     private final AssetManager assetManager;
     private final GameManager manager;
     private final GameService service;
-    private Music music;
 
     private Viewport viewport;
     private Stage stage;
+    private OrthographicCamera backgroundCamera;
+    private StretchViewport backgroundViewport;
+    private SpriteBatch batch;
 
     private Skin skin;
     private BitmapFont font;
     private Label.LabelStyle fontSkin;
     private TextureAtlas gameplayAtlas;
-
+    private Sprite background;
 
     public MenuScreen(Uno game) {
         //SET GLOBAL VARS
@@ -76,16 +82,26 @@ public class MenuScreen extends ScreenAdapter {
         else{
             game.stopMusic();
         }
+        //create batch for scalable background image
+        batch = new SpriteBatch();
     }
 
     @Override
     public void show(){
         viewport = new FitViewport(GameConfig.HUD_WIDTH,GameConfig.HUD_HEIGHT);
+        backgroundCamera = new OrthographicCamera();
+        backgroundViewport = new StretchViewport(GameConfig.HUD_WIDTH, GameConfig.HUD_HEIGHT, backgroundCamera);
         stage = new Stage(viewport, game.getBatch());
 
         skin = assetManager.get(AssetDescriptors.UI_SKIN);
         gameplayAtlas = assetManager.get(AssetDescriptors.GAMEPLAY);
         font = assetManager.get(AssetDescriptors.UI_FONT);
+
+        //create background image
+        TextureRegion backgroundRegion = gameplayAtlas.findRegion(RegionNames.background3);
+        background = new Sprite(backgroundRegion);
+        background.setSize(viewport.getWorldWidth(), viewport.getWorldHeight());
+        background.setPosition(0, 0);
 
         //kombiniraj font in skin za font-e
         fontSkin = new Label.LabelStyle(skin.get(Label.LabelStyle.class));
@@ -98,6 +114,11 @@ public class MenuScreen extends ScreenAdapter {
     @Override
     public void resize(int width, int height){
         viewport.update(width,height,true);
+        stage.getViewport().update(width,height,true);
+        //scalable background
+        backgroundViewport.update(width, height, true);
+        background.setSize(backgroundViewport.getWorldWidth(), backgroundViewport.getWorldHeight());
+        background.setPosition(0, 0);
     }
 
     @Override
@@ -109,6 +130,14 @@ public class MenuScreen extends ScreenAdapter {
         float a=0.5f; //prosojnost
         ScreenUtils.clear(r,g,b,a);
 
+        //draw background
+        backgroundViewport.apply();
+        batch.setProjectionMatrix(backgroundCamera.combined);
+        batch.begin();
+        background.draw(batch);
+        batch.end();
+
+        viewport.apply();
         stage.act(delta);
         stage.draw();
     }
@@ -141,18 +170,8 @@ public class MenuScreen extends ScreenAdapter {
         //titleText.setFontScale(4f);
 
         //BACKGROUND
-        TextureRegion backgroundRegion = gameplayAtlas.findRegion(RegionNames.background3);
-        table.setBackground(new TextureRegionDrawable(backgroundRegion));
-
-        /*
-        TextButton introButton = new TextButton("Intro screen", skin);
-        introButton.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                game.setScreen(new IntroScreen(game));
-           }
-        });
-        */
+        //TextureRegion backgroundRegion = gameplayAtlas.findRegion(RegionNames.background3);
+        //table.setBackground(new TextureRegionDrawable(backgroundRegion));
 
         TextButton playSPButton = new TextButton("Singleplayer", skin);
         playSPButton.addListener(new ClickListener() {
@@ -244,10 +263,6 @@ public class MenuScreen extends ScreenAdapter {
 
         // Create a Table to hold the list of games or messages
         Table contentTable = new Table(skin);
-        // Set the initial height
-        //contentTable.setHeight(dialog.getHeight() * 0.75f);
-        // Make the table expand and fill the available space
-        //contentTable.defaults().expand().fill();
 
         List<GameData> gamesList = new List<>(skin);
 
