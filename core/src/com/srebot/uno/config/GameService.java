@@ -324,6 +324,58 @@ public class GameService {
         });
     }
 
+    public interface FetchPlayersScoresCallback {
+        void onSuccess(Player[] players);
+        void onFailure(Throwable t);
+    }
+    public void fetchPlayersScores(FetchPlayersScoresCallback callback){
+        HttpRequestBuilder requestBuilder = new HttpRequestBuilder();
+        Net.HttpRequest request = requestBuilder.newRequest()
+                .method(Net.HttpMethods.GET)
+                .url(GameConfig.SERVER_URL + GameConfig.PLAYER_URL + "/scores")
+                .header("Content-Type", "application/json")
+                .build();
+
+        Gdx.net.sendHttpRequest(request, new Net.HttpResponseListener() {
+            @Override
+            public void handleHttpResponse(Net.HttpResponse httpResponse) {
+                int statusCode = httpResponse.getStatus().getStatusCode();
+                if (statusCode == 200) {
+                    String responseJson = httpResponse.getResultAsString();
+                    Gdx.app.log("DATA:", responseJson);
+                    Player[] players = gson.fromJson(responseJson, Player[].class);
+                    Gdx.app.postRunnable(() -> {
+                        // Perform actions on the main thread
+                        if (players != null) {
+                            callback.onSuccess(players);
+                        } else {
+                            // Handle the error
+                            Gdx.app.log("fetchPlayersScores", "Failed to parse game data - players");
+                            callback.onFailure(new Exception("Failed to parse game data - players"));
+                        }
+                    });
+                }
+                else{
+                    // Handle non-200 response codes
+                    Gdx.app.log("fetchPlayersScores", "Invalid status code response: "+statusCode);
+                    callback.onFailure(new Exception("Failed to fetch players. Status code: " + statusCode));
+                }
+            }
+
+            @Override
+            public void failed(Throwable t) {
+                Gdx.app.log("FAILED","CANNOT CONNECT TO SERVER");
+                Gdx.app.postRunnable(() -> callback.onFailure(t));
+            }
+
+            @Override
+            public void cancelled() {
+                Gdx.app.log("CANCELLED","REQUEST CANCELLED");
+                Gdx.app.postRunnable(() -> callback.onFailure(new Exception("Request cancelled")));
+            }
+        });
+    }
+
     public interface FetchGameTurnCallback {
         void onSuccess(GameData gameTurn);
         void onFailure(Throwable t);

@@ -14,6 +14,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.ButtonGroup;
 import com.badlogic.gdx.scenes.scene2d.ui.Container;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
@@ -21,6 +22,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
@@ -35,7 +37,9 @@ import com.srebot.uno.assets.RegionNames;
 import com.srebot.uno.classes.Player;
 import com.srebot.uno.config.GameConfig;
 import com.srebot.uno.config.GameManager;
+import com.srebot.uno.config.GameService;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -44,6 +48,7 @@ public class LeaderboardScreen extends ScreenAdapter {
     private final Uno game;
     private final AssetManager assetManager;
     private GameManager manager;
+    private final GameService service;
 
     private Viewport viewport;
     private Stage stage;
@@ -57,10 +62,19 @@ public class LeaderboardScreen extends ScreenAdapter {
     private TextureAtlas gameplayAtlas;
     private Sprite background;
 
+    private Player[] playersData;
+
+    //get multiple Players scores data
+    public interface FetchPlayersScoresCallback {
+        void onPlayersFetched(Player[] players);
+    }
+
     public LeaderboardScreen(Uno game) {
         this.game = game;
         assetManager = game.getAssetManager();
         manager = game.getManager();
+        service = game.getService();
+
         if(manager.getMusicPref()) {
             game.playMusic();
         }
@@ -93,6 +107,34 @@ public class LeaderboardScreen extends ScreenAdapter {
 
         stage.addActor(createLeaderboard());
         Gdx.input.setInputProcessor(stage);
+
+        getLeaderboardData();
+    }
+
+    private void getLeaderboardData(){
+        getMultiplayerLeaderboard(fetchedPlayers -> {
+            if (fetchedPlayers != null) {
+                Gdx.app.log("LEADERBOARD DATA", "DATA FETCHED");
+                playersData = fetchedPlayers;
+            } else
+                Gdx.app.log("LEADERBOARD DATA", "FETCHED DATA IS NULL");
+        });
+    }
+
+    private void getMultiplayerLeaderboard(FetchPlayersScoresCallback callback) {
+        service.fetchPlayersScores(new GameService.FetchPlayersScoresCallback() {
+            @Override
+            public void onSuccess(Player[] players) {
+                Gdx.app.log("PLAYERS", "Players fetched: " + players.length);
+                callback.onPlayersFetched(players);
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                Gdx.app.log("PLAYERS", "FAILED: " + t);
+                callback.onPlayersFetched(null);
+            }
+        });
     }
 
     @Override
@@ -124,7 +166,6 @@ public class LeaderboardScreen extends ScreenAdapter {
         viewport.apply();
         stage.act(delta);
         stage.draw();
-
     }
 
     @Override
@@ -136,7 +177,24 @@ public class LeaderboardScreen extends ScreenAdapter {
         stage.dispose();
     }
 
-    //TODO: posebi dobi Singleplayer in Multiplayer leaderboard data
+    //populate scrollpane display
+    private void updateListTable(List<Player> players, Table listTable, Label.LabelStyle fontSkin) {
+        listTable.clear();
+        listTable.add(new Label("Player", fontSkin)).pad(5).padLeft(10);
+        listTable.add(new Label("Score", fontSkin)).pad(5).padRight(10);
+        listTable.row();
+
+        if (players.isEmpty()) {
+            listTable.add(new Label("No data available", fontSkin)).pad(5).colspan(2).center();
+            listTable.row();
+        } else {
+            for (Player player : players) {
+                listTable.add(new Label(player.getName(), fontSkin)).pad(5).padLeft(10);
+                listTable.add(new Label(String.valueOf(player.getScore()), fontSkin)).pad(5).padRight(10);
+                listTable.row();
+            }
+        }
+    }
 
     private Actor createLeaderboard() {
         //TABELA
@@ -149,14 +207,16 @@ public class LeaderboardScreen extends ScreenAdapter {
         final Table scrollTable = new Table();
         scrollTable.defaults();
 
+        final Table buttonGroupTable = new Table();
+        buttonGroupTable.defaults();
+
         final Table buttonTable = new Table();
         buttonTable.defaults();
 
         //TITLE
-        //kot slika
         Image titleText = new Image(gameplayAtlas.findRegion(RegionNames.textLeaderboard));
         Container titleContainer = new Container(titleText);
-        //doloci velikost
+        //set size
         float sizeX = GameConfig.TEXT_WIDTH*0.5f;
         float sizeY = GameConfig.TEXT_HEIGHT*0.5f;
 
@@ -165,12 +225,7 @@ public class LeaderboardScreen extends ScreenAdapter {
         titleText.setSize(sizeX,sizeY);
         titleTable.add(titleContainer).width(sizeX).height(sizeY)
                 .center().padBottom(15).row();
-        /*
-        //kot tekst (slabo skaliranje)
-        Label titleText = new Label("LEADERBOARD",fontSkin);
-        titleText.setFontScale(4f);
-        titleTable.add(titleText).padBottom(15).row();
-        */
+
         titleTable.center();
 
         //BACKGROUND
@@ -185,9 +240,6 @@ public class LeaderboardScreen extends ScreenAdapter {
             }
         });
 
-        //TextureRegion menuBackgroundRegion = gameplayAtlas.findRegion(RegionNames.MENU_BACKGROUND);
-        //buttonTable.setBackground(new TextureRegionDrawable(menuBackgroundRegion));
-
         Table listTable = new Table(skin);
 
         //SEZNAM PODATKOV
@@ -196,19 +248,6 @@ public class LeaderboardScreen extends ScreenAdapter {
         // Sort the list by score in descending order
         Collections.sort(listData, (player1, player2) -> Integer.compare(player2.getScore(), player1.getScore()));
 
-        listTable.add(new Label("Player",fontSkin)).pad(5).padLeft(10);
-        listTable.add(new Label("Score",fontSkin)).pad(5).padRight(10);
-        listTable.row();
-        if(listData.size()==0){
-            listTable.add(new Label("No data available", fontSkin)).pad(5).colspan(2).center();
-            listTable.row();
-        }
-
-        for(Player player : listData) {
-            listTable.add(new Label(player.getName(), fontSkin)).pad(5).padLeft(10);
-            listTable.add(new Label(String.valueOf(player.getScore()), fontSkin)).pad(5).padRight(10);
-            listTable.row();
-        }
         listTable.setWidth(GameConfig.WIDTH/3f);
         listTable.setHeight(
                 Math.min(GameConfig.HEIGHT/3f,150));
@@ -216,10 +255,6 @@ public class LeaderboardScreen extends ScreenAdapter {
         final ScrollPane scrollPane = new ScrollPane(listTable,skin);
         scrollPane.setFadeScrollBars(false);
 
-        /*
-        TextureRegion paneBackground = gameplayAtlas.findRegion(RegionNames.background1);
-        scrollTable.setBackground(new TextureRegionDrawable(paneBackground));
-        */
         NinePatch patch = new NinePatch(gameplayAtlas.findRegion(RegionNames.backgroundPane1));
         NinePatchDrawable paneBackground = new NinePatchDrawable(patch);
         scrollTable.setBackground(paneBackground);
@@ -227,8 +262,65 @@ public class LeaderboardScreen extends ScreenAdapter {
         Container container = new Container(scrollPane);
         container.fillX();
 
+        //TOGGLE BUTTONS FOR SWITCHING SP/MP
+        //get the default TextButtonStyle from skin
+        TextButton.TextButtonStyle buttonStyle = new TextButton.TextButtonStyle(skin.get(TextButton.TextButtonStyle.class));
+
+        //set custom "checked" appearence as defualt hover style skin uses
+        buttonStyle.checked = buttonStyle.over;
+        buttonStyle.checkedFontColor = buttonStyle.overFontColor != null
+                ? buttonStyle.overFontColor
+                : buttonStyle.fontColor;
+
+        //create buttons using this style
+        TextButton singleplayerButton = new TextButton("Singleplayer", buttonStyle);
+        TextButton multiplayerButton = new TextButton("Multiplayer", buttonStyle);
+
+        //create ButtonGroup for mutual exclusivity
+        ButtonGroup<TextButton> toggleGroup = new ButtonGroup<>(singleplayerButton, multiplayerButton);
+        toggleGroup.setMaxCheckCount(1);
+        toggleGroup.setMinCheckCount(1);
+        toggleGroup.setUncheckLast(true); //prevent deselecting the last button
+
+        //select singleplayer by default
+        singleplayerButton.setChecked(true);
+
+        //add to layout
+        buttonGroupTable.add(singleplayerButton).padRight(10);
+        buttonGroupTable.add(multiplayerButton);
+
+        //button listeners
+        singleplayerButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                Gdx.app.log("Button listener", "Displaying local data");
+                List<Player> localData = manager.loadFromJson();
+                Collections.sort(localData, (p1, p2) -> Integer.compare(p2.getScore(), p1.getScore()));
+                updateListTable(localData, listTable, fontSkin);
+            }
+        });
+        multiplayerButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeListener.ChangeEvent event, Actor actor) {
+                Gdx.app.log("Button listener", "Displaying database data");
+                if(playersData!=null) {
+                    List<Player> multiplayerData = Arrays.asList(playersData);
+                    Collections.sort(multiplayerData, (p1, p2) -> Integer.compare(p2.getScore(), p1.getScore()));
+                    updateListTable(multiplayerData, listTable, fontSkin);
+                }
+                else{
+                    getLeaderboardData();
+                }
+            }
+        });
+
+        //call singleplayer button automatically
+        singleplayerButton.fire(new ChangeListener.ChangeEvent());
+
         scrollTable.add(container).expandX().fillX().row();
         scrollTable.center();
+
+        buttonTable.add(buttonGroupTable).row();
 
         buttonTable.add(menuButton).row();
         buttonTable.center();

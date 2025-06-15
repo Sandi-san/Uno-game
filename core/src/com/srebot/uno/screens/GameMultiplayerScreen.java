@@ -1749,8 +1749,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         stage.dispose();
         /*
         batch.dispose();
-        skin.dispose();
-        gameplayAtlas.dispose();
         sfxPickup.dispose();
         sfxCollect.dispose();
          */
@@ -1765,7 +1763,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             deckDraw.setCards(currentPlayer.getHand().getCards());
         }
         stopScheduler();
-        updateGameRemovePlayer(currentPlayer, currentGameId, new GameUpdateCallback() {
+        updateGameRemovePlayer(currentPlayer, gameId, new GameUpdateCallback() {
             @Override
             public void onGameFetched(GameData updatedGame) {
                 Gdx.app.log("GAME", "Removed player with id: " + localPlayerId + " from Game with id: "+updatedGame.getId());
@@ -1778,6 +1776,14 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         });
     }
 
+    //if player leaves during their turn, update turn to next player on BE
+    public void updateTurn(int gameId){
+        if(!isWaiting && playerTurn == (getIndexOfCurrentPlayer()+1)) {
+            playerTurn = getNextTurn(playerTurn);
+
+        }
+    }
+
     //z scene2d
     public Actor createExitButton(State state) {
         TextButton exitButton = new TextButton("Exit", skin);
@@ -1786,6 +1792,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             public void clicked(InputEvent event, float x, float y) {
                 Gdx.app.log("Button Clicked", "Exit button clicked!");
                 playerLeaveGame(localPlayerId,currentGameId);
+                updateTurn(currentGameId);
                 game.setScreen(new MenuScreen(game));
             }
         });
