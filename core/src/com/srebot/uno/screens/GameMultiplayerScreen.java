@@ -160,7 +160,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         void onGameFetched(GameData game);
     }
 
-    //get one Game
+    //update one Game
     public interface GameUpdateCallback {
         void onGameFetched(GameData game);
         void onFailure(Throwable t);
@@ -239,14 +239,18 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                     if(fetchedTurnAndDeck!=null && scheduler!=null) {  //TODO: isto za vse ko returnas null on BE failure
                         int fetchedTurn = fetchedTurnAndDeck.getCurrentTurn();
                         Card fetchedTopCard = fetchedTurnAndDeck.getTopCard();
-                        if (Objects.equals(fetchedTurnAndDeck.getGameState(), "Over"))
+                        String fetchedGameState = fetchedTurnAndDeck.getGameState();
+                        if (Objects.equals(fetchedGameState, "Over"))
                             state = State.Over;
-                        else if (Objects.equals(fetchedTurnAndDeck.getGameState(), "Paused")) {
+                        else if (Objects.equals(fetchedGameState, "Paused")) {
                             state = State.Paused;
                         }
                         Gdx.app.log("TURN FETCH", "Player: " + localPlayerId + " is waiting for turn...");
                         playerWaiting = playersData.get(fetchedTurn-1);
+                        //TODO: error when joining game again: playerWaiting is null
                         Gdx.app.log("TURN FETCH", "Waiting for player: " + playerWaiting.getName());
+
+                        Gdx.app.log("TURN FETCH", "State: " + fetchedGameState);
                         //fetched turn is valid
                         if (fetchedTurn != 0 && fetchedTopCard != null) {
                             topCard = fetchedTopCard;
@@ -547,6 +551,23 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         }, gameId, player);
     }
 
+    /** Update Game Turn and remove a player (if current player leaves) */
+    private void updateGameRemovePlayerTurn(Player player, int gameId, int turn, GameUpdateCallback callback) {
+        service.updateGameRemovePlayerTurn(new GameService.GameUpdatePlayerRemoveCallback() {
+            @Override
+            public void onSuccess(GameData game) {
+                Gdx.app.log("SUCCESS", "Player removed from backend & turn updated");
+                callback.onGameFetched(game);
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                Gdx.app.log("GAME", "FAILED: " + t);
+                callback.onFailure(t);
+            }
+        }, gameId, player, turn);
+    }
+
     /**
      * Call create Game function in GameService and fetch response
      */
@@ -606,6 +627,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             @Override
             public void onSuccess(GameData fetchedGame) {
                 Gdx.app.log("TURN FETCH", "Fetched turn: " + fetchedGame.getCurrentTurn());
+                //TODO: Join error thrown here
                 //get array of players from current Game from DB
                 callback.onTurnFetched(fetchedGame);
             }
@@ -1359,22 +1381,22 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
             //draw waiting for player if
             if(isWaiting && playerWaiting!=null){
-                waitingY = waitingY - lineHeight;
+                waitingY = waitingY - (lineHeight*2);
                 font.getData().setScale(1f);
-                outlineColor = Color.YELLOW;
+                outlineColor = Color.GOLDENROD;
                 String waitingText = "Waiting for: " + playerWaiting.getName();
 
                 font.setColor(outlineColor);
 
                 //outline effect
-                font.draw(batch, waitingText, startX + outlineOffset1, playerY + outlineOffset1);
-                font.draw(batch, waitingText, startX + outlineOffset2, playerY + outlineOffset2);
-                font.draw(batch, waitingText, startX - outlineOffset1, playerY + outlineOffset1);
-                font.draw(batch, waitingText, startX - outlineOffset2, playerY + outlineOffset2);
-                font.draw(batch, waitingText, startX + outlineOffset1, playerY - outlineOffset1);
-                font.draw(batch, waitingText, startX + outlineOffset2, playerY - outlineOffset2);
-                font.draw(batch, waitingText, startX - outlineOffset1, playerY - outlineOffset1);
-                font.draw(batch, waitingText, startX - outlineOffset2, playerY - outlineOffset2);
+                font.draw(batch, waitingText, startX + outlineOffset1, waitingY + outlineOffset1);
+                font.draw(batch, waitingText, startX + outlineOffset2, waitingY + outlineOffset2);
+                font.draw(batch, waitingText, startX - outlineOffset1, waitingY + outlineOffset1);
+                font.draw(batch, waitingText, startX - outlineOffset2, waitingY + outlineOffset2);
+                font.draw(batch, waitingText, startX + outlineOffset1, waitingY - outlineOffset1);
+                font.draw(batch, waitingText, startX + outlineOffset2, waitingY - outlineOffset2);
+                font.draw(batch, waitingText, startX - outlineOffset1, waitingY - outlineOffset1);
+                font.draw(batch, waitingText, startX - outlineOffset2, waitingY - outlineOffset2);
 
                 //text
                 font.setColor(Color.WHITE);
@@ -1758,29 +1780,40 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         //get player from playersData that is leaving (based on localId)
         Player currentPlayer = playersData.get(getIndexOfCurrentPlayer());
         //if game is over, dont add cards back into drawDeck
-        if(state != State.Over) {
+        if (state != State.Over) {
             //put their cards back into the drawDeck
             deckDraw.setCards(currentPlayer.getHand().getCards());
         }
         stopScheduler();
-        updateGameRemovePlayer(currentPlayer, gameId, new GameUpdateCallback() {
-            @Override
-            public void onGameFetched(GameData updatedGame) {
-                Gdx.app.log("GAME", "Removed player with id: " + localPlayerId + " from Game with id: "+updatedGame.getId());
-            }
 
-            @Override
-            public void onFailure(Throwable t) {
-                Gdx.app.log("ERROR", "Failed to remove player from game.");
-            }
-        });
-    }
-
-    //if player leaves during their turn, update turn to next player on BE
-    public void updateTurn(int gameId){
+        //update turn AND remove player
         if(!isWaiting && playerTurn == (getIndexOfCurrentPlayer()+1)) {
             playerTurn = getNextTurn(playerTurn);
+            updateGameRemovePlayerTurn(currentPlayer, gameId, playerTurn, new GameUpdateCallback() {
+                @Override
+                public void onGameFetched(GameData updatedGame) {
+                    Gdx.app.log("GAME", "Removed player with id: " + localPlayerId + " & updated turn to: "+ updatedGame.getCurrentTurn() +" from Game with id: " + updatedGame.getId());
+                }
 
+                @Override
+                public void onFailure(Throwable t) {
+                    Gdx.app.log("ERROR", "Failed to remove player from game.");
+                }
+            });
+        }
+        //only remove player
+        else {
+            updateGameRemovePlayer(currentPlayer, gameId, new GameUpdateCallback() {
+                @Override
+                public void onGameFetched(GameData updatedGame) {
+                    Gdx.app.log("GAME", "Removed player with id: " + localPlayerId + " from Game with id: " + updatedGame.getId());
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    Gdx.app.log("ERROR", "Failed to remove player from game.");
+                }
+            });
         }
     }
 
@@ -1792,7 +1825,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             public void clicked(InputEvent event, float x, float y) {
                 Gdx.app.log("Button Clicked", "Exit button clicked!");
                 playerLeaveGame(localPlayerId,currentGameId);
-                updateTurn(currentGameId);
                 game.setScreen(new MenuScreen(game));
             }
         });
