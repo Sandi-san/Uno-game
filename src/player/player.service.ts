@@ -91,6 +91,17 @@ export class PlayerService {
     return player
   }
 
+  //get all players by descending scores
+  async getPlayersScores(): Promise<Player[] | null> {
+    const players = await this.prisma.player.findMany({
+        orderBy: {
+          score: 'desc',
+        }
+    })
+    console.log(players)
+    return players
+  }
+
   //UNUSED: update players data & gameId
   async updateMany(players: UpdatePlayerDto[], gameId: number): Promise<Player[]> {
     const updatedPlayers = await Promise.all(

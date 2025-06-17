@@ -8,6 +8,11 @@ import { UpdatePlayerDto } from './dto/update-player.dto';
 export class PlayerController {
     constructor(private readonly playerService: PlayerService) {}
 
+    @Get('scores')
+    async getPlayersScores(): Promise<Player[]> {
+      return this.playerService.getPlayersScores();
+    }
+    
     @Post()
     async createPlayer(@Body() data: CreatePlayerDto): Promise<Player> {
       console.log("PLAYER CREATE:",data)
