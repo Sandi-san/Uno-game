@@ -101,7 +101,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     private Card topCard;
 
     //trenutni turn
-    private int playerTurn;
+    private int playerTurn = 0;
     //preglej ce trenutni player naredil akcijo
     private boolean playerPerformedAction = false;
     //max players
@@ -236,7 +236,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         scheduler.scheduleAtFixedRate(() -> {
             if (waitForTurn()) {
                 checkForTurnChange(fetchedTurnAndDeck -> {
-                    if(fetchedTurnAndDeck!=null && scheduler!=null) {  //TODO: isto za vse ko returnas null on BE failure
+                    if(fetchedTurnAndDeck!=null && scheduler!=null) {  //TODO: isto za vse ko returnas null on BE failure //mogoce check if players>=2
                         int fetchedTurn = fetchedTurnAndDeck.getCurrentTurn();
                         Card fetchedTopCard = fetchedTurnAndDeck.getTopCard();
                         String fetchedGameState = fetchedTurnAndDeck.getGameState();
@@ -246,16 +246,18 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                             state = State.Paused;
                         }
                         Gdx.app.log("TURN FETCH", "Player: " + localPlayerId + " is waiting for turn...");
-                        playerWaiting = playersData.get(fetchedTurn-1);
-                        //TODO: error when joining game again: playerWaiting is null
-                        Gdx.app.log("TURN FETCH", "Waiting for player: " + playerWaiting.getName());
+                        playerWaiting = getPlayerById(fetchedTurn);
+                        if(playerWaiting!=null)
+                            Gdx.app.log("TURN FETCH", "Waiting for player: " + playerWaiting.getName());
+                        else
+                            Gdx.app.log("TURN FETCH", "Player waiting is null: " + playerWaiting);
 
                         Gdx.app.log("TURN FETCH", "State: " + fetchedGameState);
                         //fetched turn is valid
                         if (fetchedTurn != 0 && fetchedTopCard != null) {
                             topCard = fetchedTopCard;
                             //fetched turn is same as index of player
-                            if (fetchedTurn == getIndexOfCurrentPlayer() + 1) {
+                            if (fetchedTurn == localPlayerId) {
                                 //get full data of database
                                 fetchGameFromBackend(currentGameId, fetchedGame -> {
                                     if (fetchedGame != null) {
@@ -479,8 +481,10 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         }
         //PRIPRAVI FIRST PLAYER (HOST)
         createPlayerFromBackend(manager.getNamePref(), player -> {
-            // Get first turn, set up game, etc.
-            getFirstTurn();
+            //set playerTurn as id of player that created the game (first player)
+            int currentPlayerTurn = player.getId();
+            if(currentPlayerTurn!=0)
+                playerTurn = currentPlayerTurn;
 
             // Create and save game data
             GameData gameData = new GameData(
@@ -627,7 +631,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             @Override
             public void onSuccess(GameData fetchedGame) {
                 Gdx.app.log("TURN FETCH", "Fetched turn: " + fetchedGame.getCurrentTurn());
-                //TODO: Join error thrown here
                 //get array of players from current Game from DB
                 callback.onTurnFetched(fetchedGame);
             }
@@ -657,6 +660,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         }
         return count;
     }
+    //TODO: remove this?
     //Get index in playersData of current player (localPlayerId)
     private int getIndexOfCurrentPlayer() {
         int index = -1;
@@ -854,24 +858,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         }
     }
 
-    //s cigavim turn se igra zacne
-    private void getFirstTurn() {
-        /*
-        1-bottom
-        2-left
-        3-top
-        4-right
-         */
-        playerTurn = 1;
-        /*
-        if(Objects.equals(manager.getStarterPref(), "Player"))
-            playerTurn=1;
-        else if(Objects.equals(manager.getStarterPref(), "Computer"))
-            playerTurn=3;
-         */
-    }
-
-    //vrni turn index naslednjega playerja, ce obstaja
+    /*
     private int getNextTurn(int index) {
         do {
             if (clockwiseOrder) {
@@ -887,6 +874,47 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             }
         } while (playersData.get(index - 1) == null);
         return index;
+    }
+    */
+
+    //vrni player Id naslednjega playerja, ce obstaja
+    private int getNextTurn(int playerId) {
+        int size = playersData.size();
+
+        // Find the current index of the player with the given ID
+        int currentIndex = -1;
+        for (int i = 0; i < size; i++) {
+            Player p = playersData.get(i);
+            if (p != null && p.getId() == playerId) {
+                currentIndex = i;
+                break;
+            }
+        }
+
+        if (currentIndex == -1) {
+            throw new IllegalArgumentException("Player ID not found in playersData.");
+        }
+
+        // Search for the next/previous player, skipping nulls
+        int nextIndex = currentIndex;
+        do {
+            nextIndex = clockwiseOrder
+                    ? (nextIndex + 1) % size
+                    : (nextIndex - 1 + size) % size;
+        } while (playersData.get(nextIndex) == null);
+
+        return playersData.get(nextIndex).getId();
+    }
+
+
+    private Player getPlayerById(int id){
+        for(Player player : playersData){
+            if(player!=null) {
+                if (player.getId() == id)
+                    return player;
+            }
+        }
+        return null;
     }
 
     private String getOrderAsString() {
@@ -951,7 +979,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
     //check scheduler for retrieving turn
     public boolean waitForTurn() {
-        if (playerTurn != getIndexOfCurrentPlayer() + 1) {
+        if (playerTurn != localPlayerId) {
             isWaiting = true;
             return true;
         }
@@ -1331,11 +1359,18 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             float waitingY = 0;
             float playerY = startY;
 
-            for (int i = 0; i < playersData.size(); ++i) {
-                Player player = playersData.get(i);
+            //TODO: poglej ce dobi pravega playerja + test player leave -> return
+            int numPlayers = getPlayersSize();
+            int currentPlayerIndex = getIndexOfCurrentPlayer();
+            if(currentPlayerIndex==-1)
+                return;
+            for (int i = 0; i < numPlayers; ++i) {
+                //get index of current player first (localId) (current player always starts at bottom)
+                int playerIndex = (currentPlayerIndex + i) % playersData.size();
+                //get next player at the calculated index
+                Player player = playersData.get(playerIndex);
                 if (player != null) {
                     String position = "Bottom";
-                    int numPlayers = getPlayersSize();
                     //0-P1, 1-P2, 2-P3, 3-P4
                     switch (i) {
                         case 1:
@@ -1460,7 +1495,8 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
         if (state == State.Running) {
             //arrow button click cycle
-            Player currentPlayer = playersData.get(playerTurn - 1);
+            //Player currentPlayer = playersData.get(playerTurn - 1);
+            Player currentPlayer = getPlayerById(playerTurn);
             Hand currentHand = currentPlayer.getHand();
             if (isClickedOnArrowButtonLeft(worldCoords.x, worldCoords.y, currentHand)) {
                 if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT) && showLeftArrow) {
@@ -1472,7 +1508,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 }
             }
 
-            //PlayerTurn: player se ni imel poteze ta turn
+            //player se ni imel poteze ta turn
             if (!playerPerformedAction) {
                 //player trenutnega turna
                 //Gdx.app.log("Current player", currentPlayer.getName());
@@ -1483,7 +1519,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                             sfxPickup.play();
                         }
                         currentPlayer.getHand().pickCard(deckDraw);
-                        //ce hocemo da konec tren player turna, ko vlece karto iz decka
+                        //ce hocemo da konec trenutnega player turna, ko vlece karto iz decka
                         playerTurn = getNextTurn(playerTurn);
                         playerPerformedAction = true;
                         //move hand index right (draw card)
@@ -1552,6 +1588,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         int index;
         String special = card.getSpecial();
         int maxCardsShow = getMaxCardsShow();
+        Player nextPlayer = null;
         switch (special) {
             //Stop
             case "S":
@@ -1570,18 +1607,25 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 //dobi naslednjega playerja glede na turnOrder pref
                 //naj vlecejo +2
                 index = getNextTurn(playerTurn);
+                nextPlayer = getPlayerById(index);
                 //naslednji player picka 2x karti
-                playersData.get(index - 1).getHand().pickCards(deckDraw, 2);
-                //inkrementiraj lastIndex
-                playersData.get(index - 1).getHand().lastIndexIncrement(2,maxCardsShow);
+                if(nextPlayer!=null && nextPlayer.getHand()!=null) {
+                    nextPlayer.getHand().pickCards(deckDraw, 2);
+                    //inkrementiraj lastIndex
+                    nextPlayer.getHand().lastIndexIncrement(2, maxCardsShow);
+                }
                 break;
             //Plus 4
             case "P4":
                 //dobi naslednjega playerja glede na turnOrder pref
                 //naj vlecejo +4
-                index = getNextTurn(playerTurn);
-                playersData.get(index - 1).getHand().pickCards(deckDraw, 4);
-                playersData.get(index - 1).getHand().lastIndexIncrement(4,maxCardsShow);
+                index = getNextTurn(playerTurn);nextPlayer = getPlayerById(index);
+                //naslednji player picka 2x karti
+                if(nextPlayer!=null && nextPlayer.getHand()!=null) {
+                    nextPlayer.getHand().pickCards(deckDraw, 4);
+                    //inkrementiraj lastIndex
+                    nextPlayer.getHand().lastIndexIncrement(4, maxCardsShow);
+                }
                 break;
             //Rainbow
             default:
@@ -1778,7 +1822,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
     public void playerLeaveGame(int playerId, int gameId){
         //get player from playersData that is leaving (based on localId)
-        Player currentPlayer = playersData.get(getIndexOfCurrentPlayer());
+        Player currentPlayer = getPlayerById(playerId);
         //if game is over, dont add cards back into drawDeck
         if (state != State.Over) {
             //put their cards back into the drawDeck
@@ -1787,7 +1831,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         stopScheduler();
 
         //update turn AND remove player
-        if(!isWaiting && playerTurn == (getIndexOfCurrentPlayer()+1)) {
+        if(!isWaiting && playerTurn == localPlayerId) {
             playerTurn = getNextTurn(playerTurn);
             updateGameRemovePlayerTurn(currentPlayer, gameId, playerTurn, new GameUpdateCallback() {
                 @Override

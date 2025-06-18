@@ -35,9 +35,9 @@ public class GameService {
         gsonBuilder.registerTypeAdapter(Hand.class, new HandDeserializer());
         gsonBuilder.registerTypeAdapter(Player.class, new PlayerSerializer());
         gsonBuilder.registerTypeAdapter(Player.class, new PlayerDeserializer());
-        gsonBuilder.registerTypeAdapter(PlayerTurn.class, new PlayerTurnSerializer());
         gsonBuilder.registerTypeAdapter(Card.class, new CardSerializer());
         gsonBuilder.registerTypeAdapter(Date.class, new DateDeserializer());
+        gsonBuilder.registerTypeAdapter(PlayerTurn.class, new PlayerTurnSerializer());
         gsonBuilder.setPrettyPrinting();
         gson = gsonBuilder.create();
     }
