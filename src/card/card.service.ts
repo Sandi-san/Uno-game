@@ -68,9 +68,24 @@ export class CardService {
     console.log("Deleting Cards of Hand:", handId)
     await this.prisma.card.deleteMany({
       where: {
-        handId
+        handId: handId,
       }
     })
+  }
+
+  //delete handId from cards but dont delete them
+  async disconnectManyFromHand(cardIds: { id: number }[]): Promise<void> {
+    console.log("Disconnecting handId of Cards:", cardIds)
+    const ids = cardIds.map(c => c.id);
+
+    await this.prisma.card.updateMany({
+      where: {
+        id: { in: ids },
+      },
+      data: {
+        handId: null,
+      },
+    });
   }
 
 }

@@ -94,9 +94,9 @@ export class PlayerService {
   //get all players by descending scores
   async getPlayersScores(): Promise<Player[] | null> {
     const players = await this.prisma.player.findMany({
-        orderBy: {
-          score: 'desc',
-        }
+      orderBy: {
+        score: 'desc',
+      }
     })
     console.log(players)
     return players
@@ -182,7 +182,7 @@ export class PlayerService {
       updateData.hand = player.hand ? { update: handData } : { create: handData };
     } else if (player.hand) {
       //delete cards from hand
-      await this.cardService.deleteManyFromHand(player.hand.id)
+      //await this.cardService.deleteManyFromHand(player.hand.id)
       // If hand is not provided and player already has a hand, delete it
       updateData.hand = { delete: true };
     }
@@ -212,6 +212,9 @@ export class PlayerService {
     if (!player)
       throw new NotFoundException(`Player with id ${id} not found.`);
 
+
+    //TODO: check if score update ever occurs?
+    console.log(`Player ${id} score is ${score}`)
     if (score > player.score) {
       const updatedPlayer = await this.prisma.player.update({
         where: { id },

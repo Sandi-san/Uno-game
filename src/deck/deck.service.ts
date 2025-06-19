@@ -32,7 +32,7 @@ export class DeckService {
     })
   }
 
-  async get(id: number): Promise<Deck | null> {
+  async get(id: number): Promise<Deck & { cards: Card[] } | null> {
     return this.prisma.deck.findUnique({
       where: { id },
       include: {
@@ -87,6 +87,12 @@ export class DeckService {
       ?.filter(card => card && card.id !== undefined)
       .map(card => ({ id: card.id }))
 
+    console.log(`DECK ${deck.id} ADD: `, cardIds)
+
+    //first disconnect cards from hand (set handId as null) (prevents deletion when deleting cards)
+    await this.cardService.disconnectManyFromHand(cardIds)
+
+    //then connect the cards to the deck (deckId becomes id of this deck) 
     const updatedDeck = await this.prisma.deck.update({
       where: { id: deck.id },
       data: {
@@ -96,8 +102,7 @@ export class DeckService {
       },
       include: { cards: true }
     });
-
-    console.log(`DECK ${updatedDeck.id} ADD: `, cardIds)
+    
     return updatedDeck
   }
 

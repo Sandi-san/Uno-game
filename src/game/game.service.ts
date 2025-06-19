@@ -320,6 +320,8 @@ export class GameService {
       //second Update Players' Hands
       if (dto.players) {
         //refetch before updating (important for first game turn else unsynchronized behaviour)
+        
+        //TODO: error dobi prvotne vrednoist indexFirst/Last in ne updatea (solution: najprej posodobi indexe) 
         const gamePlayers = await this.playerService.getForGame(id)
         await this.handService.updateForGame(dto.players, gamePlayers)
       }
