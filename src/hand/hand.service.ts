@@ -68,7 +68,7 @@ export class HandService {
         .filter(card => card && card.id !== undefined)
         .map(card => card.id);
 
-        
+
       console.log(`PLAYER HAND: ${playerDto.id} | ${playerDto.hand.cards}`)
       console.log(`HAND NEW: ${newCardIds} | EXISTING: ${existingCardIds}`)
 
@@ -87,6 +87,19 @@ export class HandService {
         await this.prisma.card.updateMany({
           where: { id: { in: toAdd } },
           data: { handId: player.hand.id, deckId: null },
+        });
+      }
+
+      // Also update indexFirst and indexLast if defined
+      const { indexFirst, indexLast } = playerDto.hand;
+      const updateHandData: Partial<Hand> = {};
+      if (indexFirst !== undefined) updateHandData.indexFirst = indexFirst;
+      if (indexLast !== undefined) updateHandData.indexLast = indexLast;
+
+      if (Object.keys(updateHandData).length > 0) {
+        await this.prisma.hand.update({
+          where: { id: player.hand.id },
+          data: updateHandData,
         });
       }
     }

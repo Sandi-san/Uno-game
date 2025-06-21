@@ -25,6 +25,8 @@ export class GameService {
     private cardService: CardService,
   ) { }
 
+  //TODO: transaction vse metode kjer se dogaja vec Prisma callov
+
   async create(data: CreateGameDto): Promise<Game> {
     //TODO: transaction this
     const game = await this.prisma.$transaction(async (tx) => {
@@ -163,6 +165,8 @@ export class GameService {
     const games = await this.prisma.game.findMany({
       include: {
         decks: true,
+        players: true,
+        /*
         players: {
           include: {
             hand: {
@@ -172,6 +176,7 @@ export class GameService {
             },
           },
         },
+        */
       },
       orderBy: {
         createdAt: 'desc',
@@ -320,10 +325,24 @@ export class GameService {
       //second Update Players' Hands
       if (dto.players) {
         //refetch before updating (important for first game turn else unsynchronized behaviour)
-        
-        //TODO: error dobi prvotne vrednoist indexFirst/Last in ne updatea (solution: najprej posodobi indexe) 
         const gamePlayers = await this.playerService.getForGame(id)
+
+        //keep newly updated index values: firstIndex & lastIndex of Hands and merge them into gamePlayers data
+        for (const updatedPlayer of dto.players) {
+          const targetPlayer = gamePlayers.find(p => p.id === updatedPlayer.id);
+          if (targetPlayer && targetPlayer.hand && updatedPlayer.hand) {
+            targetPlayer.hand.indexFirst = updatedPlayer.hand.indexFirst;
+            targetPlayer.hand.indexLast = updatedPlayer.hand.indexLast;
+          }
+        }
+
+        //update hands
         await this.handService.updateForGame(dto.players, gamePlayers)
+        /*
+        const updatedHands = await this.playerService.getForGame(id)
+        console.log("Updated hands 0: ",updatedHands.at(0).hand.indexLast)
+        console.log("Updated hands 1: ",updatedHands.at(1).hand.indexLast)
+        */
       }
 
       //if the game is over, update all connected players' scores

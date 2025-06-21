@@ -21,7 +21,6 @@ export class PlayerService {
         score: data.score,
         //hand can be null (set hand as null if not passed)
         hand: data.hand != null ? {
-          //TODO: create hand
           create: {
             indexFirst: data.hand.indexFirst,
             indexLast: data.hand.indexLast,
@@ -211,7 +210,6 @@ export class PlayerService {
     const player = await this.get(id)
     if (!player)
       throw new NotFoundException(`Player with id ${id} not found.`);
-
 
     //TODO: check if score update ever occurs?
     console.log(`Player ${id} score is ${score}`)
