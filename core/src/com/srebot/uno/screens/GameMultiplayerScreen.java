@@ -214,18 +214,17 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             if (waitForPlayers()) {
                 checkForNewPlayers(fetchedPlayers -> {
                     int localPlayersSize = getPlayersSize();
-                    //TODO: pri vsaki funkciji iz db baze, poglej ce je returned element null
-                    if (fetchedPlayers != null) {
+                    if (fetchedPlayers != null && scheduler!=null) {
                         if (fetchedPlayers.length != localPlayersSize) {
                             Gdx.app.log("PLAYERCHECKER", "FOUND NEW PLAYER");
                             checkPlayersChanged(fetchedPlayers);
                         } else
                             Gdx.app.log("PLAYERCHECKER", "NO NEW PLAYERS");
                     } else
-                        Gdx.app.log("PLAYERCHECKER", "FETCHED PLAYERS ARE NULL");
+                        Gdx.app.log("ERROR", "Checking for players: Fetched players are null");
                 });
             }
-        }, 0, 7, TimeUnit.SECONDS); // Check every 10 seconds (completes within 10s)
+        }, 0, 7, TimeUnit.SECONDS); // Check every 5-7 seconds (completes within 7s)
     }
 
     //Turn checker scheduler: check DB for turn change if not currently playing
@@ -247,7 +246,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                         }
                         Gdx.app.log("TURN FETCH", "Player: " + localPlayerId + " is waiting for turn...");
                         playerWaiting = getPlayerById(fetchedTurn);
-                        if(playerWaiting!=null)
+                        if (playerWaiting != null)
                             Gdx.app.log("TURN FETCH", "Waiting for player: " + playerWaiting.getName());
                         else
                             Gdx.app.log("TURN FETCH", "Player waiting is null: " + playerWaiting);
@@ -257,7 +256,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                         if (fetchedTurn != 0 && fetchedTopCard != null) {
                             topCard = fetchedTopCard;
                             //fetched turn is same as index of player
-                            if (fetchedTurn == localPlayerId) {
+                            if (fetchedTurn == localPlayerId || state == State.Over) {
                                 //get full data of database
                                 fetchGameFromBackend(currentGameId, fetchedGame -> {
                                     if (fetchedGame != null) {
@@ -270,13 +269,14 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                                     }
                                 });
                             }
-                        }
+                        } else
+                            Gdx.app.log("ERROR", "Fetched turn or top card are null");
                     }
                 });
             }
             isWaiting = false;
             Gdx.app.log("TURN FETCH", "Player: " + localPlayerId + " is not waiting.");
-        }, 0, 5, TimeUnit.SECONDS); // Check every 3 seconds (completes within 3s)
+        }, 0, 5, TimeUnit.SECONDS); // Check every 3-5 seconds (completes within 5s)
     }
 
     private void setMusicAndSounds() {
@@ -346,27 +346,29 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 // Step 2: Create the player and update the game
                 createPlayerFromBackend(playerName, player -> {
                     state = State.Paused;
-                    // Step 3: Add the player to the fetched game's player list and update the game in the backend
-                    updateGameWithPlayer(player, fetchedGame.getId(), new GameUpdateCallback() {
-                        @Override
-                        public void onGameFetched(GameData updatedGame) {
-                            Gdx.app.log("GAME", "Game updated with player: " + player.getId());
-                            localPlayerId = player.getId();
-                            setGameData(updatedGame);
-                            //state = State.Paused;
-                            //when fetching updated game, check if any players have to be added
-                            if (!checkPlayersChanged(updatedGame.getPlayers()))
-                                startScheduler();
-                            //update game State before fetching from DB
-                            //TODO: check current turn (if its you) and THEN run wait for turn checker
-                            waitForPlayers();
-                        }
-
-                        @Override
-                        public void onFailure(Throwable t) {
-                            Gdx.app.log("ERROR", "Failed to update game with player.");
-                        }
-                    });
+                    if (player != null) {
+                        // Step 3: Add the player to the fetched game's player list and update the game in the backend
+                        updateGameWithPlayer(player, fetchedGame.getId(), new GameUpdateCallback() {
+                            @Override
+                            public void onGameFetched(GameData updatedGame) {
+                                Gdx.app.log("GAME", "Game updated with player: " + player.getId());
+                                localPlayerId = player.getId();
+                                setGameData(updatedGame);
+                                //state = State.Paused;
+                                //when fetching updated game, check if any players have to be added
+                                if (!checkPlayersChanged(updatedGame.getPlayers()))
+                                    startScheduler();
+                                //update game State before fetching from DB
+                                //TODO: check current turn (if its you) and THEN run wait for turn checker
+                                waitForPlayers();
+                            }
+                            @Override
+                            public void onFailure(Throwable t) {
+                                Gdx.app.log("ERROR", "Failed to update game with player.");
+                            }
+                        });
+                    } else
+                        Gdx.app.log("ERROR", "Created player from backend is null");
                 });
 
             } else {
@@ -434,7 +436,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 state.toString(), playerTurn, getOrderAsString());
         gameData.setId(currentGameId);
 
-        //TODO: pri vsakem callback funkciji (v tem class, daj succeed & failure)
         updateGame(gameData, new GameUpdateCallback() {
             @Override
             public void onGameFetched(GameData game) {
@@ -445,7 +446,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 }*/
                 setGameData(game);
             }
-
             @Override
             public void onFailure(Throwable t) {
                 Gdx.app.log("ERROR", "Failed to update game: " + t.getMessage());
@@ -481,25 +481,31 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         }
         //PRIPRAVI FIRST PLAYER (HOST)
         createPlayerFromBackend(manager.getNamePref(), player -> {
-            //set playerTurn as id of player that created the game (first player)
-            int currentPlayerTurn = player.getId();
-            if(currentPlayerTurn!=0)
-                playerTurn = currentPlayerTurn;
+            if (player != null) {
+                //set playerTurn as id of player that created the game (first player)
+                int currentPlayerTurn = player.getId();
+                if (currentPlayerTurn != 0)
+                    playerTurn = currentPlayerTurn;
 
-            // Create and save game data
-            GameData gameData = new GameData(
-                    playersData, deckDraw, deckDiscard, topCard, maxPlayers,
-                    state.toString(), playerTurn, getOrderAsString());
+                // Create and save game data
+                GameData gameData = new GameData(
+                        playersData, deckDraw, deckDiscard, topCard, maxPlayers,
+                        state.toString(), playerTurn, getOrderAsString());
 
-            //create game in DB and fetch id of newly created game
-            createGame(gameData, fetchedGame -> {
-                //set current game id locally (prevent unneeded DB fetching)
-                setGameData(fetchedGame);
-                //game is initialized, change state to Paused
-                state = State.Paused;
-                //run scheduler that checks for new players
-                startScheduler();
-            });
+                //create game in DB and fetch id of newly created game
+                createGame(gameData, fetchedGame -> {
+                    if (fetchedGame != null) {
+                        //set current game id locally (prevent unneeded DB fetching)
+                        setGameData(fetchedGame);
+                        //game is initialized, change state to Paused
+                        state = State.Paused;
+                        //run scheduler that checks for new players
+                        startScheduler();
+                    } else
+                        Gdx.app.log("ERROR", "Created game is null");
+                });
+            } else
+                Gdx.app.log("ERROR", "Created player from backend is null");
         });
     }
 
@@ -511,7 +517,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 //get array of players from current Game from DB
                 callback.onGameFetched(game);
             }
-
             @Override
             public void onFailure(Throwable t) {
                 Gdx.app.log("GAME", "FAILED: " + t);
@@ -529,7 +534,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 //get array of players from current Game from DB
                 callback.onGameFetched(game);
             }
-
             @Override
             public void onFailure(Throwable t) {
                 Gdx.app.log("GAME", "FAILED: " + t);
@@ -546,7 +550,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 Gdx.app.log("SUCCESS", "Player removed from backend");
                 callback.onGameFetched(game);
             }
-
             @Override
             public void onFailure(Throwable t) {
                 Gdx.app.log("GAME", "FAILED: " + t);
@@ -563,7 +566,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 Gdx.app.log("SUCCESS", "Player removed from backend & turn updated");
                 callback.onGameFetched(game);
             }
-
             @Override
             public void onFailure(Throwable t) {
                 Gdx.app.log("GAME", "FAILED: " + t);
@@ -582,7 +584,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 Gdx.app.log("SUCCESS", "Game created with ID: " + fetchedGame.getId());
                 callback.onGameFetched(fetchedGame);
             }
-
             @Override
             public void onFailure(Throwable t) {
                 Gdx.app.log("ERROR", "Failed to create game: " + t.getMessage());
@@ -600,7 +601,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 Gdx.app.log("SUCCESS", "Game updated on backend");
                 callback.onGameFetched(fetchedGame);
             }
-
             @Override
             public void onFailure(Throwable t) {
                 Gdx.app.log("ERROR", "Failed to create game: " + t.getMessage());
@@ -617,7 +617,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 //get array of players from current Game from DB
                 callback.onPlayersFetched(players);
             }
-
             @Override
             public void onFailure(Throwable t) {
                 Gdx.app.log("PLAYERS", "FAILED: " + t);
@@ -634,7 +633,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 //get array of players from current Game from DB
                 callback.onTurnFetched(fetchedGame);
             }
-
             @Override
             public void onFailure(Throwable t) {
                 Gdx.app.log("TURN FETCH", "FAILED: " + t);
@@ -660,8 +658,8 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         }
         return count;
     }
-    //TODO: remove this?
-    //Get index in playersData of current player (localPlayerId)
+
+    //Get index in playersData of current player (used for circling through playersData array)
     private int getIndexOfCurrentPlayer() {
         int index = -1;
         for (int i = 0; i < playersData.size(); ++i) {
@@ -760,7 +758,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 // Invoke the callback with the fetched player
                 callback.onPlayerFetched(thisPlayer);
             }
-
             @Override
             public void onFailure(Throwable t) {
                 Gdx.app.log("ERROR", "Failed to fetch player: " + t.getMessage());
@@ -780,7 +777,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                             addPlayerToArray(player);
                         callback.onPlayerFetched(player);
                     }
-
                     @Override
                     public void onFailure(Throwable t) {
                         Gdx.app.log("ERROR", "Failed to create player: " + t.getMessage());
@@ -1127,6 +1123,9 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         //hand.setIndexLast();
         int firstIndex = hand.getIndexFirst();
         int lastIndex = hand.getIndexLast();
+        //fix indexes if needed for player
+        if(isPlayer)
+            lastIndex = hand.getIndexLast(maxCardsShow);
 
         float startX = 0; //start at bottom
 
@@ -1359,7 +1358,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             float waitingY = 0;
             float playerY = startY;
 
-            //TODO: poglej ce dobi pravega playerja + test player leave -> return
             int numPlayers = getPlayersSize();
             int currentPlayerIndex = getIndexOfCurrentPlayer();
             if(currentPlayerIndex==-1)
@@ -1478,7 +1476,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             float waitY = GameConfig.HUD_HEIGHT/2f + wonLayout.height/2f;
             font.draw(batch, wonText, waitX,waitY+(font.getXHeight()*2));
 
-            int playerScore = playersData.get(getIndexOfCurrentPlayer()).getScore();
+            int playerScore = getPlayerById(localPlayerId).getScore();
             String scoreText = "Your score: "+playerScore;
             wonLayout.setText(font,scoreText);
             font.draw(batch,scoreText,waitX,waitY);
@@ -1838,7 +1836,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 public void onGameFetched(GameData updatedGame) {
                     Gdx.app.log("GAME", "Removed player with id: " + localPlayerId + " & updated turn to: "+ updatedGame.getCurrentTurn() +" from Game with id: " + updatedGame.getId());
                 }
-
                 @Override
                 public void onFailure(Throwable t) {
                     Gdx.app.log("ERROR", "Failed to remove player from game.");
@@ -1852,7 +1849,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 public void onGameFetched(GameData updatedGame) {
                     Gdx.app.log("GAME", "Removed player with id: " + localPlayerId + " from Game with id: " + updatedGame.getId());
                 }
-
                 @Override
                 public void onFailure(Throwable t) {
                     Gdx.app.log("ERROR", "Failed to remove player from game.");
