@@ -101,7 +101,7 @@ public class Deck {
     }
 
     //ustvari karte: 1-9, reverse in stop, plus in wildcard
-    public void generateByRules(int numColor,int numSpecial,int numWild){
+    public void generateByRules(int numColor,int numSpecial,int numWild, String preset){
         //2 karti od 1-9 vseh barv
         //2 +2, 2 reverse, 2 stop
         //4 WC, 4 +4
@@ -143,7 +143,7 @@ public class Deck {
             cards.add(Card.generateSpecific(CardValues.Y8));
             cards.add(Card.generateSpecific(CardValues.Y9));
         }
-        if(Objects.equals(manager.getPresetPref(), "All")) {
+        if(Objects.equals(preset, "All")) {
             for (int i = 0; i < numSpecial; ++i) {
                 cards.add(Card.generateSpecific(CardValues.BS));
                 cards.add(Card.generateSpecific(CardValues.GS));

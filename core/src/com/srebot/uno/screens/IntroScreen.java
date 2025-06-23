@@ -25,7 +25,7 @@ import com.srebot.uno.config.GameConfig;
 
 public class IntroScreen extends ScreenAdapter {
     //DOLZINA INTRO V SEKUNDIH
-    public static final float INTRO_DURATION = 4f; //4f
+    public static final float INTRO_DURATION = 4f;
 
     public static final float CARD_SIZE = 200f;
 
@@ -107,8 +107,15 @@ public class IntroScreen extends ScreenAdapter {
 
         duration += delta;
 
-        //KO INTRO KONEC, POJDI NA MENU SCREEN
-        if(duration>INTRO_DURATION){
+        //check if intro is set to be played
+        if(game.getManager().getPlayIntroPref()) {
+            //KO INTRO KONEC, POJDI NA MENU SCREEN
+            if (duration > INTRO_DURATION) {
+                game.setScreen(new MenuScreen(game));
+            }
+        }
+        //skip intro
+        else if (duration > 0) {
             game.setScreen(new MenuScreen(game));
         }
 

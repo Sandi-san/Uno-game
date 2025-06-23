@@ -46,7 +46,6 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MenuScreen extends ScreenAdapter {
-
     private final Uno game;
     private final AssetManager assetManager;
     private final GameManager manager;
@@ -534,7 +533,7 @@ public class MenuScreen extends ScreenAdapter {
         Label deckSizeLabel = new Label("Deck size: ",skin);
         Label presetLabel = new Label("Card preset: ",skin);
         Label orderLabel = new Label("Turn order: ",skin);
-        //TODO?: add card preset - by number, random, etc.
+        //TODO?: add card preset - by number, random, etc. (use Random & other unused Deck methods)
 
         //STYLING
         float boxWidth = (float) Math.floor(GameConfig.WIDTH/5.3f);

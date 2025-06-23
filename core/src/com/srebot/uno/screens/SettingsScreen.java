@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -24,6 +25,8 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.scenes.scene2d.utils.DragListener;
+import com.badlogic.gdx.scenes.scene2d.utils.DragScrollListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.ScreenUtils;
@@ -35,6 +38,8 @@ import com.srebot.uno.assets.AssetDescriptors;
 import com.srebot.uno.assets.RegionNames;
 import com.srebot.uno.config.GameConfig;
 import com.srebot.uno.config.GameManager;
+
+import java.util.Random;
 
 public class SettingsScreen extends ScreenAdapter {
     private final Uno game;
@@ -50,18 +55,21 @@ public class SettingsScreen extends ScreenAdapter {
     private Skin skin;
     private TextureAtlas gameplayAtlas;
     private Sprite background;
+    private Sound sfxPickup;
+    private Sound sfxCollect;
 
     public SettingsScreen(Uno game) {
         this.game = game;
         assetManager = game.getAssetManager();
         manager = game.getManager();
         game.setMusicVolume(manager.getMusicVolumePref());
-        if(manager.getMusicPref()) {
+        if (manager.getMusicPref()) {
             game.playMusic();
-        }
-        else{
+        } else {
             game.stopMusic();
         }
+        sfxPickup = assetManager.get(AssetDescriptors.PICK_SOUND);
+        sfxCollect = assetManager.get(AssetDescriptors.SET_SOUND);
         batch = new SpriteBatch();
     }
 
@@ -164,60 +172,42 @@ public class SettingsScreen extends ScreenAdapter {
 
         //DOBI VREDNOSTI IZ NASTAVITEV
         String namePref = manager.getNamePref();
-        String presetPref = manager.getPresetPref();
-        int difficultyPref = manager.getDifficultyPref();
-        String orderPref = manager.getOrderPref();
         boolean soundPref = manager.getSoundPref();
         boolean musicPref = manager.getMusicPref();
         float soundVPref = manager.getSoundVolumePref();
         float musicVPref = manager.getMusicVolumePref();
-
-        //PRIPRAVI SEZNAME ZA BOX
-        String[] presetValues = new String[]{"All", "Numbers only"};
-        Integer[] difficultyValues = new Integer[]{1,2,3};
-        String[] orderValues = new String[]{"Clockwise", "Counter Clockwise"};
+        boolean introPref = manager.getPlayIntroPref();
 
         //USTVARI WIDGETE
         final TextField nameField = new TextField("",skin);
         nameField.setText(namePref);
-        final SelectBox<String> presetBox = new SelectBox<String>(skin);
-        //NAPOLNI SEZNAM IN NASTAVI PRIKAZAN ELEMENT
-        presetBox.setItems(presetValues);
-        presetBox.setSelected(presetPref);
-        final SelectBox<Integer> difficultyBody = new SelectBox<Integer>(skin);
-        difficultyBody.setItems(difficultyValues);
-        difficultyBody.setSelected(difficultyPref);
-        final SelectBox<String> orderBox = new SelectBox<String>(skin);
-        orderBox.setItems(orderValues);
-        orderBox.setSelected(orderPref);
 
         final CheckBox soundCheckBox = new CheckBox("Enable Sound", skin);
         soundCheckBox.setChecked(soundPref);
         final CheckBox musicCheckBox = new CheckBox("Enable Music", skin);
         musicCheckBox.setChecked(musicPref);
+        final CheckBox introCheckBox = new CheckBox("Enable Intro", skin);
+        introCheckBox.setChecked(introPref);
 
         final Slider musicVolumeSlider = new Slider(0f,1f,0.01f, false,skin);
         musicVolumeSlider.setValue(musicVPref);
+        final Slider soundVolumeSlider = new Slider(0f,1f,0.01f, false,skin);
+        soundVolumeSlider.setValue(soundVPref);
 
         Label nameLabel = new Label("Player name: ",skin);
-        Label presetLabel = new Label("Card preset: ",skin);
-        Label starterLabel = new Label("AI difficulty: ",skin);
-        Label orderLabel = new Label("Turn order: ",skin);
         Label musicVolumeLabel = new Label("Music volume: ",skin);
+        Label soundVolumeLabel = new Label("SFX volume: ",skin);
 
         //STYLING
         settingsTable.add(nameLabel).pad(10);
         settingsTable.add(nameField).pad(10).row();
-        settingsTable.add(presetLabel).pad(10);
-        settingsTable.add(presetBox).pad(10).width(nameField.getWidth()).row();
-        settingsTable.add(starterLabel).pad(10);
-        settingsTable.add(difficultyBody).pad(10).width(nameField.getWidth()).row();
-        settingsTable.add(orderLabel).pad(10);
-        settingsTable.add(orderBox).pad(10).width(nameField.getWidth()).row();
         settingsTable.add(soundCheckBox).pad(10);
         settingsTable.add(musicCheckBox).pad(10).row();
         settingsTable.add(musicVolumeLabel).pad(10);
         settingsTable.add(musicVolumeSlider).pad(10).row();
+        settingsTable.add(soundVolumeLabel).pad(10);
+        settingsTable.add(soundVolumeSlider).pad(10).row();
+        settingsTable.add(introCheckBox).colspan(2).center().pad(10).row();
 
         //dynamic spreminjanje music play glede na slider
         musicCheckBox.addListener(new ChangeListener() {
@@ -242,18 +232,39 @@ public class SettingsScreen extends ScreenAdapter {
             }
         });
 
+        //dynamic igraj sound effect ko user interakta z sliderjem
+        soundVolumeSlider.addListener(new DragListener() {
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                // Return true to indicate we want to handle touchUp
+                return true;
+            }
+
+            @Override
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                float value = soundVolumeSlider.getValue();
+                if(soundCheckBox.isChecked()){
+                    Random rnd = new Random();
+                    //get random number 0 or 1
+                    int rndNumber = rnd.nextInt(2);
+                    if(rndNumber==0)
+                        sfxPickup.play(value);
+                    else
+                        sfxCollect.play(value);
+                }
+            }
+        });
 
         final TextButton menuButton = new TextButton("Save and return", skin);
         menuButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 manager.setNamePref(nameField.getText());
-                manager.setPresetPref(presetBox.getSelected());
-                manager.setDifficultyPref(difficultyBody.getSelected());
-                manager.setOrderPref(orderBox.getSelected());
                 manager.setSoundPref(soundCheckBox.isChecked());
                 manager.setMusicPref(musicCheckBox.isChecked());
                 manager.setMusicVolumePref(musicVolumeSlider.getValue());
+                manager.setSoundVolumePref(soundVolumeSlider.getValue());
+                manager.setPlayIntroPref(introCheckBox.isChecked());
                 manager.savePrefs();
                 game.setScreen(new MenuScreen(game));
             }

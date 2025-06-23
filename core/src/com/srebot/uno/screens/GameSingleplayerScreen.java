@@ -783,7 +783,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
                     if (isClickedOnDeck(worldCoords.x, worldCoords.y, deckDraw)) {
                         if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
                             if (sfxPickup != null) {
-                                sfxPickup.play();
+                                sfxPickup.play(manager.getSoundVolumePref());
                             }
                             currentPlayer.getHand().pickCard(deckDraw);
                             //ce hocemo da konec tren player turna, ko vlece karto iz decka
@@ -801,7 +801,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
                             card.setHighlight(true);
                             if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
                                 if (sfxCollect != null) {
-                                    sfxCollect.play();
+                                    sfxCollect.play(manager.getSoundVolumePref());
                                 }
                                 //TODO: izbira vec kart (isHighlighted) in posli vse v discard deck
                                 gameControl(card, currentPlayer.getHand());
@@ -827,7 +827,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
             if (card != null) {
                 if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
                     if (sfxCollect != null) {
-                        sfxCollect.play();
+                        sfxCollect.play(manager.getSoundVolumePref());
                     }
                     changeTopDeckCard(card.getColor());
                     state = State.Running;
@@ -1234,13 +1234,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
     @Override
     public void dispose() {
         stage.dispose();
-        /*
         batch.dispose();
-        skin.dispose();
-        gameplayAtlas.dispose();
-        sfxPickup.dispose();
-        sfxCollect.dispose();
-         */
     }
 
     //z scene2d

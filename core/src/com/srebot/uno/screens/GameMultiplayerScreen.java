@@ -1514,7 +1514,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 if (isClickedOnDeck(worldCoords.x, worldCoords.y, deckDraw)) {
                     if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
                         if (sfxPickup != null) {
-                            sfxPickup.play();
+                            sfxPickup.play(manager.getSoundVolumePref());
                         }
                         currentPlayer.getHand().pickCard(deckDraw);
                         //ce hocemo da konec trenutnega player turna, ko vlece karto iz decka
@@ -1533,7 +1533,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                         card.setHighlight(true);
                         if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
                             if (sfxCollect != null) {
-                                sfxCollect.play();
+                                sfxCollect.play(manager.getSoundVolumePref());
                             }
                             gameControl(card, currentPlayer.getHand());
                             break;
@@ -1550,7 +1550,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             if (card != null) {
                 if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
                     if (sfxCollect != null) {
-                        sfxCollect.play();
+                        sfxCollect.play(manager.getSoundVolumePref());
                     }
                     topCard = card;
                     state = State.Running;
@@ -1811,11 +1811,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     @Override
     public void dispose() {
         stage.dispose();
-        /*
         batch.dispose();
-        sfxPickup.dispose();
-        sfxCollect.dispose();
-         */
     }
 
     public void playerLeaveGame(int playerId, int gameId){

@@ -111,9 +111,4 @@ public class Uno extends Game {
     public void setMusicVolume(float volume) {
         music.setVolume(volume);
     }
-
-    //TODO
-    public void setSoundVolume(float volume) {
-        //sound.setVolume(volume);
-    }
 }

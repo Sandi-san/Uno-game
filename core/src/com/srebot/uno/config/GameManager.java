@@ -15,9 +15,6 @@ import java.util.Objects;
 public class GameManager {
     public static final GameManager INSTANCE = new GameManager();
     private static final String PLAYER_NAME = "currentPlayer";
-    private static final String CARD_PRESET = "cardPreset";
-    private static final String STARTER_PLAYER = "starterPlayer";
-    private static final String CARD_ORDER = "cardOrder";
     private static final boolean PLAY_SOUND = true;
     private static final boolean PLAY_MUSIC = true;
     private static final int SCORE_PLAYER = 0;
@@ -27,14 +24,11 @@ public class GameManager {
 
     //DOBI VREDNOSTI IZ NASTAVITEV
     private String namePref;
-    private String presetPref;
-    private int difficultyPref;
-    private String orderPref;
     private boolean soundPref;
     private boolean musicPref;
     private float soundVPref;
     private float musicVPref;
-    //TODO: add PlayIntroPref?
+    private boolean playIntroPref;
 
     private Player playersData;
 
@@ -42,25 +36,14 @@ public class GameManager {
         PREFS = Gdx.app.getPreferences("GameSettings");
         //DOBI VREDNOSTI IZ NASTAVITEV
         namePref = PREFS.getString("currentPlayer","Player 1");
-        presetPref = PREFS.getString("cardPreset","All");
-        difficultyPref = PREFS.getInteger("difficulty",2);
-        orderPref = PREFS.getString("cardOrder","Clockwise");
         soundPref = PREFS.getBoolean("soundEnabled", true);
         musicPref = PREFS.getBoolean("musicEnabled", true);
         soundVPref = PREFS.getFloat("soundVolume", 1f);
         musicVPref = PREFS.getFloat("musicVolume", 0.5f);
+        playIntroPref = PREFS.getBoolean("introEnabled", true);
     }
     public String getNamePref() {
         return namePref;
-    }
-    public String getPresetPref() {
-        return presetPref;
-    }
-    public int getDifficultyPref() {
-        return difficultyPref;
-    }
-    public String getOrderPref() {
-        return orderPref;
     }
     public boolean getSoundPref(){
         return soundPref;
@@ -71,9 +54,8 @@ public class GameManager {
     public float getSoundVolumePref(){
         return soundVPref;
     }
-    public float getMusicVolumePref(){
-        return musicVPref;
-    }
+    public float getMusicVolumePref(){return musicVPref;}
+    public boolean getPlayIntroPref() {return playIntroPref;}
 
     public void setNamePref(String namePref) {
         //player name ne sme biti "Computer"
@@ -82,18 +64,6 @@ public class GameManager {
             this.namePref = namePref;
             PREFS.putString("currentPlayer", namePref);
         }
-    }
-    public void setPresetPref(String presetPref) {
-        this.presetPref = presetPref;
-        PREFS.putString("cardPreset", presetPref);
-    }
-    public void setDifficultyPref(int difficultyPref) {
-        this.difficultyPref = difficultyPref;
-        PREFS.putInteger("difficultyPref", difficultyPref);
-    }
-    public void setOrderPref(String orderPref) {
-        this.orderPref = orderPref;
-        PREFS.putString("cardOrder", orderPref);
     }
     public void setSoundPref(boolean soundPref) {
         this.soundPref = soundPref;
@@ -110,6 +80,10 @@ public class GameManager {
     public void setMusicVolumePref(float musicVPref) {
         this.musicVPref = musicVPref;
         PREFS.putFloat("musicVolume", musicVPref);
+    }
+    public void setPlayIntroPref(boolean playIntroPref) {
+        this.playIntroPref = playIntroPref;
+        PREFS.putBoolean("introEnabled", playIntroPref);
     }
     public void savePrefs(){
         PREFS.flush();
