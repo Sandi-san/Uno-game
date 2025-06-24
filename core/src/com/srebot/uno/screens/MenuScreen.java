@@ -3,7 +3,6 @@ package com.srebot.uno.screens;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.assets.AssetManager;
-import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.NinePatch;
@@ -24,9 +23,9 @@ import com.badlogic.gdx.scenes.scene2d.ui.SelectBox;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable;
-import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.ScreenUtils;
@@ -413,7 +412,7 @@ public class MenuScreen extends ScreenAdapter {
         //PRIPRAVI SEZNAME ZA BOX
         Integer[] numPlayerValues = new Integer[]{2,3,4};
         Integer[] deckSizeValues = new Integer[]{52,104,208};
-        String[] presetValues = new String[]{"All", "Numbers only"};
+        String[] presetValues = new String[]{"All", "Numbers only", "No Wildcards", "No Plus Cards"};
         String[] orderValues = new String[]{"Clockwise", "Counter Clockwise"};
 
         //USTVARI WIDGETE
@@ -498,7 +497,7 @@ public class MenuScreen extends ScreenAdapter {
                 // Handle dialog result here if needed
             }
         };
-        Label titleLabel = new Label("Game settings", fontSkin);
+        Label titleLabel = new Label("Game Settings", fontSkin);
         dialog.getContentTable().add(titleLabel).padTop(20).center().expand().row();
 
         final Table settingsTable = new Table(skin);
@@ -507,7 +506,7 @@ public class MenuScreen extends ScreenAdapter {
         //PRIPRAVI SEZNAME ZA BOX
         Integer[] numComputerValues = new Integer[]{1,2,3};
         Integer[] deckSizeValues = new Integer[]{52,104,208};
-        String[] presetValues = new String[]{"All", "Numbers only"};
+        String[] presetValues = new String[]{"All", "Numbers only", "No Wildcards", "No Plus Cards", "Custom"};
         String[] orderValues = new String[]{"Clockwise", "Counter Clockwise"};
         Integer[] AIDiffValues = new Integer[]{1,2,3};
 
@@ -533,20 +532,32 @@ public class MenuScreen extends ScreenAdapter {
         Label deckSizeLabel = new Label("Deck size: ",skin);
         Label presetLabel = new Label("Card preset: ",skin);
         Label orderLabel = new Label("Turn order: ",skin);
-        //TODO?: add card preset - by number, random, etc. (use Random & other unused Deck methods)
+
+        Integer[] rulesValues = new Integer[]{1,1,1};
+
+        TextButton customRulesButton = new TextButton("Custom Deck", skin);
+        customRulesButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                cardRulesDialog(rulesValues);
+                Gdx.app.log("Values there: ",rulesValues[0].toString());
+                //dialog.remove();
+            }
+        });
 
         //STYLING
         float boxWidth = (float) Math.floor(GameConfig.WIDTH/5.3f);
-        settingsTable.add(numComputerLabel).pad(10);
-        settingsTable.add(numComputerBox).pad(10).width(boxWidth).row();
-        settingsTable.add(AIDiffLabel).pad(10);
-        settingsTable.add(AIDiffBox).pad(10).width(boxWidth).row();
-        settingsTable.add(deckSizeLabel).pad(10);
-        settingsTable.add(deckSizeBox).pad(10).width(boxWidth).row();
-        settingsTable.add(presetLabel).pad(10);
-        settingsTable.add(presetBox).pad(10).width(boxWidth).row();
-        settingsTable.add(orderLabel).pad(10);
-        settingsTable.add(orderBox).pad(10).width(boxWidth).row();
+        settingsTable.add(numComputerLabel);
+        settingsTable.add(numComputerBox).width(boxWidth).row();
+        settingsTable.add(AIDiffLabel);
+        settingsTable.add(AIDiffBox).width(boxWidth).row();
+        settingsTable.add(deckSizeLabel);
+        settingsTable.add(deckSizeBox).width(boxWidth).row();
+        settingsTable.add(presetLabel);
+        settingsTable.add(presetBox).width(boxWidth).row();
+        settingsTable.add(orderLabel);
+        settingsTable.add(orderBox).width(boxWidth).row();
+        settingsTable.add(customRulesButton).colspan(2).center().width(boxWidth).row();
 
         dialog.getContentTable().add(settingsTable).row();
 
@@ -559,6 +570,7 @@ public class MenuScreen extends ScreenAdapter {
                 final Array<String> args = new Array<String>();
                 args.add(String.valueOf(numComputerBox.getSelected()),String.valueOf(AIDiffBox.getSelected()));
                 args.add(String.valueOf(deckSizeBox.getSelected()),presetBox.getSelected(),orderBox.getSelected());
+                args.add(String.valueOf(rulesValues[0]),String.valueOf(rulesValues[1]),String.valueOf(rulesValues[2]));
                 game.setScreen(new GameSingleplayerScreen(game,args));
             }
         });
@@ -585,6 +597,91 @@ public class MenuScreen extends ScreenAdapter {
         dialog.show(stage);
         // Set the size of the dialog (changes when adding background image)
         dialog.setSize(GameConfig.WIDTH*0.6f, GameConfig.HEIGHT*0.6f);
+        // Center the dialog
+        dialog.setPosition((stage.getWidth() - dialog.getWidth()) / 2, (stage.getHeight() - dialog.getHeight()) / 2);
+    }
+
+    private void cardRulesDialog(Integer[] rulesValues){
+        Dialog dialog = new Dialog("", skin) {
+            @Override
+            protected void result(Object object) {
+            }
+        };
+        Label titleLabel = new Label("Use Custom Deck (values 0-9)", fontSkin);
+        dialog.getContentTable().add(titleLabel).padTop(20).center().expand().row();
+
+        final Table settingsTable = new Table(skin);
+        settingsTable.defaults();
+
+        //USTVARI WIDGETE
+        final TextField numColorField = new TextField("",skin);
+        numColorField.setText("1");
+        final TextField numSpecialField = new TextField("",skin);
+        numSpecialField.setText("1");
+        final TextField numWildField = new TextField("",skin);
+        numWildField.setText("1");
+
+        Label numColorLabel = new Label("Number of Normal cards: ",skin);
+        Label numSpecialLabel = new Label("Number of Special cards: ",skin);
+        Label numWildLabel = new Label("Number of Wild cards: ",skin);
+
+        //STYLING
+        float boxWidth = (float) Math.floor(GameConfig.WIDTH/5.3f);
+        settingsTable.add(numColorLabel).pad(10);
+        settingsTable.add(numColorField).pad(10).width(boxWidth).row();
+        settingsTable.add(numSpecialLabel).pad(10);
+        settingsTable.add(numSpecialField).pad(10).width(boxWidth).row();
+        settingsTable.add(numWildLabel).pad(10);
+        settingsTable.add(numWildField).pad(10).width(boxWidth).row();
+
+        dialog.getContentTable().add(settingsTable).row();
+
+        TextButton closeButton = new TextButton("OK", skin);
+        closeButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                try {
+                    int colorValue = Integer.parseInt(numColorField.getText());
+                    int specialValue = Integer.parseInt(numSpecialField.getText());
+                    int wildValue = Integer.parseInt(numWildField.getText());
+                    rulesValues[0] = colorValue;
+                    rulesValues[1] = specialValue;
+                    rulesValues[2] = wildValue;
+                    for(int i=0;i<=2;++i) {
+                        if (rulesValues[i] > 9)
+                            rulesValues[i] = 9;
+                        else if(rulesValues[i]<0)
+                            rulesValues[i]=0;
+                    }
+                    if(rulesValues[0]==0){
+                        numColorField.setText("1");
+                        throw new IllegalArgumentException("Number of normal cards cannot be 0");
+                    }
+                    dialog.remove();
+                }
+                catch (NumberFormatException e){
+                    Gdx.app.log("NumberFormatException",e.getMessage());
+                    showMessageDialog("Cannot convert string to integer.");
+                }
+                catch (IllegalArgumentException e){
+                    Gdx.app.log("ERROR",e.getMessage());
+                    showMessageDialog(e.getMessage());
+                }
+            }
+        });
+
+        // Add buttons to the dialog
+        Table buttonTable = new Table(skin);
+        buttonTable.add(closeButton).center().padBottom(15);
+        dialog.getContentTable().add(buttonTable);
+
+        NinePatch patch = new NinePatch(gameplayAtlas.findRegion(RegionNames.backgroundPane1));
+        NinePatchDrawable dialogBackground = new NinePatchDrawable(patch);
+        dialog.setBackground(dialogBackground);
+
+        dialog.show(stage);
+        // Set the size of the dialog (changes when adding background image)
+        dialog.setSize(GameConfig.WIDTH*0.5f, GameConfig.HEIGHT*0.4f);
         // Center the dialog
         dialog.setPosition((stage.getWidth() - dialog.getWidth()) / 2, (stage.getHeight() - dialog.getHeight()) / 2);
     }

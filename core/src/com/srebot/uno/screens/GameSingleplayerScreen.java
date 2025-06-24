@@ -136,8 +136,10 @@ public class GameSingleplayerScreen extends ScreenAdapter {
         //ustvari main deck
         deckDraw = new Deck(deckSize, game);
         //deckDraw.generateRandom();
-        //deckDraw.generateByRules(2, 2, 2);
-        deckDraw.generateBySize(deckSize,preset);
+        if(preset.equals("Custom"))
+            deckDraw.generateByRules(Integer.parseInt(args.get(5)), Integer.parseInt(args.get(6)), Integer.parseInt(args.get(7)));
+        else
+            deckDraw.generateBySize(deckSize,preset);
         deckDraw.shuffleDeck();
         //vzemi eno karto iz deka
         topCard = deckDraw.pickCard();

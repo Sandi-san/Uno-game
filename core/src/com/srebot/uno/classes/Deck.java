@@ -101,11 +101,11 @@ public class Deck {
     }
 
     //ustvari karte: 1-9, reverse in stop, plus in wildcard
-    public void generateByRules(int numColor,int numSpecial,int numWild, String preset){
+    public void generateByRules(int numColor,int numSpecial,int numWild) {
         //2 karti od 1-9 vseh barv
         //2 +2, 2 reverse, 2 stop
         //4 WC, 4 +4
-        for(int i=0;i<numColor;++i){
+        for (int i = 0; i < numColor; ++i) {
             cards.add(Card.generateSpecific(CardValues.B1));
             cards.add(Card.generateSpecific(CardValues.B2));
             cards.add(Card.generateSpecific(CardValues.B3));
@@ -143,27 +143,25 @@ public class Deck {
             cards.add(Card.generateSpecific(CardValues.Y8));
             cards.add(Card.generateSpecific(CardValues.Y9));
         }
-        if(Objects.equals(preset, "All")) {
-            for (int i = 0; i < numSpecial; ++i) {
-                cards.add(Card.generateSpecific(CardValues.BS));
-                cards.add(Card.generateSpecific(CardValues.GS));
-                cards.add(Card.generateSpecific(CardValues.RS));
-                cards.add(Card.generateSpecific(CardValues.YS));
-                cards.add(Card.generateSpecific(CardValues.BR));
-                cards.add(Card.generateSpecific(CardValues.GR));
-                cards.add(Card.generateSpecific(CardValues.RR));
-                cards.add(Card.generateSpecific(CardValues.YR));
-            }
-            for (int i = 0; i < numWild; ++i) {
-                cards.add(Card.generateSpecific(CardValues.WC));
-                cards.add(Card.generateSpecific(CardValues.P4));
-                cards.add(Card.generateSpecific(CardValues.P2B));
-                cards.add(Card.generateSpecific(CardValues.P2R));
-                cards.add(Card.generateSpecific(CardValues.P2G));
-                cards.add(Card.generateSpecific(CardValues.P2Y));
-                cards.add(Card.generateSpecific(CardValues.P2GY));
-                cards.add(Card.generateSpecific(CardValues.P2BR));
-            }
+        for (int i = 0; i < numSpecial; ++i) {
+            cards.add(Card.generateSpecific(CardValues.BS));
+            cards.add(Card.generateSpecific(CardValues.GS));
+            cards.add(Card.generateSpecific(CardValues.RS));
+            cards.add(Card.generateSpecific(CardValues.YS));
+            cards.add(Card.generateSpecific(CardValues.BR));
+            cards.add(Card.generateSpecific(CardValues.GR));
+            cards.add(Card.generateSpecific(CardValues.RR));
+            cards.add(Card.generateSpecific(CardValues.YR));
+        }
+        for (int i = 0; i < numWild; ++i) {
+            cards.add(Card.generateSpecific(CardValues.WC));
+            cards.add(Card.generateSpecific(CardValues.P4));
+            cards.add(Card.generateSpecific(CardValues.P2B));
+            cards.add(Card.generateSpecific(CardValues.P2R));
+            cards.add(Card.generateSpecific(CardValues.P2G));
+            cards.add(Card.generateSpecific(CardValues.P2Y));
+            cards.add(Card.generateSpecific(CardValues.P2GY));
+            cards.add(Card.generateSpecific(CardValues.P2BR));
         }
     }
 
@@ -243,6 +241,38 @@ public class Deck {
                 cards.add(Card.generateSpecific(CardValues.P2Y));
                 cards.add(Card.generateSpecific(CardValues.P2GY));
                 cards.add(Card.generateSpecific(CardValues.P2BR));
+            }
+        }
+        else if(Objects.equals(preset, "No Wildcards")) {
+            for (int i = 0; i < size; ++i) {
+                cards.add(Card.generateSpecific(CardValues.BS));
+                cards.add(Card.generateSpecific(CardValues.GS));
+                cards.add(Card.generateSpecific(CardValues.RS));
+                cards.add(Card.generateSpecific(CardValues.YS));
+                cards.add(Card.generateSpecific(CardValues.BR));
+                cards.add(Card.generateSpecific(CardValues.GR));
+                cards.add(Card.generateSpecific(CardValues.RR));
+                cards.add(Card.generateSpecific(CardValues.YR));
+
+                cards.add(Card.generateSpecific(CardValues.P2B));
+                cards.add(Card.generateSpecific(CardValues.P2R));
+                cards.add(Card.generateSpecific(CardValues.P2G));
+                cards.add(Card.generateSpecific(CardValues.P2Y));
+                cards.add(Card.generateSpecific(CardValues.P2GY));
+                cards.add(Card.generateSpecific(CardValues.P2BR));
+            }
+        }
+        else if(Objects.equals(preset, "No Plus Cards")) {
+            for (int i = 0; i < size; ++i) {
+                cards.add(Card.generateSpecific(CardValues.BS));
+                cards.add(Card.generateSpecific(CardValues.GS));
+                cards.add(Card.generateSpecific(CardValues.RS));
+                cards.add(Card.generateSpecific(CardValues.YS));
+                cards.add(Card.generateSpecific(CardValues.BR));
+                cards.add(Card.generateSpecific(CardValues.GR));
+                cards.add(Card.generateSpecific(CardValues.RR));
+                cards.add(Card.generateSpecific(CardValues.YR));
+                cards.add(Card.generateSpecific(CardValues.WC));
             }
         }
     }

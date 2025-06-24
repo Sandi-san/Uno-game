@@ -281,6 +281,4 @@ public class SettingsScreen extends ScreenAdapter {
 
         return table;
     }
-
-    //TODO: add skipIntro?, remove card preset, AI diff, turn order
 }
