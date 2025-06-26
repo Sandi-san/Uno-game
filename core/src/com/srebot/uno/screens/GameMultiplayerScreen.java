@@ -24,6 +24,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
+import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
@@ -922,7 +923,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     @Override
     public void show() {
         camera = new OrthographicCamera();
-        viewport = new FitViewport(GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT, camera);
+        viewport = new ExtendViewport(GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT, camera);
         hudCamera = new OrthographicCamera();
         hudViewport = new FitViewport(GameConfig.HUD_WIDTH, GameConfig.HUD_HEIGHT, hudCamera);
         backgroundCamera = new OrthographicCamera();
@@ -1054,9 +1055,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
     private void draw() {
         //VELIKOST kart (v WORLD UNITS)
-        float sizeX = 11.2f;
-        float sizeY = 16f;
-        //regular size if 2 players
+        float sizeX, sizeY;
         if(getPlayersSize()==2){
             sizeX = GameConfig.CARD_WIDTH;
             sizeY = GameConfig.CARD_HEIGHT;
@@ -1067,6 +1066,8 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             sizeY = GameConfig.CARD_HEIGHT_SM;
         }
 
+        int numPlayers = getPlayersSize();
+
         if (state == State.Running) {
             //MIDDLE DECK
             if(topCard==null)
@@ -1074,17 +1075,21 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             String topCardTexture = topCard.getTexture();
             TextureRegion topCardRegion = gameplayAtlas.findRegion(topCardTexture);
             //POZICIJA - MIDDLE
-            float topX = (GameConfig.WORLD_WIDTH - sizeX) / 2f;
-            float topY = (GameConfig.WORLD_HEIGHT - sizeY) / 2f;
+            float topX = (viewport.getWorldWidth() - sizeX) / 2f;
+            float topY = (viewport.getWorldHeight() - sizeY) / 2f;
             topCard.setPositionAndBounds(topX, topY, sizeX, sizeY);
             Card.render(batch, topCardRegion, topCard);
 
             //DRAW DECK
             TextureRegion drawDeckRegion = gameplayAtlas.findRegion(RegionNames.back);
-            float drawX = (GameConfig.WORLD_WIDTH - sizeX) - (topX / 2f);
-            float drawY = (GameConfig.WORLD_HEIGHT - sizeY) / 2f;
+            //FAR RIGHT
+            float drawX = (viewport.getWorldWidth() - sizeX);
+            //or slightly right of draw deck but not covering left player cards
+            if(numPlayers>2)
+                drawX = drawX - (topX / 2f);
+            float drawY = (viewport.getWorldHeight() - sizeY) / 2f;
             deckDraw.setPositionAndBounds(drawX, drawY, sizeX, sizeY);
-            Card.render(batch, drawDeckRegion, drawX, drawY, sizeX, sizeY);
+            Card.render(batch, drawDeckRegion, deckDraw.getPosition().x, deckDraw.getPosition().y, sizeX, sizeY);
         }
         //TODO: when Paused: also draw cards but not decks
         if(state==State.Running || state==State.Over){
@@ -1140,7 +1145,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             case 1:
                 if (numPlayers == 2) {
                     //top
-                    startY = GameConfig.WORLD_HEIGHT - sizeY;
+                    startY = viewport.getWorldHeight() - sizeY;
                 } else {
                     //right
                     startY = sizeX;
@@ -1150,7 +1155,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             //top
             case 2:
                 //ce maxPlayers=>3: draw P1
-                startY = GameConfig.WORLD_HEIGHT - GameConfig.CARD_HEIGHT_SM; //top
+                startY = viewport.getWorldHeight() - GameConfig.CARD_HEIGHT_SM; //top
                 startX = 2; //start at top
                 break;
             //left
@@ -1200,7 +1205,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
             //koliko prostora ostane na horizontali ki ni pokrita z karti
             //deli polovicno za risanje arrow-jev
-            float sizeLeft = GameConfig.WORLD_WIDTH - ((lastIndex+1 - firstIndex) * spacing);
+            float sizeLeft = viewport.getWorldWidth() - ((lastIndex+1 - firstIndex) * spacing);
             startX = sizeLeft / 2f;
 
             //IZRISI CARDE
@@ -1294,18 +1299,18 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             //brez spacing
             if (size <= 5) {
                 hand.setIndexLast();
-                startY = (GameConfig.WORLD_HEIGHT - size * sizeX) / 2f;
+                startY = (viewport.getWorldHeight() - size * sizeX) / 2f;
             }
             //spacing le dokler ne reachas MaxCardsToShow
             else if (size <= 7) {
                 hand.setIndexLast();
                 spacing = overlap;
-                startY = (GameConfig.WORLD_HEIGHT - size * sizeX) / 2f;
+                startY = (viewport.getWorldHeight() - size * sizeX) / 2f;
             }
             //ne vec spacingat ko imas vec kart kot MaxCardsToShow
             else {
                 spacing = overlap;
-                startY = (GameConfig.WORLD_HEIGHT - maxCardsShow * sizeX) / 2f;
+                startY = (viewport.getWorldHeight() - maxCardsShow * sizeX) / 2f;
             }
 
             //LIMIT RENDER CARDS DOL
@@ -1314,7 +1319,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
             //set x-axis based on hand location (left/right)
             if (startX == 1)
-                startX = GameConfig.WORLD_WIDTH - (GameConfig.CARD_WIDTH_SM + GameConfig.CARD_HEIGHT_SM * 0.1f); //malce levo
+                startX = viewport.getWorldWidth() - (GameConfig.CARD_WIDTH_SM + GameConfig.CARD_HEIGHT_SM * 0.1f); //malce levo
             else
                 startX = GameConfig.CARD_HEIGHT_SM * 0.1f; //malce desno
 
@@ -1701,9 +1706,8 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             float sizeX = GameConfig.CARD_WIDTH_SM;
             float sizeY = GameConfig.CARD_HEIGHT_SM;
 
-            float startX = (GameConfig.WORLD_WIDTH - 4 * sizeX) / 2f;
-            //float centerX = (GameConfig.WORLD_WIDTH - sizeX) / 2f;
-            float centerY = (GameConfig.WORLD_HEIGHT - sizeY) / 2f;
+            float startX = (viewport.getWorldWidth() - 4 * sizeX) / 2f;
+            float centerY = (viewport.getWorldHeight() - sizeY) / 2f;
 
             Card cardB = new Card();
             //float BX = centerX - sizeX*2;
