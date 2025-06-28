@@ -12,6 +12,7 @@ import com.srebot.uno.classes.Hand;
 
 import java.lang.reflect.Type;
 
+/** For deserializing Hand and all its connected objects */
 public class HandDeserializer implements JsonDeserializer<Hand> {
     @Override
     public Hand deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
@@ -24,6 +25,7 @@ public class HandDeserializer implements JsonDeserializer<Hand> {
         JsonArray cardsArray = jsonObject.has("cards") ? jsonObject.getAsJsonArray("cards") : new JsonArray();
         Array<Card> cards = new Array<>();
 
+        //deserialize each Card in Hand separately
         for (JsonElement cardElement : cardsArray) {
             if (cardElement != null && !cardElement.isJsonNull()) {
                 Card card = context.deserialize(cardElement, Card.class);

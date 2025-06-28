@@ -10,6 +10,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
+/** Used for deserializing date of Game object when fetching from backend */
 public class DateDeserializer implements JsonDeserializer<Date> {
     private static final SimpleDateFormat dateFormat;
 

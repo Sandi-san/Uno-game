@@ -11,7 +11,7 @@ public class Player {
         this.name="A";
         this.score=0;
     }
-    //constructor iz json
+    //constructor for json
     public Player(String name, int score){
         this.name = name;
         if(score==-1) this.score=0;
@@ -57,11 +57,5 @@ public class Player {
         if(playerHand.getCards().size==1)
             return name+" "+playerHand.getCards().size+" card";
         return name+" "+playerHand.getCards().size+" cards";
-    }
-
-    //get ids of hand and cards from fetchedPlayer and set them to this object
-    public void setIds(Player fetchedPlayer) {
-        this.getHand().setId(fetchedPlayer.getHand().getId());
-        this.getHand().setIdCards(fetchedPlayer.getHand());
     }
 }

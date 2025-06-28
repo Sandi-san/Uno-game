@@ -1,5 +1,6 @@
 package com.srebot.uno.classes;
 
+/** Used for serializing Player + currentTurn and passing data through backend */
 public class PlayerTurn extends Player {
     private int currentTurn;
 
@@ -9,7 +10,7 @@ public class PlayerTurn extends Player {
         currentTurn=1;
     }
 
-    //constructor iz json
+    //constructor for json
     public PlayerTurn(String name, int score, int currentTurn){
         super(name, score);
         this.currentTurn = currentTurn;
@@ -28,33 +29,4 @@ public class PlayerTurn extends Player {
     public int getCurrentTurn() {
         return currentTurn;
     }
-/*
-    public int getId() {return id;}
-    public void setId(int id) {this.id = id;}
-
-    public String getName() {
-        return name;
-    }
-    public int getScore() {
-        return score;
-    }
-    public Hand getHand(){return playerHand;}
-
-    public void setName(String name) {
-        this.name = name;
-    }
-    public void setScore(int score) {
-        this.score = score;
-    }
-    public void setHand(Hand playerHand) {
-        this.playerHand = playerHand;
-    }
-
-    @Override
-    public String toString(){
-        if(playerHand.getCards().size==1)
-            return name+" "+playerHand.getCards().size+" card";
-        return name+" "+playerHand.getCards().size+" cards";
-    }
-    */
 }

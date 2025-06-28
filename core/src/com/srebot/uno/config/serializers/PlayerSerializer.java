@@ -8,6 +8,7 @@ import com.srebot.uno.classes.Player;
 
 import java.lang.reflect.Type;
 
+/** For serializing Player and all its connected objects */
 public class PlayerSerializer implements JsonSerializer<Player> {
     @Override
     public JsonElement serialize(Player player, Type typeOfSrc, JsonSerializationContext context) {
@@ -17,7 +18,7 @@ public class PlayerSerializer implements JsonSerializer<Player> {
         jsonObject.addProperty("name", player.getName());
         jsonObject.addProperty("score", player.getScore());
 
-        // Serialize the cards list directly without "items", "size", and "ordered"
+        //serialize Cards list directly without "items", "size", and "ordered"
         jsonObject.add("hand", context.serialize(player.getHand()));
 
         return jsonObject;

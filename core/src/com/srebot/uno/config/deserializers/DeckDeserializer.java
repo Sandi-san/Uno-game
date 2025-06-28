@@ -12,6 +12,7 @@ import com.srebot.uno.classes.Deck;
 
 import java.lang.reflect.Type;
 
+/** For deserializing Deck and all its connected objects */
 public class DeckDeserializer implements JsonDeserializer<Deck> {
     @Override
     public Deck deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
@@ -21,6 +22,7 @@ public class DeckDeserializer implements JsonDeserializer<Deck> {
         int size = jsonObject.get("size").getAsInt();
         JsonArray cardsArray = jsonObject.getAsJsonArray("cards");
 
+        //deserialize each Card in Deck separately
         Array<Card> cards = new Array<>();
         if (cardsArray != null) {
             for (JsonElement cardElement : cardsArray) {

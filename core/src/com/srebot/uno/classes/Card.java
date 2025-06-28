@@ -10,17 +10,17 @@ import java.util.Random;
 public class Card {
     private int id;
     private int handId;
-    private int priority; //AI
+    private int priority; //for AI
     private int value;
     private String color;
     private String texture;
 
-    //za izbiranje na ekranu
+    //for determining positions on screen
     private Vector2 position;
     private Rectangle bounds;
     private boolean isHighlighted;
 
-    //default costructor
+    //default constructor
     public Card() {
         id = 0;
         handId = 0;
@@ -60,7 +60,6 @@ public class Card {
     public int getId() {
         return id;
     }
-
     public void setId(int id) {
         this.id = id;
     }
@@ -68,7 +67,6 @@ public class Card {
     public int getHandId() {
         return handId;
     }
-
     public void setHandId(int handId) {
         this.handId = handId;
     }
@@ -100,17 +98,8 @@ public class Card {
     public boolean getHighlight() {
         return isHighlighted;
     }
-
     public void setHighlight(boolean value) {
         this.isHighlighted = value;
-    }
-
-    public void setPosition(Vector2 position) {
-        this.position = position;
-    }
-
-    public void setBounds(Rectangle bounds) {
-        this.bounds = bounds;
     }
 
     public void setPositionAndBounds(float x, float y,
@@ -121,7 +110,8 @@ public class Card {
         this.bounds.height = sizeY;
     }
 
-    public void setDefault(String texture) {
+    /** Sets color based on texture */
+    public void setColor(String texture) {
         this.texture = texture;
         if (texture.contains("blue")) {
             this.color = "B";
@@ -134,12 +124,20 @@ public class Card {
         }
     }
 
+    /** Render Card object with batch */
     public static void render(SpriteBatch batch, TextureRegion texture,
                               Card card) {
         batch.draw(texture, card.getPosition().x, card.getPosition().y,
                 card.getBounds().width, card.getBounds().height);
     }
-    //render card with rotation
+    /** Render Card with batch */
+    public static void render(SpriteBatch batch, TextureRegion texture,
+                              float x, float y,
+                              float sizeX, float sizeY) {
+        batch.draw(texture, x, y,
+                sizeX, sizeY);
+    }
+    /** Render Card object with batch and rotation */
     public static void renderFlipped(SpriteBatch batch, TextureRegion texture,
                               Card card, int rotationScalar) {
             batch.draw(texture, card.getPosition().x, card.getPosition().y,
@@ -147,75 +145,64 @@ public class Card {
                     card.getBounds().width, card.getBounds().height,1f,1f,rotationScalar*90f);
     }
 
-    public static void render(SpriteBatch batch, TextureRegion texture,
-                              float x, float y,
-                              float sizeX, float sizeY) {
-        batch.draw(texture, x, y,
-                sizeX, sizeY);
-    }
-
+    /** Check if two Cards contain the same (or valid) color */
     public boolean containsColor(Card card) {
         if(card!=null) {
             String color = card.getColor();
-            //eden od card je anyColor
+            //one of the Cards is any color
             if (color.equals("-") || this.color.equals("-"))
                 return true;
-            //vsaj en vsebuje color
+            //Cards contain the same color
             if (color.contains(this.color) || this.color.contains(color))
                 return true;
         }
         return false;
     }
 
+    /** Check if two Cards contain the symbol color */
     public boolean containsSymbol(Card card) {
         if(card!=null) {
-            //preveri karte z stevilkami
             int value = card.getValue();
+            //check if both Cards are normal cards and contain same value
             if (value < 10 && value == this.value)
                 return true;
 
             String texture = card.getTexture();
-            //preveri stop karte
+            //check if both Cards are Stop Cards
             if (texture.contains("stop") && this.texture.contains("stop"))
                 return true;
-            //preveri reverse karte
+            //check if both Cards are Reverse Cards
             if (texture.contains("Reverse") && this.texture.contains("Reverse"))
                 return true;
-            //preveri plus2 karte
+            //check if both Cards are (colored) Plus 2 Cards
             if (texture.contains("plus2") && this.texture.contains("plus2"))
                 return true;
         }
         return false;
     }
 
-    //karta je posebna (ni regular stevilka)
     public boolean isSpecial() {
         if (this.value > 9)
             return true;
         return false;
     }
 
-    //ce je karta special, vrni katera je
+    /** Return simplified type of Special Card */
     public String getSpecial() {
-        //preveri stop karte
         if (this.texture.contains("stop"))
             return "S";
-        //preveri reverse karte
         if (this.texture.contains("Reverse"))
             return "R";
-        //preveri plus2 karte
         if (this.texture.contains("plus2"))
             return "P2";
-        //preveri plus4 karte
         if (this.texture.contains("plus4"))
             return "P4";
-        //preveri rainbow karte
-        return "-";
+        return "-"; //Card is Rainbow Card
     }
 
-    //generiraj random karto z CardValues vrednosti
+    /** Generate random Card from CardValues values */
     public static Card generateRandom() {
-        //dobi random enum
+        //get random enum
         CardValues[] vals = CardValues.values();
         CardValues randVals = vals[new Random().nextInt(vals.length)];
         Card card = new Card();
@@ -227,7 +214,7 @@ public class Card {
         return card;
     }
 
-    //generiraj random karto z CardValues vrednosti
+    /** Generate Card with specific CardValues value */
     public static Card generateSpecific(CardValues value) {
         Card card = new Card();
         card.priority = value.getPriority();
@@ -238,7 +225,7 @@ public class Card {
         return card;
     }
 
-    //dobi karto z isto vrednostjo ampak drugacno barvo
+    /** Get Card with same value but different color */
     public static Card switchCard(Card oldCard, String color) {
         Card newCard = new Card(oldCard);
         newCard.color = color;
@@ -246,7 +233,7 @@ public class Card {
         return newCard;
     }
 
-    //izpisi vrednosti karte kot string (debug only)
+    /** Return values of Card as string (debug only) */
     public String asString() {
         String priority = String.valueOf(this.getPriority());
         String value = String.valueOf(this.getValue());

@@ -9,6 +9,7 @@ import java.util.Objects;
 
 
 public enum CardValues {
+    //each Card has predetermined possible values (priority, value, color, texture)
     B1(1,1,"B", RegionNames.B1),
     B2(1,2,"B", RegionNames.B2),
     B3(1,3,"B", RegionNames.B3),
@@ -62,13 +63,12 @@ public enum CardValues {
     P4(6,50,"-", RegionNames.plus4),
     WC(6,50,"-", RegionNames.rainbow);
 
-
-    //prioriteta, da bo AI igral karto, če jo ima
     private final int priority;
     private final int value;
     private final String color;
     private final String textureName;
 
+    //constructor
     CardValues(int priority, int value, String color, String textureName){
         this.priority=priority;
         this.value=value;
@@ -89,6 +89,7 @@ public enum CardValues {
         return textureName;
     }
 
+    /** Switches textures between two Cards */
     public static String switchTexture(Card oldCard, Card newCard){
         int oldValue = oldCard.getValue();
         String newColor = newCard.getColor();

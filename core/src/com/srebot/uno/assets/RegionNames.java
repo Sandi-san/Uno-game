@@ -1,10 +1,7 @@
 package com.srebot.uno.assets;
 
-import com.badlogic.gdx.audio.Sound;
-
+/** Set region names for gameplay.atlas for easy access to textures */
 public class RegionNames {
-
-    // gameplay.atlas
     //BLUE
     public static final String B1 = "blue1";
     public static final String B2 = "blue2";
@@ -84,12 +81,6 @@ public class RegionNames {
 
     //OTHER
     public static final String arrow = "Arrow";
-
-    /*
-    //particles
-    public static final String TRAIL = "shipTrail.pe";
-    public static final String LIGHT = "shipLight.pe";
-    */
 
     private RegionNames() {
     }

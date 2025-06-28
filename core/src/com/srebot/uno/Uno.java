@@ -9,10 +9,9 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.srebot.uno.config.GameManager;
 import com.srebot.uno.config.GameService;
 import com.srebot.uno.screens.GameMultiplayerScreen;
-import com.srebot.uno.screens.GameSingleplayerScreen;
 import com.srebot.uno.screens.IntroScreen;
 
-//PRVI CLASS KI SE ZAŽENE
+/** First class that executes when running applications */
 public class Uno extends Game {
     private AssetManager assetManager;
     private SpriteBatch batch;
@@ -30,33 +29,32 @@ public class Uno extends Game {
 
         setScreen(new IntroScreen(this));
 
-        // Adding the LifecycleListener here
+        //Listener
         Gdx.app.addLifecycleListener(new LifecycleListener() {
             @Override
             public void pause() {
-                // Handle pause
             }
 
             @Override
             public void resume() {
-                // Handle resume
             }
 
             @Override
             public void dispose() {
                 Gdx.app.log("DISPOSE", "CLOSING APPLICATION FROM LIFECYCLE LISTENER");
-                // Clean up resources
+                //If closing application when within multiplayer screen
                 if(screen instanceof GameMultiplayerScreen) {
                     Gdx.app.log("DISPOSE", "Calling from GameMultiplayerScreen");
                     GameMultiplayerScreen mpScreen = (GameMultiplayerScreen) screen;
                     //close scheduler
                     mpScreen.stopScheduler();
+                    //get id of player and game and call remove player from game method
                     int playerId = mpScreen.getPlayerId();
                     int gameId = mpScreen.getGameId();
                     if (playerId != 0 && gameId != 0) {
                         Gdx.app.log("DISPOSE", "MultiplayerScreen closed with localPlayerId: " + playerId);
+                        //backend: delete player's GameId from Game, if Game then has no players, delete game
                         mpScreen.playerLeaveGame(playerId,gameId);
-                        //BE: delete player's GameId from Game, if Game then has no players, delete game
                     }
                 }
             }

@@ -1,17 +1,14 @@
 package com.srebot.uno.assets;
 
 import com.badlogic.gdx.assets.AssetDescriptor;
-import com.badlogic.gdx.assets.AssetLoaderParameters;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.ParticleEffect;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-import com.srebot.uno.assets.AssetPaths;
 
+/** Easy access to assets through consts */
 public class AssetDescriptors {
-
     public static final AssetDescriptor<BitmapFont> UI_FONT =
             new AssetDescriptor<BitmapFont>(AssetPaths.UI_FONT, BitmapFont.class);
 

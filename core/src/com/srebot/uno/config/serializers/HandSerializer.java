@@ -10,17 +10,17 @@ import com.srebot.uno.classes.Hand;
 
 import java.lang.reflect.Type;
 
+/** For serializing Hand and all its connected objects */
 public class HandSerializer implements JsonSerializer<Hand> {
     @Override
     public JsonElement serialize(Hand hand, Type typeOfSrc, JsonSerializationContext context) {
         JsonObject jsonObject = new JsonObject();
 
-
         jsonObject.addProperty("id", hand.getId());
         jsonObject.addProperty("indexFirst", hand.getIndexFirst());
         jsonObject.addProperty("indexLast", hand.getIndexLast());
 
-        // Get the filtered list of cards
+        //get the filtered list of cards
         Array<Card> filteredCards = new Array<>();
         for (Card card : hand.getCards()) {
             if (card != null) {
@@ -28,7 +28,7 @@ public class HandSerializer implements JsonSerializer<Hand> {
             }
         }
 
-        // Serialize the cards list directly without "items", "size", and "ordered"
+        //serialize Cards list directly without "items", "size", and "ordered"
         jsonObject.add("cards", context.serialize(filteredCards.items));
         //jsonObject.add("cards", context.serialize(hand.getCards().items));
 

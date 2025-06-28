@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
+/** Manages global application variables */
 public class GameManager {
     public static final GameManager INSTANCE = new GameManager();
     private static final String PLAYER_NAME = "currentPlayer";
@@ -22,7 +23,7 @@ public class GameManager {
     private Json json = new Json();
     private final Preferences PREFS;
 
-    //DOBI VREDNOSTI IZ NASTAVITEV
+    //Variables from local settings
     private String namePref;
     private boolean soundPref;
     private boolean musicPref;
@@ -34,7 +35,7 @@ public class GameManager {
 
     public GameManager() {
         PREFS = Gdx.app.getPreferences("GameSettings");
-        //DOBI VREDNOSTI IZ NASTAVITEV
+        //load local settings variables
         namePref = PREFS.getString("currentPlayer","Player 1");
         soundPref = PREFS.getBoolean("soundEnabled", true);
         musicPref = PREFS.getBoolean("musicEnabled", true);
@@ -57,9 +58,9 @@ public class GameManager {
     public float getMusicVolumePref(){return musicVPref;}
     public boolean getPlayIntroPref() {return playIntroPref;}
 
+    /** Set name for current Player */
     public void setNamePref(String namePref) {
-        //player name ne sme biti "Computer"
-        //rezervirano za AI playerja
+        //Player name cannot be "Computer" (reserved for AI computers)
         if(!namePref.equals("Computer")) {
             this.namePref = namePref;
             PREFS.putString("currentPlayer", namePref);
@@ -89,6 +90,7 @@ public class GameManager {
         PREFS.flush();
     }
 
+    /** Load settings variables from json file */
     public List<Player> loadFromJson() {
         List<Player> playerList = new ArrayList<>();
 
@@ -96,6 +98,7 @@ public class GameManager {
             String jsonData = Gdx.files.local("playerData.json").readString();
             JsonValue root = new JsonReader().parse(jsonData);
 
+            //for each json entry, get name and score variable and create new Player object
             for (JsonValue entry = root.child(); entry != null; entry = entry.next()) {
                 String playerName = entry.getString("name");
                 int playerScore = entry.getInt("score");
@@ -109,16 +112,16 @@ public class GameManager {
         return playerList;
     }
 
-    //zdruzi playerje iz json z playerje trenutne igre
+    /** Merge Players from json into Players of current Game (playersData) */
     public List<Player> mergeJson(List<Player> playerList) {
         List<Player> playersFromJson = loadFromJson();
-        //iteriraj skozi playersFromJson in zdruzi s playerDataList
+        //iterate from all Players from json and merge with playerDataList
         for (Player playerJson : playersFromJson) {
             boolean playerExists = false;
             for (Player existingPlayer : playerList) {
                 if (existingPlayer != null) {
                     if (Objects.equals(playerJson.getName(), existingPlayer.getName())) {
-                        //posodobi player rezultat le ce je visji
+                        //update Player's score in json if current Player's score is higher (updates local highscore)
                         if (playerJson.getScore() > existingPlayer.getScore()) {
                             existingPlayer.setScore(playerJson.getScore());
                         }
@@ -127,7 +130,7 @@ public class GameManager {
                     }
                 }
             }
-            //ce player se ne obstaja v trenutni listi, dodaj
+            //if Player doesn't exist in json, add it
             if (!playerExists) {
                 playerList.add(playerJson);
             }
@@ -135,44 +138,45 @@ public class GameManager {
         return playerList;
     }
 
+    /** Saves Player data to json */
     public void saveDataToJsonFile(List<Player> playerList) {
         try {
-            //zdruzi loadJson in playerDataList
+            //merge loadJson in playerDataList
             playerList = mergeJson(playerList);
 
-            //ne shranjevat Hand in nastavi score na -1, ce je score 0
-            //ker json ne zna shranit int=0
+            //don't save Hand objects in json and set scores of 0 as -1 (regular json library doesn't save integers of 0)
             Iterator<Player> iterator = playerList.iterator();
             while (iterator.hasNext()) {
                 Player player = iterator.next();
                 if (player != null) {
-                    // ne shranit playerja z imenom "Computer"
+                    //don't save Players with name "Computer" (reserved for AI opponents)
                     if (Objects.equals(player.getName(), "Computer")) {
                         iterator.remove();
                         continue;
                     }
                     else {
-                        //ce je score==0, nastavi na -1, da lahko shrani v json
+                        //change scores of 0 to -1
                         if(player.getScore()==0)
                             player.setScore(-1);
                         player.setHand(null);
                     }
                 }
-                //odstrani null primerke (pomembno, sicer error pri load)
+                //remove null elements (required since null elements throw error when loading from json)
                 else
                     iterator.remove();
             }
-            // Serialize the list of PlayerData to JSON
+
+            //serialize the list of PlayerData to JSON
             String jsonData = json.toJson(playerList);
 
-            // Write the JSON data to the file
+            //write the JSON data to the file
             Gdx.files.local("playerData.json").writeString(jsonData, false);
         } catch (Exception e) {
-            // Handle exceptions (write error, etc.)
             e.printStackTrace();
         }
     }
 
+    /** Get Player from json with specific name */
     public Player getPlayerByName(List<Player> playerList, String name) {
         for (Player player : playerList) {
             if (player.getName().equals(name)) {

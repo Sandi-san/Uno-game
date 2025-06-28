@@ -25,7 +25,6 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
-import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.srebot.uno.Uno;
@@ -387,10 +386,8 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         //USTVARI DECKE in settaj game manager
         //ustvari main deck
         deckDraw = fetchedGame.getDecks()[0];
-        deckDraw.setManager(game);
         //ustvari discard deck
         deckDiscard = fetchedGame.getDecks()[1];
-        deckDiscard.setManager(game);
 
         //ustvari current top card
         topCard = fetchedGame.getTopCard();
@@ -465,7 +462,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         playersData = new ArrayList<>();
         //USTVARI DECKE
         //ustvari main deck
-        deckDraw = new Deck(deckSize, game);
+        deckDraw = new Deck(deckSize);
         deckDraw.generateBySize(deckSize, preset);
         deckDraw.shuffleDeck();
 
@@ -473,7 +470,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         topCard = deckDraw.pickCard();
 
         //ustvari discard dek in polozi to karto nanj
-        deckDiscard = new Deck(deckSize, game);
+        deckDiscard = new Deck(deckSize);
         deckDiscard.setCard(topCard);
 
         //USTVARI PLAYERJE IN NAPOLNI ARRAY
@@ -925,7 +922,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         camera = new OrthographicCamera();
         viewport = new ExtendViewport(GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT, camera);
         hudCamera = new OrthographicCamera();
-        hudViewport = new FitViewport(GameConfig.HUD_WIDTH, GameConfig.HUD_HEIGHT, hudCamera);
+        hudViewport = new ExtendViewport(GameConfig.HUD_WIDTH, GameConfig.HUD_HEIGHT, hudCamera);
         backgroundCamera = new OrthographicCamera();
         backgroundViewport = new StretchViewport(GameConfig.HUD_WIDTH, GameConfig.HUD_HEIGHT, backgroundCamera);
         stage = new Stage(hudViewport, game.getBatch());
@@ -1056,7 +1053,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     private void draw() {
         //VELIKOST kart (v WORLD UNITS)
         float sizeX, sizeY;
-        if(getPlayersSize()==2){
+        if (getPlayersSize() == 2) {
             sizeX = GameConfig.CARD_WIDTH;
             sizeY = GameConfig.CARD_HEIGHT;
         }
@@ -1070,7 +1067,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
         if (state == State.Running) {
             //MIDDLE DECK
-            if(topCard==null)
+            if (topCard == null)
                 topCard = deckDiscard.getTopCard();
             String topCardTexture = topCard.getTexture();
             TextureRegion topCardRegion = gameplayAtlas.findRegion(topCardTexture);
@@ -1085,18 +1082,18 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             //FAR RIGHT
             float drawX = (viewport.getWorldWidth() - sizeX);
             //or slightly right of draw deck but not covering left player cards
-            if(numPlayers>2)
+            if (numPlayers > 2)
                 drawX = drawX - (topX / 2f);
             float drawY = (viewport.getWorldHeight() - sizeY) / 2f;
             deckDraw.setPositionAndBounds(drawX, drawY, sizeX, sizeY);
             Card.render(batch, drawDeckRegion, deckDraw.getPosition().x, deckDraw.getPosition().y, sizeX, sizeY);
         }
         //TODO: when Paused: also draw cards but not decks
-        if(state==State.Running || state==State.Over){
+        if (state != State.Paused && state != State.Initializing) {
             //DRAW PLAYER HANDS for each current player
             int currentPlayerIndex = getIndexOfCurrentPlayer();
             //if returned==-1 -> data iz db se se ni shranil localno
-            if(currentPlayerIndex==-1)
+            if (currentPlayerIndex == -1)
                 return;
             for (int i = 0; i < playersData.size(); ++i) {
                 // Calculate the index in a circular manner
@@ -1113,12 +1110,11 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                             sizeX, sizeY, isCurrentPlayer);
                 }
             }
-        } else if (state == State.Choosing) {
-            drawColorWheel();
-        }
 
-        //DRAW EXIT BUTTON
-        //drawExitButton();
+            if (state == State.Choosing) {
+                drawColorWheel();
+            }
+        }
     }
 
     private void drawHand(Hand hand, int index, float sizeX, float sizeY, boolean isPlayer) {
@@ -1350,7 +1346,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             font.getData().setScale(0.8f);  // Scale down to 80% of the original size
 
             float startX = 10f; //width left + margin
-            float startY = GameConfig.HUD_HEIGHT-10f; //top + margin
+            float startY = hudViewport.getWorldHeight()-10f; //top + margin
 
             //height of each line of font + spacing
             float lineHeight = font.getXHeight();
@@ -1449,8 +1445,8 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             String waitText = "Waiting for players";
             GlyphLayout waitLayout = new GlyphLayout();
             waitLayout.setText(font,waitText);
-            float waitX = GameConfig.HUD_WIDTH/2f - waitLayout.width/2f;
-            float waitY = GameConfig.HUD_HEIGHT/2f + waitLayout.height/2f;
+            float waitX = hudViewport.getWorldWidth()/2f - waitLayout.width/2f;
+            float waitY = hudViewport.getWorldHeight()/2f + waitLayout.height/2f;
             font.draw(batch, waitText, waitX,waitY);
         }
         if(state == State.Over){
@@ -1477,8 +1473,8 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 wonText = "No winner.";
             GlyphLayout wonLayout = new GlyphLayout();
             wonLayout.setText(font,wonText);
-            float waitX = GameConfig.HUD_WIDTH/2f - wonLayout.width/2f;
-            float waitY = GameConfig.HUD_HEIGHT/2f + wonLayout.height/2f;
+            float waitX = hudViewport.getWorldWidth()/2f - wonLayout.width/2f;
+            float waitY = hudViewport.getWorldHeight()/2f + wonLayout.height/2f;
             font.draw(batch, wonText, waitX,waitY+(font.getXHeight()*2));
 
             int playerScore = getPlayerById(localPlayerId).getScore();
@@ -1714,7 +1710,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             float BX = startX;
             float BY = centerY;
             cardB.setPositionAndBounds(BX, BY, sizeX, sizeY);
-            cardB.setDefault(RegionNames.Bdefault);
+            cardB.setColor(RegionNames.Bdefault);
             choosingCards.add(cardB);
 
             Card cardR = new Card();
@@ -1722,7 +1718,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             float RX = startX + sizeX;
             float RY = centerY;
             cardR.setPositionAndBounds(RX, RY, sizeX, sizeY);
-            cardR.setDefault(RegionNames.Rdefault);
+            cardR.setColor(RegionNames.Rdefault);
             choosingCards.add(cardR);
 
             Card cardG = new Card();
@@ -1730,7 +1726,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             float GX = startX + sizeX * 2;
             float GY = centerY;
             cardG.setPositionAndBounds(GX, GY, sizeX, sizeY);
-            cardG.setDefault(RegionNames.Gdefault);
+            cardG.setColor(RegionNames.Gdefault);
             choosingCards.add(cardG);
 
             Card cardY = new Card();
@@ -1738,7 +1734,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             float YX = startX + sizeX * 3;
             float YY = centerY;
             cardY.setPositionAndBounds(YX, YY, sizeX, sizeY);
-            cardY.setDefault(RegionNames.Ydefault);
+            cardY.setColor(RegionNames.Ydefault);
             choosingCards.add(cardY);
         }
 

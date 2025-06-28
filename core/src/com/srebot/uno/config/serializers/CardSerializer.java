@@ -9,19 +9,19 @@ import com.srebot.uno.classes.Deck;
 
 import java.lang.reflect.Type;
 
+/** For serializing Card and passing it to backend */
 public class CardSerializer implements JsonSerializer<Card> {
     @Override
     public JsonElement serialize(Card card, Type typeOfSrc, JsonSerializationContext context) {
         JsonObject jsonObject = new JsonObject();
 
-        // Only include the fields that you want to serialize
+        //include fields to serialize
         jsonObject.addProperty("id", card.getId());
         jsonObject.addProperty("priority", card.getPriority());
         jsonObject.addProperty("value", card.getValue());
         jsonObject.addProperty("color", card.getColor());
         jsonObject.addProperty("texture", card.getTexture());
-
-        // Exclude "position", "bounds", and "isHighlighted"
+        //exclude "position", "bounds", and "isHighlighted"
 
         return jsonObject;
     }

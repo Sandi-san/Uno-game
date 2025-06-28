@@ -1,5 +1,6 @@
 package com.srebot.uno.config;
 
+/** Global const variables used in application */
 public class GameConfig {
     //GAME WINDOW
     public static final float WIDTH = 1000f;
@@ -11,7 +12,7 @@ public class GameConfig {
     public static final float WORLD_WIDTH = 80f;
     public static final float WORLD_HEIGHT = 60f;
 
-    //CARD RATIO (za intro)
+    //CARD RATIO (for intro)
     public static final float CARD_WIDTH_RATIO = 0.7f;
     public static final float CARD_HEIGHT_RATIO = 1f;
     //CARD SIZE IN WORLD UNITS
@@ -30,10 +31,10 @@ public class GameConfig {
     public static final float BUTTON_HEIGHT = 14f;
 
     //MAX CARDS TO SHOW IN PLAYER HANDS AT ONE TIME
-    public static final int MAX_CARDS_SHOW = 7; //7
+    public static final int MAX_CARDS_SHOW = 7;
     public static final int MAX_CARDS_SHOW_SM = 9;
 
-    //MULTIPLAYER/SERVER
+    //MULTIPLAYER SERVER/BACKEND ROUTES
     public static final String SERVER_URL = "http://localhost:3000/";
     public static final String GAME_URL = "game";
     public static final String PLAYER_URL = "player";

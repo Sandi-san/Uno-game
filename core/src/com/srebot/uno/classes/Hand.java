@@ -14,15 +14,15 @@ import java.util.Random;
 public class Hand {
     private int id;
     private Array<Card> cards;
-    //index prve karte v cards array za izris
+    //index of first Card in Cards array to render
     private int indexFirst;
-    //index zadnje karte v cards array za izris
+    //index of last Card in Cards array to render
     private int indexLast;
 
-    //texture elementi za preklapljanje med Cardi v drawHands
+    //texture elements for arrows used to shift first/last indexes
     private TextureRegion arrowRegionLeft;
     private TextureRegion arrowRegionRight;
-    //za izbiranje na ekranu
+
     private Vector2 positionArrowRegionLeft;
     private Rectangle boundsArrowRegionLeft;
     private Vector2 positionArrowRegionRight;
@@ -34,12 +34,12 @@ public class Hand {
         initIndexes();
         initRegions();
     }
-    //copy constructor, ai
+    //copy constructor, for ai
     public Hand(Hand hand){
         this.cards = new Array<Card>(hand.getCards());
         initIndexes();
     }
-    //ai
+    //constructor for ai
     public Hand(Card lastCard) {
         Array<Card> cards = new Array<Card>();
         cards.add(lastCard);
@@ -63,6 +63,8 @@ public class Hand {
         this.indexFirst=0;
         this.indexLast=this.cards.size-1;
     }
+
+    /** Initializes arrow regions (textures) */
     private void initRegions(){
         positionArrowRegionLeft = new Vector2();
         positionArrowRegionRight = new Vector2();
@@ -70,6 +72,7 @@ public class Hand {
         boundsArrowRegionRight = new Rectangle();
     }
 
+    /** Sets arrow regions (sets textures) */
     public void setArrowRegions(TextureAtlas.AtlasRegion region){
         if(this.arrowRegionRight==null)
             this.arrowRegionRight = new TextureRegion(region);
@@ -78,6 +81,8 @@ public class Hand {
             this.arrowRegionLeft.flip(true, false);
         }
     }
+
+    /** Sets positions and bounds of left arrow */
     public void setArrowRegionLeft(float x,float y,
                                    float sizeX, float sizeY){
         this.positionArrowRegionLeft.x = x;
@@ -85,6 +90,8 @@ public class Hand {
         this.boundsArrowRegionLeft.width = sizeX;
         this.boundsArrowRegionLeft.height = sizeY;
     }
+
+    /** Sets positions and bounds of right arrow */
     public void setArrowRegionRight(float x,float y,
                                      float sizeX, float sizeY){
         this.positionArrowRegionRight.x = x;
@@ -120,28 +127,31 @@ public class Hand {
     }
 
     public int getIndexLast(){return this.indexLast;}
-    //Get last index: if last index is less
+
+    /** Get last index and validify indexes */
     public int getIndexLast(int maxCardsShow){
         fixIndexes(maxCardsShow);
         return this.indexLast;
     }
-    //set default (v tem classu)
+
+    /** Set default last index */
     public void setIndexLast(){this.indexLast=this.cards.size-1;}
 
     public int getIndexFirst(){ return indexFirst;}
-    //set default (v tem classu)
+
+    /** Set default first index */
     public void setIndexFirst(){
         this.indexFirst=0;
     }
 
-    //actual set
+    /** Increments both indexes */
     public void indexIncrement(int maxCardsShow){
-        //da ne bo inkrementiral firstIndex ko imamo manj kot MaxCards v roki
+        //first check if indexes can be changed (don't increment first index when Hand has less cards than maxCards)
         if(indexDiffValid(this.indexFirst,this.indexLast+1,maxCardsShow)) {
-            //last index
+            //increment last index if possible
             if(this.indexLast+1<=this.cards.size-1)
                 this.indexLast++;
-            //first index (if needed)
+            //increment first index (if needed)
             if(!indexDiffValid(this.indexFirst,this.indexLast,maxCardsShow)){
                 this.indexFirst++;
             }
@@ -149,59 +159,59 @@ public class Hand {
         else{
             if(!indexDiffValid(this.indexFirst,this.indexLast+1,maxCardsShow)){
                 this.indexFirst++;
-                //last index
                 if(this.indexLast+1<=this.cards.size-1)
                     this.indexLast++;
             }
         }
     }
 
-    //fix indexes if Hand has more cards in hand than maxCardsShow and
-    //player was not at max lastIndex when setting card, resulting in
-    //incorrect diffirence between first/last index (which should be maxCardsShow-1 on cards.size>maxCardsShow-1)
+    /** Fix indexes if Hand has more cards in hand than maxCardsShow and
+    player was not at max lastIndex when setting card, resulting in
+    incorrect difference between first/last index (which should be maxCardsShow-1 on cards.size>maxCardsShow-1) */
     private void fixIndexes(int maxCardsShow){
+        //check if indexes need to be fixed, if not, return
         if((this.indexLast-this.indexFirst==maxCardsShow-1) || (cards.size<=maxCardsShow-1))
             return;
         do {
+            //increment last index until the difference between first index is same size as maxCardsShow
             this.indexLast = this.indexLast+1;
         } while(this.indexLast-this.indexFirst!=maxCardsShow-1);
     }
 
+    /** Decrements both indexes */
     public void indexDecrement(int maxCardsShow){
-        //over course game se lahko lastIndex unsync-a, popravi indekse
+        //Validify indexes first
         fixIndexes(maxCardsShow);
+        //Check if index decrement can happen
         if(indexDiffValid(this.indexFirst,this.indexLast-1,maxCardsShow)) {
-            //last index
             this.indexLast--;
-
-            //first index (if needed)
             if(!indexDiffValid(this.indexFirst,this.indexLast,maxCardsShow)){
-                //first index
                 if (this.indexFirst - 1 >= 0)
                     this.indexFirst--;
             }
         }
         else {
             if(!indexDiffValid(this.indexFirst,this.indexLast-1,maxCardsShow)){
-                //first index
                 if (this.indexFirst - 1 >= 0)
                     this.indexFirst--;
-                //last index
                 this.indexLast--;
             }
         }
     }
 
+    /** Increments last index only (when adding +2/4 Cards to Hand) */
     public void lastIndexIncrement(int num, int maxCardsShow){
         this.indexLast = this.indexLast+num;
         int diff = this.indexLast-this.indexFirst;
-        //ustrezno premikanje first/last index ko ti opponent vrze +2/+4 card
+        //accordingly move first index when adding Cards and expanding beyond maxCards
         if(diff>=maxCardsShow) {
             this.indexFirst = this.indexLast - maxCardsShow + 1;
         }
     }
-    //ne spreminjaj indekse ce difference med first in last index (za show) ni vec kot st. card ki prikazujes
+
+    /** Checks if changing indexes still leaves them within valid bounds */
     private boolean indexDiffValid(int first, int last, int maxCardsShow){
+        //Prevents changing indexes if difference between first/last index doesn't exceed maxCardsShow
         if((last+first)<=maxCardsShow-1)
             return true;
         return false;
@@ -214,10 +224,12 @@ public class Hand {
         this.cards=newCards;
     }
 
+    /** Gets most used color within Cards of Hand */
     public String getMostUsedCardColor(){
-        //0-B, 1-R, 2-G, 3-Y
+        //Create an array for possible colors: 0-B, 1-R, 2-G, 3-Y
         Integer[] nums = new Integer[4];
         Arrays.fill(nums,0);
+        //Count how often colors appear in Hand
         for(Card card : cards){
             if(card.getColor().contains("B"))
                 ++nums[0];
@@ -235,6 +247,8 @@ public class Hand {
                 ++nums[3];
             }*/
         }
+
+        //Get most occurring color and its index
         int max=0;
         int index=-1;
         for(int i=0; i<nums.length;++i){
@@ -243,6 +257,8 @@ public class Hand {
                 index = i;
             }
         }
+
+        //Return most occurring color
         switch(index){
             case 0:
                 return "B";
@@ -257,6 +273,7 @@ public class Hand {
         }
     }
 
+    /** Get the combined value of distinct colors within Hand */
     public String getMostValuedCardColor(){
         //0-B, 1-R, 2-G, 3-Y
         Integer[] values = new Integer[4];
@@ -293,6 +310,7 @@ public class Hand {
         }
     }
 
+    /** Get least used color that appears in Cards of Hand */
     public Array<String> getLeastUsedCardColors(){
         //0-B, 1-R, 2-G, 3-Y
         Array<String> colors = new Array<>();
@@ -367,7 +385,7 @@ public class Hand {
         return colors[rndIndex];
     }
 
-    //remove all cards except those defined in colors array
+    /** Remove all Cards from Hand except those defined in colors array */
     public Array<Card> keepColors(Array<String> colors){
         Array<Card> parsedCards = new Array<Card>();
         //go through all cards
@@ -384,6 +402,7 @@ public class Hand {
         return parsedCards;
     }
 
+    /** Picks Card from Deck and adds it to Hand */
     public void pickCard(Deck deck){
         if(!deck.isEmpty()) {
             Card card = deck.pickCard();
@@ -391,6 +410,8 @@ public class Hand {
             //setIndexLast();
         }
     }
+
+    /** Picks multiple Cards from Deck and adds them to Hand */
     public void pickCards(Deck deck, int n){
         Card card;
         for(int i=0;i<n;++i){
@@ -398,35 +419,39 @@ public class Hand {
             card = deck.pickCard();
             cards.add(card);
         }
-        //first draw?: set lastIndex
+        //if first draw: set lastIndex
         if(indexLast==-1)
             setIndexLast();
     }
-    //get first valid card from deck depending on color/value
+
+    /** Get first valid Card from Deck depending on color/value and add it to Hand */
     public void pickSpecificCard(Deck deck, Card validCard){
         if(!deck.isEmpty()) {
             Array<Card> deckCards = deck.getCards();
-            //go through each card of deck
+            //go through each Card of Deck
             for (int i = 0; i < deckCards.size; ++i) {
                 Card card = deckCards.get(i);
-                //if current card is valid
+                //check if current Card is valid (same color or value)
                 if (validCard.containsColor(card) || validCard.containsSymbol(card)) {
-                    //remove card from deck
+                    //remove Card from Deck
                     deck.getCards().removeIndex(i);
-                    //add card to Hand
+                    //add Card to Hand
                     cards.add(card);
-                    //stop after first valid card
+                    //stop after first valid Card
                     return;
                 }
             }
         }
-        //if no card was added, no valid cards in deck, pick top instead
+        //if no Card was added, that means there are no valid cards in deck, pick top Card from Deck instead
         pickCard(deck);
     }
+
+    /** Remove Card from Hand and add it to Deck */
     public void setCard(Card card,Deck deck){
+        //add to Deck
         if(deck!=null)
             deck.setCard(card);
-        //odstrani iz hand
+        //remove from Hand
         int cardIndex = cards.indexOf(card,true);
         if(cardIndex != -1)
             cards.removeIndex(cardIndex);
@@ -434,6 +459,7 @@ public class Hand {
         //    setIndexLast();
     }
 
+    /** Get Card with the highest priority within Hand */
     public Card getHighestPriorityCard(){
         int priority = 0;
         Card card = null;
@@ -447,6 +473,8 @@ public class Hand {
         }
         return card;
     }
+
+    /** Get Card with the highest value within Hand */
     public Card getHighestValueCard(){
         int value = 0;
         Card card = null;
@@ -461,6 +489,7 @@ public class Hand {
         return card;
     }
 
+    /** Get special Card with the lowest priority within Hand (return null if no special Cards) */
     public Card getLowestPrioritySpecialCard(){
         int priority = 7;
         Card card = null;
@@ -476,6 +505,7 @@ public class Hand {
         return card;
     }
 
+    /** Get random Card from Hand */
     public Card getRandomCard(){
         Card card = null;
         if(!cards.isEmpty()){
@@ -486,7 +516,7 @@ public class Hand {
         return card;
     }
 
-    //get all special cards from hand
+    /** Get all special Cards from Hand */
     public Array<Card> getSpecialCards() {
         Array<Card> specials = new Array<>();
         for(int i = 0; i<this.cards.size; ++i){
@@ -498,13 +528,15 @@ public class Hand {
         return specials;
     }
 
+    /** Get last Card that was added to Hand (used within phantomHand for AI) */
     public Card getLastCard(){
         if(!cards.isEmpty()){
             return cards.get(cards.size-1);
         }
         return null;
     }
-    //dobi vsoto vseh tock kart v roki
+
+    /** Get sum value of all Cards within hand */
     public int getSumCardPoints(){
         int value=0;
         for(Card card : cards){
@@ -512,12 +544,12 @@ public class Hand {
         }
         return value;
     }
-    //for each card, set id in fetchedHand
+
+    /** For each Card, set id in fetchedHand */
     public void setIdCards(Hand fetchedHand) {
         //get size of smallest hand to avoid out of bounds error
         int size = Math.min(this.cards.size, fetchedHand.getCards().size);
         for(int i=0;i<size;++i) {
-            //for(int i=0;i<fetchedHand.getCards().size;++i){
             Card thisCard = this.cards.get(i);
             //local card doesn't have set id or handId, add it
             if (thisCard.getHandId() == 0 || thisCard.getId() == 0) {

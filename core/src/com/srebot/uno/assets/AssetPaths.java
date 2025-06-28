@@ -1,5 +1,6 @@
 package com.srebot.uno.assets;
 
+/** Set constants to access asset files */
 public class AssetPaths {
 
     public static final String UI_FONT = "fonts/arial-32.fnt";

@@ -9,6 +9,7 @@ import com.srebot.uno.classes.PlayerTurn;
 
 import java.lang.reflect.Type;
 
+/** For serializing Player (and current turn of Game) and all its connected objects */
 public class PlayerTurnSerializer implements JsonSerializer<PlayerTurn> {
     @Override
     public JsonElement serialize(PlayerTurn playerTurn, Type typeOfSrc, JsonSerializationContext context) {
@@ -18,9 +19,9 @@ public class PlayerTurnSerializer implements JsonSerializer<PlayerTurn> {
         jsonObject.addProperty("name", playerTurn.getName());
         jsonObject.addProperty("score", playerTurn.getScore());
 
-        // Serialize the cards list directly without "items", "size", and "ordered"
+        //serialize the Cards list directly without "items", "size", and "ordered"
         jsonObject.add("hand", context.serialize(playerTurn.getHand()));
-
+        //add current turn into property to serialize and pass into backend
         jsonObject.addProperty("currentTurn", playerTurn.getCurrentTurn());
 
         return jsonObject;
