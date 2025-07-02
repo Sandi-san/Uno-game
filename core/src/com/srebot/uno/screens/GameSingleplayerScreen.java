@@ -69,7 +69,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
     private Viewport backgroundViewport; //viewport for background
     private Sprite background;  //image for background
 
-    private Stage stage; //stage for when game over
+    private Stage stage; //stage for game
     private Stage stageHud; //stage for hud
     private SpriteBatch batch;
 
@@ -620,6 +620,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
             float outlineOffset1 = 1.8f;  //offset for 1st outline (outer)
             float outlineOffset2 = 1.2f;  //offset for 2nd outline (inner)
 
+            //y-axis position where to start drawing first Player text
             float playerY = startY;
 
             //iterate through each non-null Player to draw info text
@@ -704,7 +705,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
         }
     }
 
-    /** check State of game after each move */
+    /** Check State of game after each move */
     private void checkGamestate() {
         //if draw Deck is empty, end game and no winner
         if (deckDraw.isEmpty()) {
@@ -747,21 +748,21 @@ public class GameSingleplayerScreen extends ScreenAdapter {
 
     /** Calculate Players' points */
     private void calcPoints() {
-        //iterate through players in array
+        //iterate through Players in array
         for (Player currentPlayer : playersData) {
             if (currentPlayer != null) {
                 int sumPoints = 0;
-                //go through each other player in array
+                //go through each other Player in array
                 for (Player otherPlayer : playersData) {
                     if (otherPlayer != null) {
-                        //if other player is not same as one currently calculating points for
+                        //if other Player is not same as one currently calculating points for
                         if (!Objects.equals(otherPlayer.getName(), currentPlayer.getName())) {
-                            //get sum of values of Cards from other player's hand and add to current player's sum
+                            //get sum of values of Cards from other Player's Hand and add to current Player's sum
                             sumPoints += otherPlayer.getHand().getSumCardPoints();
                         }
                     }
                 }
-                //set current player's points
+                //set current Player's points
                 currentPlayer.setScore(sumPoints);
             }
         }
@@ -1093,14 +1094,45 @@ public class GameSingleplayerScreen extends ScreenAdapter {
         topCard = Card.switchCard(deckDiscard.getSecondTopCard(), color);
     }
 
-    /** Method when left arrow on Hand is clicked */
-    private void handArrowLeftClicked(Hand currentHand) {
-        int maxCardsShow = getMaxCardsShow();
-        //decrement indexes of Hand
-        currentHand.indexDecrement(maxCardsShow);
-        int indexFirst = currentHand.getIndexFirst();
-        int indexLast = currentHand.getIndexLast();
-        Gdx.app.log("ARROW CLICK LEFT", "Index first: " + indexFirst + " | Index last: " + indexLast);
+    /** Return turn index of next player */
+    private int getNextTurn(int index) {
+        do {
+            if (clockwiseOrder) {
+                if (index < 4)
+                    index += 1;
+                else
+                    index = 1;
+            } else {
+                if (index > 1)
+                    index -= 1;
+                else
+                    index = 4;
+            }
+        } while (playersData.get(index - 1) == null);
+        return index;
+    }
+
+    /** Get local playersData size (without null elements) */
+    private int getPlayersSize() {
+        int count = 0;
+        for (Player player : playersData) {
+            if (player != null)
+                count++;
+        }
+        return count;
+    }
+
+    /** Get the maximum amount of cards to render in player's hand during game */
+    private int getMaxCardsShow(){
+        int maxCardsShow = 7;
+        if(getPlayersSize()==2){
+            maxCardsShow = GameConfig.MAX_CARDS_SHOW;
+        }
+        //small size if 3 or 4 players
+        else {
+            maxCardsShow = GameConfig.MAX_CARDS_SHOW_SM;
+        }
+        return maxCardsShow;
     }
 
     /** Check if user mouse is within Deck bounds */
@@ -1111,16 +1143,12 @@ public class GameSingleplayerScreen extends ScreenAdapter {
                 && mouseY >= position.y && mouseY <= position.y + bounds.height;
     }
 
-    /** Check if user mouse is within bounds of Card in choosingCards */
-    private Card isClickedOnChoosingCards(float mouseX, float mouseY) {
-        for (Card card : choosingCards) {
-            Vector2 position = card.getPosition();
-            Rectangle bounds = card.getBounds();
-            if (mouseX >= position.x && mouseX <= position.x + bounds.width
-                    && mouseY >= position.y && mouseY <= position.y + bounds.height)
-                return card;
-        }
-        return null;
+    /** Check if user mouse is within Card bounds */
+    private boolean isClickedOnCard(float mouseX, float mouseY, Card card) {
+        Vector2 position = card.getPosition();
+        Rectangle bounds = card.getBounds();
+        return mouseX >= position.x && mouseX <= position.x + bounds.width
+                && mouseY >= position.y && mouseY <= position.y + bounds.height;
     }
 
     /** Check if user mouse is within bounds of left arrow of Hand */
@@ -1129,6 +1157,16 @@ public class GameSingleplayerScreen extends ScreenAdapter {
         Rectangle bounds = hand.getBoundsArrowRegionLeft();
         return mouseX >= position.x && mouseX <= position.x + bounds.width
                 && mouseY >= position.y && mouseY <= position.y + bounds.height;
+    }
+
+    /** Method when left arrow on Hand is clicked */
+    private void handArrowLeftClicked(Hand currentHand) {
+        int maxCardsShow = getMaxCardsShow();
+        //decrement indexes of Hand
+        currentHand.indexDecrement(maxCardsShow);
+        int indexFirst = currentHand.getIndexFirst();
+        int indexLast = currentHand.getIndexLast();
+        Gdx.app.log("ARROW CLICK LEFT", "Index first: " + indexFirst + " | Index last: " + indexLast);
     }
 
     /** Check if user mouse is within bounds of right arrow of Hand */
@@ -1149,12 +1187,16 @@ public class GameSingleplayerScreen extends ScreenAdapter {
         Gdx.app.log("ARROW CLICK RIGHT", "Index first: " + indexFirst + " | Index last: " + indexLast);
     }
 
-    /** Check if user mouse is within Card bounds */
-    private boolean isClickedOnCard(float mouseX, float mouseY, Card card) {
-        Vector2 position = card.getPosition();
-        Rectangle bounds = card.getBounds();
-        return mouseX >= position.x && mouseX <= position.x + bounds.width
-                && mouseY >= position.y && mouseY <= position.y + bounds.height;
+    /** Check if user mouse is within bounds of Card in choosingCards */
+    private Card isClickedOnChoosingCards(float mouseX, float mouseY) {
+        for (Card card : choosingCards) {
+            Vector2 position = card.getPosition();
+            Rectangle bounds = card.getBounds();
+            if (mouseX >= position.x && mouseX <= position.x + bounds.width
+                    && mouseY >= position.y && mouseY <= position.y + bounds.height)
+                return card;
+        }
+        return null;
     }
 
     /** Fills choosingCards array with default colored Cards and renders them */
@@ -1207,47 +1249,6 @@ public class GameSingleplayerScreen extends ScreenAdapter {
         }
     }
 
-    /** Return turn index of next player */
-    private int getNextTurn(int index) {
-        do {
-            if (clockwiseOrder) {
-                if (index < 4)
-                    index += 1;
-                else
-                    index = 1;
-            } else {
-                if (index > 1)
-                    index -= 1;
-                else
-                    index = 4;
-            }
-        } while (playersData.get(index - 1) == null);
-        return index;
-    }
-
-    /** Get local playersData size (without null elements) */
-    private int getPlayersSize() {
-        int count = 0;
-        for (Player player : playersData) {
-            if (player != null)
-                count++;
-        }
-        return count;
-    }
-
-    /** Get the maximum amount of cards to render in player's hand during game */
-    private int getMaxCardsShow(){
-        int maxCardsShow = 7;
-        if(getPlayersSize()==2){
-            maxCardsShow = GameConfig.MAX_CARDS_SHOW;
-        }
-        //small size if 3 or 4 players
-        else {
-            maxCardsShow = GameConfig.MAX_CARDS_SHOW_SM;
-        }
-        return maxCardsShow;
-    }
-
     @Override
     public void hide() {
         dispose();
@@ -1262,7 +1263,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
     /** Render exit button(s) with scene2d */
     public Actor createExitButton(State state) {
         TextButton exitButton = new TextButton("Exit", skin);
-        //when exit button is clicked, save current Players data (updates Player score) and sets current screen to MenuScreen
+        //when exit button is clicked, save current Players data (update Player score) and set current screen to MenuScreen
         exitButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
@@ -1280,7 +1281,8 @@ public class GameSingleplayerScreen extends ScreenAdapter {
         //determine position of button depending on state
         if (state == State.Over) {
             buttonTable.center().padTop(100); //center the button during game over
-        } else {
+        }
+        else {
             buttonTable.top().right().pad(2); //position button in top-right for HUD
         }
 

@@ -24,9 +24,9 @@ import com.srebot.uno.assets.RegionNames;
 import com.srebot.uno.config.GameConfig;
 
 public class IntroScreen extends ScreenAdapter {
-    //DOLZINA INTRO V SEKUNDIH
+    //duration of intro in seconds
     public static final float INTRO_DURATION = 4f;
-
+    //size of Cards used in intro in pixels
     public static final float CARD_SIZE = 200f;
 
     private final Uno game;
@@ -57,7 +57,7 @@ public class IntroScreen extends ScreenAdapter {
         backgroundViewport = new StretchViewport(GameConfig.HUD_WIDTH, GameConfig.HUD_HEIGHT, backgroundCamera);
         stage = new Stage(viewport,game.getBatch());
 
-        //NALOŽI VIRE
+        //Load following assets with asset manager
         assetManager.load(AssetDescriptors.UI_FONT);
         assetManager.load(AssetDescriptors.UI_SKIN);
         assetManager.load(AssetDescriptors.GAMEPLAY);
@@ -78,11 +78,11 @@ public class IntroScreen extends ScreenAdapter {
         background.setSize(viewport.getWorldWidth(), viewport.getWorldHeight());
         background.setPosition(0, 0);
 
+        //add animation for each separate Card
         stage.addActor(createAnimation1());
         stage.addActor(createAnimation2());
         stage.addActor(createAnimation3());
         stage.addActor(createAnimation4());
-
         stage.addActor(createFinalCard());
     }
 
@@ -98,24 +98,21 @@ public class IntroScreen extends ScreenAdapter {
 
     @Override
     public void render(float delta){
-        //doloci barve ozadja
-        float r=1/255f; //=1
-        float g=255/255f;
-        float b=200/255f;
-        float a=0.8f; //prosojnost
-        ScreenUtils.clear(r,g,b,a);
+        //default background
+        ScreenUtils.clear(0,1,0.78f,0.8f);
 
+        //timer
         duration += delta;
 
         //check if intro is set to be played
         if(game.getManager().getPlayIntroPref()) {
-            //KO INTRO KONEC, POJDI NA MENU SCREEN
+            //when intro ends, switch to Menu screen
             if (duration > INTRO_DURATION) {
                 game.setScreen(new MenuScreen(game));
             }
         }
         //skip intro
-        else if (duration > 0) {
+        else {
             game.setScreen(new MenuScreen(game));
         }
 
@@ -126,11 +123,9 @@ public class IntroScreen extends ScreenAdapter {
         background.draw(batch);
         batch.end();
 
+        //draw stage for intro
         viewport.apply();
         stage.act(delta);
-        //stage.getBatch().begin();
-        //stage.getBatch().draw(background,0,0,GameConfig.WIDTH,GameConfig.HEIGHT);
-        //stage.getBatch().end();
         stage.draw();
     }
 
@@ -145,23 +140,25 @@ public class IntroScreen extends ScreenAdapter {
 
     private Actor createAnimation1(){
         Image card = new Image(gameplayAtlas.findRegion(RegionNames.B1));
-        //VELIKOST OBJEKTA V WU
+        //size of object, convert to WORLD UNITS
         card.setWidth(CARD_SIZE*GameConfig.CARD_WIDTH_RATIO);
         card.setHeight(CARD_SIZE*GameConfig.CARD_HEIGHT_RATIO);
-        //POZICIONIRAJ OBJEKT
+        //set starting position
         card.setPosition(0,0);
-        //ORIGIN TRANSFORMACIJE ACTORJA
+        //origin of transformation
         card.setOrigin(Align.center);
 
-        //definiraj center
+        //define center
         float centerX = viewport.getWorldWidth() / 2f;
         float centerY = viewport.getWorldHeight() / 2f;
 
-        //sequence - potek po vrstnem redu
-        //parallel - izvede vse naenkrat
+        //sequence = executes in order
+        //parallel = executes all at once
 
         card.addAction(
+                //run actions in order
                 Actions.sequence(
+                        //play multiple actions simultaneously
                         Actions.parallel(
                                 Actions.rotateBy(360,1f),
                                 Actions.moveTo(viewport.getWorldWidth()-card.getWidth(),
@@ -181,20 +178,14 @@ public class IntroScreen extends ScreenAdapter {
     }
     private Actor createAnimation2(){
         Image card = new Image(gameplayAtlas.findRegion(RegionNames.G2));
-        //VELIKOST OBJEKTA V WU
         card.setWidth(CARD_SIZE*GameConfig.CARD_WIDTH_RATIO);
         card.setHeight(CARD_SIZE*GameConfig.CARD_HEIGHT_RATIO);
-        //POZICIONIRAJ OBJEKT
         card.setPosition(0,viewport.getWorldHeight()-card.getHeight());
-        //ORIGIN TRANSFORMACIJE ACTORJA
         card.setOrigin(Align.center);
 
-        //definiraj center
         float centerX = viewport.getWorldWidth() / 2f;
         float centerY = viewport.getWorldHeight() / 2f;
 
-        //sequence - potek po vrstnem redu
-        //parallel - izvede vse naenkrat
         card.addAction(
                 Actions.sequence(
                         Actions.parallel(
@@ -216,20 +207,13 @@ public class IntroScreen extends ScreenAdapter {
     }
     private Actor createAnimation3(){
         Image card = new Image(gameplayAtlas.findRegion(RegionNames.R3));
-        //VELIKOST OBJEKTA V WU
         card.setWidth(CARD_SIZE*GameConfig.CARD_WIDTH_RATIO);
         card.setHeight(CARD_SIZE*GameConfig.CARD_HEIGHT_RATIO);
-        //POZICIONIRAJ OBJEKT
         card.setPosition(viewport.getWorldWidth()-card.getWidth(),0);
-        //ORIGIN TRANSFORMACIJE ACTORJA
         card.setOrigin(Align.center);
 
-        //definiraj center
         float centerX = viewport.getWorldWidth() / 2f;
         float centerY = viewport.getWorldHeight() / 2f;
-
-        //sequence - potek po vrstnem redu
-        //parallel - izvede vse naenkrat
 
         card.addAction(
                 Actions.sequence(
@@ -251,21 +235,15 @@ public class IntroScreen extends ScreenAdapter {
     }
     private Actor createAnimation4(){
         Image card = new Image(gameplayAtlas.findRegion(RegionNames.Y4));
-        //VELIKOST OBJEKTA V WU
         card.setWidth(CARD_SIZE*GameConfig.CARD_WIDTH_RATIO);
         card.setHeight(CARD_SIZE*GameConfig.CARD_HEIGHT_RATIO);
-        //POZICIONIRAJ OBJEKT
         card.setPosition(viewport.getWorldWidth()-card.getWidth(),
                 viewport.getWorldHeight()-card.getHeight());
-        //ORIGIN TRANSFORMACIJE ACTORJA
         card.setOrigin(Align.center);
 
-        //definiraj center
         final float centerX = viewport.getWorldWidth() / 2f;
         final float centerY = viewport.getWorldHeight() / 2f;
 
-        //sequence - potek po vrstnem redu
-        //parallel - izvede vse naenkrat
         card.addAction(
                 Actions.sequence(
                         Actions.parallel(
@@ -280,16 +258,6 @@ public class IntroScreen extends ScreenAdapter {
                         Actions.moveTo(centerX-card.getWidth()/2f,
                                 centerY-card.getHeight()/2f,1f),
                         Actions.fadeOut(1f),
-                        /*
-                        Actions.delay(0.01f),
-                        Actions.run(new Runnable() {
-                            @Override
-                            public void run() {
-                                // Create and add a new actor at the old actor's position
-                                stage.addActor(createFinalCard());
-                            }
-                        }),
-                        */
                         Actions.removeActor()
                 )
         );
@@ -300,33 +268,26 @@ public class IntroScreen extends ScreenAdapter {
     private Actor createFinalCard(){
         Image card = new Image(gameplayAtlas.findRegion(RegionNames.rainbow));
 
-        //definiraj center
         final float centerX = viewport.getWorldWidth() / 2f;
         final float centerY = viewport.getWorldHeight() / 2f;
 
-        //VELIKOST OBJEKTA V WU
         card.setWidth(CARD_SIZE*GameConfig.CARD_WIDTH_RATIO);
         card.setHeight(CARD_SIZE*GameConfig.CARD_HEIGHT_RATIO);
-        //card.setWidth(0f);
-        //card.setHeight(0f);
 
-        //NASTAVI PROSOJNOST NA 0
+        //set alpha to 0
         card.getColor().a = 0f;
 
-        //POZICIONIRAJ OBJEKT
         card.setPosition(centerX-card.getWidth()/2f,
                 centerY-card.getHeight()/2f);
-        //ORIGIN TRANSFORMACIJE ACTORJA
         card.setOrigin(Align.center);
 
         card.addAction(
                 Actions.sequence(
-                        //pocakaj 3s predenj se animacija zacne
+                        //wait 3 seconds until the animation starts
                         Actions.delay(3f),
                         Actions.parallel(
                                 Actions.fadeIn(1f)
-                                //Actions.scaleTo(CARD_SIZE*GameConfig.CARD_WIDTH,
-                                //        CARD_SIZE*GameConfig.CARD_HEIGHT,1f)
+                                //Actions.scaleTo(CARD_SIZE*GameConfig.CARD_WIDTH,CARD_SIZE*GameConfig.CARD_HEIGHT,1f)
                         ),
                         Actions.removeActor()
                 )

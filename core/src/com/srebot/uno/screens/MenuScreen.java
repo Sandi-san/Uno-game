@@ -63,13 +63,13 @@ public class MenuScreen extends ScreenAdapter {
     private Sprite background;
 
     public MenuScreen(Uno game) {
-        //SET GLOBAL VARS
+        //set global vars
         this.game = game;
         assetManager = game.getAssetManager();
         manager = game.getManager();
         service = game.getService();
 
-        //SET MUSIC
+        //set music
         if(manager.getMusicPref()) {
             game.setMusic(assetManager.get(AssetDescriptors.MAIN_MUSIC));
             game.playMusic();
@@ -101,7 +101,7 @@ public class MenuScreen extends ScreenAdapter {
         background.setSize(viewport.getWorldWidth(), viewport.getWorldHeight());
         background.setPosition(0, 0);
 
-        //kombiniraj font in skin za font-e
+        //combine font & skin for font style
         fontSkin = new Label.LabelStyle(skin.get(Label.LabelStyle.class));
         fontSkin.font = font;
 
@@ -121,12 +121,7 @@ public class MenuScreen extends ScreenAdapter {
 
     @Override
     public void render(float delta){
-        //doloci barve ozadja
-        float r=255/255f; //=1
-        float g=190/255f;
-        float b=0/255f;
-        float a=0.5f; //prosojnost
-        ScreenUtils.clear(r,g,b,a);
+        ScreenUtils.clear(1,0.74f,0,0.5f);
 
         //draw background
         backgroundViewport.apply();
@@ -135,6 +130,7 @@ public class MenuScreen extends ScreenAdapter {
         background.draw(batch);
         batch.end();
 
+        //draw stage
         viewport.apply();
         stage.act(delta);
         stage.draw();
@@ -146,15 +142,13 @@ public class MenuScreen extends ScreenAdapter {
     public void dispose(){stage.dispose();}
 
     private Actor createMenu() {
-        //TABELA
         Table table = new Table(skin);
         table.defaults().pad(20);
 
-        //TITLE
-        //kot slika
+        //title as image
         Image titleText = new Image(gameplayAtlas.findRegion(RegionNames.textTitle));
         Container titleContainer = new Container(titleText);
-        //doloci velikost
+        //set size
         float sizeX = GameConfig.TEXT_WIDTH;
         float sizeY = GameConfig.TEXT_HEIGHT;
         titleContainer.setSize(sizeX,sizeY);
@@ -163,14 +157,11 @@ public class MenuScreen extends ScreenAdapter {
         table.add(titleContainer).width(sizeX).height(sizeY)
                 .center().row();
 
-        //kot tekst (slabo skaliranje)
+        //as tekst (bad scaling)
         //Label titleText = new Label("UNO",skin);
         //titleText.setFontScale(4f);
 
-        //BACKGROUND
-        //TextureRegion backgroundRegion = gameplayAtlas.findRegion(RegionNames.background3);
-        //table.setBackground(new TextureRegionDrawable(backgroundRegion));
-
+        //set buttons and listeners for methods
         TextButton playSPButton = new TextButton("Singleplayer", skin);
         playSPButton.addListener(new ClickListener() {
             @Override
@@ -178,7 +169,6 @@ public class MenuScreen extends ScreenAdapter {
                 showCreateGameSingleplayerDialog();
             }
         });
-
 
         TextButton playMPButton = new TextButton("Multiplayer", skin);
         playMPButton.addListener(new ClickListener() {
@@ -195,7 +185,6 @@ public class MenuScreen extends ScreenAdapter {
                 game.setScreen(new LeaderboardScreen(game));
             }
         });
-
 
         TextButton settingsButton = new TextButton("Settings", skin);
         settingsButton.addListener(new ClickListener() {
@@ -217,7 +206,6 @@ public class MenuScreen extends ScreenAdapter {
         buttonTable.defaults();
 
         //buttonTable.add(titleText).padBottom(15).row();
-        //buttonTable.add(introButton).padBottom(15).expandX().fillX().row();
         buttonTable.add(playSPButton).padBottom(15).expandX().fill().row();
         buttonTable.add(playMPButton).padBottom(15).expandX().fill().row();
         buttonTable.add(leaderboardButton).padBottom(15).fillX().row();
@@ -233,14 +221,15 @@ public class MenuScreen extends ScreenAdapter {
         return table;
     }
 
+    /** Opens and displays dialog for Multiplayer games */
     private void showMultiplayerDialog() {
+        //dynamic bool value for checking server connection availability
         AtomicBoolean serverConnected = new AtomicBoolean(false);
 
-        // Create a dialog
+        //create the dialog
         Dialog dialog = new Dialog("", skin) {
             @Override
             protected void result(Object object) {
-                // Handle dialog result here if needed
             }
         };
 
@@ -249,7 +238,7 @@ public class MenuScreen extends ScreenAdapter {
         Label titleLabel = new Label("Multiplayer Games", fontSkin);
         titleTable.add(titleLabel).padLeft(40).padTop(20).expandX().center();
 
-        // Add an exit icon to the top right of the dialog
+        //add a close button to the top right of the dialog
         TextButton closeButton = new TextButton("X", skin);
         closeButton.addListener(new ClickListener() {
             @Override
@@ -259,34 +248,35 @@ public class MenuScreen extends ScreenAdapter {
         });
         titleTable.add(closeButton).padTop(20).padRight(5).right();
 
-        // Create a Table to hold the list of games or messages
+        //create table to hold the list of games
         Table contentTable = new Table(skin);
 
         List<GameData> gamesList = new List<>(skin);
 
-        // Fetching status label
+        //fetching/loading status label
         Label fetchingLabel = new Label("Fetching games...", fontSkin);
         contentTable.add(fetchingLabel).pad(10).colspan(2).center().row();
 
-        // Function to fetch games
+        //Function to fetch games
         Runnable fetchGames = () -> {
-            contentTable.clearChildren(); // Clear the table
-            contentTable.add(fetchingLabel).pad(10).colspan(2).center().row(); // Add fetching label
+            contentTable.clearChildren(); //clear the table
+            contentTable.add(fetchingLabel).pad(10).colspan(2).center().row(); //add fetching label (loading)
 
             service.fetchGames(new GameService.FetchGamesCallback() {
                 @Override
                 public void onSuccess(GameData[] games) {
                     Gdx.app.postRunnable(() -> {
-                        contentTable.clearChildren(); // Clear the table again
+                        contentTable.clearChildren();
 
                         if (games.length == 0) {
-                            contentTable.add(new Label("No games found.", fontSkin)).pad(10).colspan(2).center().expandY(); // Ensure the label expands vertically
-                        } else {
+                            contentTable.add(new Label("No games found.", fontSkin)).pad(10).colspan(2).center().expandY(); //ensure the label expands vertically
+                        }
+                        else {
                             gamesList.setItems(games);
 
                             ScrollPane scrollPane = new ScrollPane(gamesList, skin);
                             scrollPane.setFadeScrollBars(false);
-                            contentTable.add(scrollPane).width(dialog.getWidth()).height(dialog.getHeight() * 0.6f);//60% of dialog height
+                            contentTable.add(scrollPane).width(dialog.getWidth()).height(dialog.getHeight() * 0.6f); //60% of dialog height
                         }
 
                         serverConnected.set(true);
@@ -296,7 +286,7 @@ public class MenuScreen extends ScreenAdapter {
                 @Override
                 public void onFailure(Throwable t) {
                     Gdx.app.postRunnable(() -> {
-                        contentTable.clearChildren(); // Clear the table
+                        contentTable.clearChildren();
                         contentTable.add(new Label("Cannot connect to database.", fontSkin)).pad(10).colspan(2).center().expandY();
                         serverConnected.set(false);
                     });
@@ -304,23 +294,24 @@ public class MenuScreen extends ScreenAdapter {
             });
         };
 
-        // Call fetchGames initially
+        //automatically call fetchGames function (when dialog loads)
         fetchGames.run();
 
-        // Create Refresh button
+        //create refresh button
         TextButton refreshButton = new TextButton("Refresh", skin);
         refreshButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                fetchGames.run(); // Refresh the games list
+                fetchGames.run(); //re-fetch the games
             }
         });
 
-        // Create buttons
+        //Create button
         TextButton createGameButton = new TextButton("Create Game", skin);
         createGameButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
+                //open new game settings dialog if server connection is successful
                 if (serverConnected.get()) {
                     showCreateGameMultiplayerDialog();
                     dialog.remove();
@@ -331,13 +322,16 @@ public class MenuScreen extends ScreenAdapter {
             }
         });
 
+        //Join button
         TextButton joinGameButton = new TextButton("Join Game", skin);
         joinGameButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 if (!gamesList.getItems().isEmpty() && serverConnected.get()) {
+                    //get selected game within the list
                     GameData selectedGame = gamesList.getSelected();
                     if (selectedGame != null) {
+                        //check if player can join (maximum number of players has not been filled)
                         Player[] gamePlayers = selectedGame.getPlayers();
                         if(gamePlayers.length>=selectedGame.getMaxPlayers()){
                             Gdx.app.log("ERROR", "CANNOT JOIN GAME: " + selectedGame.getId()
@@ -345,6 +339,7 @@ public class MenuScreen extends ScreenAdapter {
                             showMessageDialog("Player slots are full.");
                             return;
                         }
+                        //check if current player has same name as player already within the game
                         for(Player player : gamePlayers){
                             if(Objects.equals(player.getName(), manager.getNamePref())) {
                                 Gdx.app.log("ERROR", "CANNOT JOIN GAME: " + selectedGame.getId()
@@ -354,6 +349,7 @@ public class MenuScreen extends ScreenAdapter {
                             }
                         }
 
+                        //open MP game screen if successful
                         Gdx.app.log("JOINING GAME", "JOINING GAME: " + selectedGame.getId());
                         game.setScreen(new GameMultiplayerScreen(game,selectedGame.getId(),manager.getNamePref()));
                     }
@@ -366,18 +362,18 @@ public class MenuScreen extends ScreenAdapter {
 
         Table buttonTable = new Table(skin);
 
-        // Add the refresh button in a separate row and position it to the right
+        //add refresh button in a separate row and position it to the right
         buttonTable.add(refreshButton).expandX().right().padRight(5).row();
 
-        // Create a new row and center the create and join buttons
+        //create new row and center the create and join buttons
         Table centeredButtonTable = new Table(skin);
         centeredButtonTable.add(createGameButton).padRight(20);
         centeredButtonTable.add(joinGameButton);
 
-        // Add the centeredButtonTable to buttonTable and center it
+        //add the centeredButtonTable to buttonTable and center it
         buttonTable.add(centeredButtonTable).colspan(2).center().padBottom(10);
 
-        //add tabels to dialog box
+        //add tables to dialog box
         //add title
         dialog.getContentTable().add(titleTable).expandX().fillX().row();
         //add content (scroll pane)
@@ -389,18 +385,17 @@ public class MenuScreen extends ScreenAdapter {
         NinePatchDrawable dialogBackground = new NinePatchDrawable(patch);
         dialog.setBackground(dialogBackground);
 
-        // Show the dialog
+        //show the dialog
         dialog.show(stage);
         dialog.setSize(GameConfig.WIDTH * 0.6f, GameConfig.HEIGHT * 0.6f);
         dialog.setPosition((stage.getWidth() - dialog.getWidth()) / 2, (stage.getHeight() - dialog.getHeight()) / 2);
     }
 
+    /** Displays dialog for creating a new Multiplayer Game with settings */
     private void showCreateGameMultiplayerDialog() {
-        // Create a dialog
         Dialog dialog = new Dialog("", skin) {
             @Override
             protected void result(Object object) {
-                // Handle dialog result here if needed
             }
         };
         Label titleLabel = new Label("Create game", fontSkin);
@@ -409,14 +404,14 @@ public class MenuScreen extends ScreenAdapter {
         final Table settingsTable = new Table(skin);
         settingsTable.defaults();
 
-        //PRIPRAVI SEZNAME ZA BOX
+        //prepare hardcoded values for boxes
         Integer[] numPlayerValues = new Integer[]{2,3,4};
         Integer[] deckSizeValues = new Integer[]{52,104,208};
         String[] presetValues = new String[]{"All", "Numbers only", "No Wildcards", "No Plus Cards"};
         String[] orderValues = new String[]{"Clockwise", "Counter Clockwise"};
 
-        //USTVARI WIDGETE
-        //NAPOLNI SEZNAM IN NASTAVI PRIKAZAN ELEMENT
+        //create widgets
+        //fill list and display selected element
         final SelectBox<Integer> numPlayerBox = new SelectBox<Integer>(skin);
         numPlayerBox.setItems(numPlayerValues);
         numPlayerBox.setSelected(numPlayerValues[0]);
@@ -434,7 +429,7 @@ public class MenuScreen extends ScreenAdapter {
         Label presetLabel = new Label("Card preset: ",skin);
         Label orderLabel = new Label("Turn order: ",skin);
 
-        //STYLING
+        //set styling
         float boxWidth = (float) Math.floor(GameConfig.WIDTH/5.3f);
         settingsTable.add(numPlayerLabel).pad(10);
         settingsTable.add(numPlayerBox).pad(10).width(boxWidth).row();
@@ -447,12 +442,12 @@ public class MenuScreen extends ScreenAdapter {
 
         dialog.getContentTable().add(settingsTable).row();
 
-        // Create buttons
         TextButton createGameButton = new TextButton("Create Game", skin);
         createGameButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 Gdx.app.log("CREATING GAME", "CREATING GAME");
+                //save selected settings into array and send into class
                 final Array<String> args = new Array<String>();
                 args.add(String.valueOf(numPlayerBox.getSelected()),String.valueOf(deckSizeBox.getSelected()),
                         presetBox.getSelected(),orderBox.getSelected());
@@ -470,7 +465,6 @@ public class MenuScreen extends ScreenAdapter {
             }
         });
 
-        // Add buttons to the dialog
         Table buttonTable = new Table(skin);
         buttonTable.add(createGameButton).left().padBottom(15);
         buttonTable.add(closeButton).right().padBottom(15);
@@ -481,20 +475,18 @@ public class MenuScreen extends ScreenAdapter {
         dialog.setBackground(dialogBackground);
         //dialog.getContentTable().setSize(600,400);
 
-        // Show the dialog
         dialog.show(stage);
-        // Set the size of the dialog (changes when adding background image)
+        //set the size of the dialog (changes when adding background image)
         dialog.setSize(GameConfig.WIDTH*0.6f, GameConfig.HEIGHT*0.6f);
-        // Center the dialog
+        //center the dialog
         dialog.setPosition((stage.getWidth() - dialog.getWidth()) / 2, (stage.getHeight() - dialog.getHeight()) / 2);
     }
 
+    /** Displays dialog for creating a new Singleplayer Game with settings */
     private void showCreateGameSingleplayerDialog() {
-        // Create a dialog
         Dialog dialog = new Dialog("", skin) {
             @Override
             protected void result(Object object) {
-                // Handle dialog result here if needed
             }
         };
         Label titleLabel = new Label("Game Settings", fontSkin);
@@ -503,15 +495,12 @@ public class MenuScreen extends ScreenAdapter {
         final Table settingsTable = new Table(skin);
         settingsTable.defaults();
 
-        //PRIPRAVI SEZNAME ZA BOX
         Integer[] numComputerValues = new Integer[]{1,2,3};
         Integer[] deckSizeValues = new Integer[]{52,104,208};
         String[] presetValues = new String[]{"All", "Numbers only", "No Wildcards", "No Plus Cards", "Custom"};
         String[] orderValues = new String[]{"Clockwise", "Counter Clockwise"};
         Integer[] AIDiffValues = new Integer[]{1,2,3};
 
-        //USTVARI WIDGETE
-        //NAPOLNI SEZNAM IN NASTAVI PRIKAZAN ELEMENT
         final SelectBox<Integer> numComputerBox = new SelectBox<Integer>(skin);
         numComputerBox.setItems(numComputerValues);
         numComputerBox.setSelected(numComputerValues[0]);
@@ -535,17 +524,16 @@ public class MenuScreen extends ScreenAdapter {
 
         Integer[] rulesValues = new Integer[]{1,1,1};
 
+        //set button listener for opening dialog for custom deck
         TextButton customRulesButton = new TextButton("Custom Deck", skin);
         customRulesButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 cardRulesDialog(rulesValues);
-                Gdx.app.log("Values there: ",rulesValues[0].toString());
                 //dialog.remove();
             }
         });
 
-        //STYLING
         float boxWidth = (float) Math.floor(GameConfig.WIDTH/5.3f);
         settingsTable.add(numComputerLabel);
         settingsTable.add(numComputerBox).width(boxWidth).row();
@@ -561,7 +549,6 @@ public class MenuScreen extends ScreenAdapter {
 
         dialog.getContentTable().add(settingsTable).row();
 
-        // Create buttons
         TextButton createGameButton = new TextButton("Start Game", skin);
         createGameButton.addListener(new ClickListener() {
             @Override
@@ -584,7 +571,6 @@ public class MenuScreen extends ScreenAdapter {
             }
         });
 
-        // Add buttons to the dialog
         Table buttonTable = new Table(skin);
         buttonTable.add(createGameButton).left().padBottom(15);
         buttonTable.add(closeButton).right().padBottom(15);
@@ -595,12 +581,11 @@ public class MenuScreen extends ScreenAdapter {
         dialog.setBackground(dialogBackground);
 
         dialog.show(stage);
-        // Set the size of the dialog (changes when adding background image)
         dialog.setSize(GameConfig.WIDTH*0.6f, GameConfig.HEIGHT*0.6f);
-        // Center the dialog
         dialog.setPosition((stage.getWidth() - dialog.getWidth()) / 2, (stage.getHeight() - dialog.getHeight()) / 2);
     }
 
+    /** Displays dialog for generating custom Deck with specific card types */
     private void cardRulesDialog(Integer[] rulesValues){
         Dialog dialog = new Dialog("", skin) {
             @Override
@@ -613,7 +598,7 @@ public class MenuScreen extends ScreenAdapter {
         final Table settingsTable = new Table(skin);
         settingsTable.defaults();
 
-        //USTVARI WIDGETE
+        //create widgets
         final TextField numColorField = new TextField("",skin);
         numColorField.setText("1");
         final TextField numSpecialField = new TextField("",skin);
@@ -625,7 +610,7 @@ public class MenuScreen extends ScreenAdapter {
         Label numSpecialLabel = new Label("Number of Special cards: ",skin);
         Label numWildLabel = new Label("Number of Wild cards: ",skin);
 
-        //STYLING
+        //styling
         float boxWidth = (float) Math.floor(GameConfig.WIDTH/5.3f);
         settingsTable.add(numColorLabel).pad(10);
         settingsTable.add(numColorField).pad(10).width(boxWidth).row();
@@ -640,6 +625,7 @@ public class MenuScreen extends ScreenAdapter {
         closeButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
+                //check validity of text box values before allowing user to progress
                 try {
                     int colorValue = Integer.parseInt(numColorField.getText());
                     int specialValue = Integer.parseInt(numSpecialField.getText());
@@ -670,7 +656,6 @@ public class MenuScreen extends ScreenAdapter {
             }
         });
 
-        // Add buttons to the dialog
         Table buttonTable = new Table(skin);
         buttonTable.add(closeButton).center().padBottom(15);
         dialog.getContentTable().add(buttonTable);
@@ -680,12 +665,11 @@ public class MenuScreen extends ScreenAdapter {
         dialog.setBackground(dialogBackground);
 
         dialog.show(stage);
-        // Set the size of the dialog (changes when adding background image)
         dialog.setSize(GameConfig.WIDTH*0.5f, GameConfig.HEIGHT*0.4f);
-        // Center the dialog
         dialog.setPosition((stage.getWidth() - dialog.getWidth()) / 2, (stage.getHeight() - dialog.getHeight()) / 2);
     }
 
+    /** Displays text dialog for displaying message for user */
     private void showMessageDialog(String messageText){
         Dialog dialog = new Dialog("",skin);
         Label labelText = new Label(messageText,fontSkin);
