@@ -49,6 +49,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class GameMultiplayerScreen extends ScreenAdapter {
+    //scheduler for executing automatic database fetches
     private ScheduledExecutorService scheduler = null;
 
     //possible game states
@@ -123,6 +124,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     private int currentGameId = 0;  //id of THIS Game
     private boolean isWaiting = false;  //checks if YOUR Player is waiting
     private Player playerWaiting = null;    //Player who is currently playing their turn
+    private boolean connectionError = false;    //for display if server connection error occurs
 
     /** Get playerId of current player for dispose function */
     public int getPlayerId() {
@@ -151,6 +153,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 //check if Player is already in Players array and add if not
                 if(!isPlayerAlreadyInArray(thisPlayer))
                     addPlayerToArray(thisPlayer);
+                connectionError = false;    //reset value to indicate no server error
                 //invoke the callback with the fetched Player
                 callback.onPlayerFetched(thisPlayer);
             }
@@ -171,10 +174,12 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                         localPlayerId = playerId;
                         if(!isPlayerAlreadyInArray(player))
                             addPlayerToArray(player);
+                        connectionError = false;
                         callback.onPlayerFetched(player);
                     }
                     @Override
                     public void onFailure(Throwable t) {
+                        connectionError = true; //change variable to indicate server error
                         Gdx.app.log("createPlayerFromBackend ERROR", "Failed to create player: " + t.getMessage());
                     }
                 }, player);
@@ -195,11 +200,13 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             @Override
             public void onSuccess(GameData fetchedGame) {
                 Gdx.app.log("createGame SUCCESS", "Game created with ID: " + fetchedGame.getId());
+                connectionError = false;
                 callback.onGameCreated(fetchedGame);
             }
             @Override
             public void onFailure(Throwable t) {
                 Gdx.app.log("createGame ERROR", "Failed to create game: " + t.getMessage());
+                connectionError = true;
                 callback.onGameCreated(null);
             }
         }, gameData);
@@ -216,12 +223,14 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             @Override
             public void onSuccess(GameData game) {
                 Gdx.app.log("fetchGameFromBackend SUCCESS", "Player added to backend");
+                connectionError = false;
                 //get array of players from current Game from DB
                 callback.onGameFetched(game);
             }
             @Override
             public void onFailure(Throwable t) {
                 Gdx.app.log("fetchGameFromBackend ERROR", "FAILED: " + t);
+                connectionError = true;
                 callback.onGameFetched(null);
             }
         });
@@ -239,11 +248,13 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             @Override
             public void onSuccess(GameData fetchedGame) {
                 Gdx.app.log("updateGame SUCCESS", "Game updated on backend");
+                connectionError = false;
                 callback.onGameUpdated(fetchedGame);
             }
             @Override
             public void onFailure(Throwable t) {
                 Gdx.app.log("updateGame ERROR", "Failed to create game: " + t.getMessage());
+                connectionError = true;
                 callback.onFailure(t);
             }
         }, currentGameId, gameData);
@@ -268,11 +279,13 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 if (game.getPlayers().length != localPlayersSize) {
                     checkPlayersChanged(game.getPlayers());
                 }*/
+                connectionError = false;
                 setGameData(game);
             }
             @Override
             public void onFailure(Throwable t) {
                 Gdx.app.log("GameUpdate ERROR", "Failed to update game: " + t.getMessage());
+                connectionError = true;
             }
         });
     }
@@ -283,12 +296,14 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             @Override
             public void onSuccess(GameData game) {
                 Gdx.app.log("updateGameWithPlayer SUCCESS", "Player added to backend");
+                connectionError = false;
                 //get array of players from current Game from DB
                 callback.onGameUpdated(game);
             }
             @Override
             public void onFailure(Throwable t) {
                 Gdx.app.log("updateGameWithPlayer ERROR", "FAILED: " + t);
+                connectionError = true;
                 callback.onFailure(t);
             }
         }, gameId, player);
@@ -300,11 +315,13 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             @Override
             public void onSuccess(GameData game) {
                 Gdx.app.log("updateGameRemovePlayer SUCCESS", "Player removed from backend");
+                connectionError = false;
                 callback.onGameUpdated(game);
             }
             @Override
             public void onFailure(Throwable t) {
                 Gdx.app.log("updateGameRemovePlayer ERROR", "FAILED: " + t);
+                connectionError = true;
                 callback.onFailure(t);
             }
         }, gameId, player);
@@ -316,11 +333,13 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             @Override
             public void onSuccess(GameData game) {
                 Gdx.app.log("updateGameRemovePlayerTurn SUCCESS", "Player removed from backend & turn updated");
+                connectionError = false;
                 callback.onGameUpdated(game);
             }
             @Override
             public void onFailure(Throwable t) {
                 Gdx.app.log("updateGameRemovePlayerTurn ERROR", "FAILED: " + t);
+                connectionError = true;
                 callback.onFailure(t);
             }
         }, gameId, player, turn);
@@ -337,12 +356,14 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             @Override
             public void onSuccess(Player[] players) {
                 Gdx.app.log("checkForNewPlayers SUCCESS", "Players fetched: " + players.length);
+                connectionError = false;
                 //get array of players from current Game from DB
                 callback.onPlayersFetched(players);
             }
             @Override
             public void onFailure(Throwable t) {
                 Gdx.app.log("checkForNewPlayers ERROR", "FAILED: " + t);
+                connectionError = true;
                 callback.onPlayersFetched(null);
             }
         }, currentGameId);
@@ -359,12 +380,14 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             @Override
             public void onSuccess(GameData fetchedGame) {
                 Gdx.app.log("checkForTurnChange SUCCESS", "Fetched turn: " + fetchedGame.getCurrentTurn());
+                connectionError = false;
                 //get array of players from current Game from DB
                 callback.onTurnFetched(fetchedGame);
             }
             @Override
             public void onFailure(Throwable t) {
                 Gdx.app.log("checkForTurnChange ERROR", "FAILED: " + t);
+                connectionError = true;
                 callback.onTurnFetched(null);
             }
         }, currentGameId);
@@ -414,11 +437,18 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                         if (fetchedPlayers.length != localPlayersSize) {
                             //new Player found, so add it to local array
                             Gdx.app.log("playerChecker", "Found new player");
+                            connectionError = false;
                             checkPlayersChanged(fetchedPlayers);
-                        } else
+                        }
+                        else {
+                            connectionError = false;
                             Gdx.app.log("playerChecker", "No new players");
-                    } else
+                        }
+                    }
+                    else {
+                        connectionError = true;
                         Gdx.app.log("playerChecker ERROR", "Checking for players: Fetched players are null");
+                    }
                 });
             }
         }, 0, 7, TimeUnit.SECONDS); // Check every 5-7 seconds (completes within 7s)
@@ -450,7 +480,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             if (waitForTurn()) {
                 //get fetched turn and discard Deck from server
                 checkForTurnChange(fetchedTurnAndDeck -> {
-                    if(fetchedTurnAndDeck!=null && scheduler!=null) {  //TODO: isto za vse ko returnas null on BE failure //mogoce check if players>=2
+                    if(fetchedTurnAndDeck!=null && scheduler!=null) {
                         int fetchedTurn = fetchedTurnAndDeck.getCurrentTurn();
                         Card fetchedTopCard = fetchedTurnAndDeck.getTopCard();
                         String fetchedGameState = fetchedTurnAndDeck.getGameState();
@@ -480,26 +510,33 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                                     if (fetchedGame != null) {
                                         isWaiting = false;
                                         Gdx.app.log("turnChecker", "Game fetched: " + fetchedGame.getId());
+                                        connectionError = false;
                                         //update local Game data with fetched Game data
                                         setGameData(fetchedGame);
-                                        //TODO: check null on each BE return, if returned null, display Server Connection error text
                                     } else {
+                                        connectionError = true;
                                         Gdx.app.log("turnChecker ERROR", "Failed to update game with player.");
                                     }
                                 });
                             }
-                        } else
+                        }
+                        else {
+                            connectionError = true;
                             Gdx.app.log("turnChecker ERROR", "Fetched turn or top card are null");
+                        }
                     }
                 });
             }
             isWaiting = false;
             Gdx.app.log("turnChecker", "Player: " + localPlayerId + " is not waiting.");
+            //connectionError = false;
         }, 0, 5, TimeUnit.SECONDS); // Check every 3-5 seconds (completes within 5s)
     }
 
     /** Checks if current turn is same as YOUR Player id */
     public boolean waitForTurn() {
+        if(getPlayersSize()<2)
+            return false;
         if (playerTurn != localPlayerId) {
             isWaiting = true;
             return true;
@@ -589,13 +626,19 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                         setGameData(fetchedGame);
                         //game is initialized, change state to Paused
                         state = State.Paused;
+                        connectionError = false;
                         //run scheduler that checks for new players
                         startScheduler();
-                    } else
+                    }
+                    else {
+                        connectionError = true;
                         Gdx.app.log("initGame ERROR", "Created game is null");
+                    }
                 });
-            } else
+            } else {
+                connectionError = true;
                 Gdx.app.log("initGame ERROR", "Created player from backend is null");
+            }
         });
     }
 
@@ -644,6 +687,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                                 localPlayerId = player.getId(); //save local Player's id as id of joined Player
                                 setGameData(updatedGame);
                                 //state = State.Paused;
+                                connectionError = false;
 
                                 //when fetching updated game, check if any players have to be added
                                 if (!checkPlayersChanged(updatedGame.getPlayers()))
@@ -655,14 +699,19 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                             }
                             @Override
                             public void onFailure(Throwable t) {
+                                connectionError = true;
                                 Gdx.app.log("Join Game ERROR", "Failed to update game with player.");
                             }
                         });
-                    } else
+                    }
+                    else {
+                        connectionError = true;
                         Gdx.app.log("Join Game ERROR", "Created player from backend is null");
+                    }
                 });
 
             } else {
+                connectionError = true;
                 Gdx.app.log("Join Game ERROR", "Failed to fetch game from backend.");
             }
         });
@@ -1276,6 +1325,37 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
     /** Draw Hud text elements */
     private void drawHud(){
+        //define outline offsets and outline color for big (regular size 1f) text (double outline = cleaner look)
+        float bigOutlineOffset1 = 2.2f;  //offset for 1st outline (outer)
+        float bigOutlineOffset2 = 1.6f;  //offset for 2nd outline (inner)
+
+        //if connectionError variable is set, meaning there was an error connecting to server, draw error text
+        if(connectionError) {
+            //set text and get size to correctly draw the text in the center of the screen
+            String errorText = "Server Connection Error";
+            GlyphLayout errorLayout = new GlyphLayout();
+            errorLayout.setText(font,errorText);
+            float errorX = hudViewport.getWorldWidth()/2f - errorLayout.width/2f;
+            float errorY = hudViewport.getWorldHeight()/2f + errorLayout.height/2f;
+
+            //set outline color
+            font.setColor(Color.FIREBRICK);
+            //draw the text multiple times to create an outline effect (up, down, left, right)
+            font.draw(batch, errorText, errorX + bigOutlineOffset1, errorY + bigOutlineOffset1);
+            font.draw(batch, errorText, errorX + bigOutlineOffset2, errorY + bigOutlineOffset2);
+            font.draw(batch, errorText, errorX - bigOutlineOffset1, errorY + bigOutlineOffset1);
+            font.draw(batch, errorText, errorX - bigOutlineOffset2, errorY + bigOutlineOffset2);
+            font.draw(batch, errorText, errorX + bigOutlineOffset1, errorY - bigOutlineOffset1);
+            font.draw(batch, errorText, errorX + bigOutlineOffset2, errorY - bigOutlineOffset2);
+            font.draw(batch, errorText, errorX - bigOutlineOffset1, errorY - bigOutlineOffset1);
+            font.draw(batch, errorText, errorX - bigOutlineOffset2, errorY - bigOutlineOffset2);
+
+            //set text color
+            font.setColor(Color.WHITE);
+            font.draw(batch, errorText, errorX,errorY);
+            return;
+        }
+
         //Draw info of players (name and number of cards)
         if(state == State.Running || state == State.Over) {
             //set the font to a smaller scale for the player's text
@@ -1351,7 +1431,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             }
 
             //if isWaiting variable is set, meaning Player is currently waiting for turn, and waiting for an actual Player, draw waiting text
-            if(isWaiting && playerWaiting!=null){
+            if(isWaiting && playerWaiting != null){
                 //set y-axis position one line lower than last text (last drawn Player data)
                 waitingY = waitingY - (lineHeight*2);
                 font.getData().setScale(1f);    //set scale back to default (1f)
@@ -1385,6 +1465,21 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             waitLayout.setText(font,waitText);
             float waitX = hudViewport.getWorldWidth()/2f - waitLayout.width/2f;
             float waitY = hudViewport.getWorldHeight()/2f + waitLayout.height/2f;
+
+            //set outline color
+            font.setColor(Color.GOLD);
+            //draw the text multiple times to create an outline effect (up, down, left, right)
+            font.draw(batch, waitText, waitX + bigOutlineOffset1, waitY + bigOutlineOffset1);
+            font.draw(batch, waitText, waitX + bigOutlineOffset2, waitY + bigOutlineOffset2);
+            font.draw(batch, waitText, waitX - bigOutlineOffset1, waitY + bigOutlineOffset1);
+            font.draw(batch, waitText, waitX - bigOutlineOffset2, waitY + bigOutlineOffset2);
+            font.draw(batch, waitText, waitX + bigOutlineOffset1, waitY - bigOutlineOffset1);
+            font.draw(batch, waitText, waitX + bigOutlineOffset2, waitY - bigOutlineOffset2);
+            font.draw(batch, waitText, waitX - bigOutlineOffset1, waitY - bigOutlineOffset1);
+            font.draw(batch, waitText, waitX - bigOutlineOffset2, waitY - bigOutlineOffset2);
+
+            //set text color
+            font.setColor(Color.WHITE);
             font.draw(batch, waitText, waitX,waitY);
         }
         //when Game has ended, draw result and current Player's score
@@ -1844,9 +1939,11 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 @Override
                 public void onGameUpdated(GameData updatedGame) {
                     Gdx.app.log("playerLeaveGame SUCCESS", "Removed player with id: " + playerId + " & updated turn to: "+ updatedGame.getCurrentTurn() +" from Game with id: " + updatedGame.getId());
+                    //connectionError = false;
                 }
                 @Override
                 public void onFailure(Throwable t) {
+                    //connectionError = false;
                     Gdx.app.log("playerLeaveGame ERROR", "Failed to update turn & remove player with id: " + playerId + " from game.");
                 }
             });
@@ -1857,10 +1954,12 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             updateGameRemovePlayer(currentPlayer, gameId, new GameUpdateCallback() {
                 @Override
                 public void onGameUpdated(GameData updatedGame) {
+                    //connectionError = false;
                     Gdx.app.log("playerLeaveGame SUCCESS", "Removed player with id: " + playerId + " from Game with id: " + updatedGame.getId());
                 }
                 @Override
                 public void onFailure(Throwable t) {
+                    //connectionError = true;
                     Gdx.app.log("playerLeaveGame ERROR", "Failed to remove player with id: " + playerId + " from game.");
                 }
             });
