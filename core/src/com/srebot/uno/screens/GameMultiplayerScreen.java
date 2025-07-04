@@ -686,6 +686,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                                 Gdx.app.log("Join Game", "Game updated with player: " + player.getId());
                                 localPlayerId = player.getId(); //save local Player's id as id of joined Player
                                 setGameData(updatedGame);
+                                //todo: nekaksni error ko leavas in re-joinas game in tvoja prva poteza draw iz draw Deck -> resetira cel Hand
                                 //state = State.Paused;
                                 connectionError = false;
 
@@ -693,8 +694,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                                 if (!checkPlayersChanged(updatedGame.getPlayers()))
                                     startScheduler();
 
-                                //TODO: check current turn (if its you) and THEN run wait for turn checker
-                                //if(localPlayerId==playerTurn) <-?
                                 waitForPlayers();
                             }
                             @Override
@@ -963,6 +962,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 //current Player's turn, stop scheduler fetching and enable user input
                 stopScheduler();
                 handleInput();
+                //todo: handle input tudi ko ni tvoj turn, razn setanje/pickanje card iz deck
             } else {
                 //not current Player's turn, start scheduler
                 startScheduler();
@@ -1199,7 +1199,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                     //get actual texture of Card if it is player's or the game is Over
                     if (isPlayer || state == State.Over)
                         texture = card.getTexture();
-                        //else draw back texture (mostly for computers)
+                    //else draw back texture (mostly for computers)
                     else
                         texture = RegionNames.back;
                     region = gameplayAtlas.findRegion(texture);
@@ -1467,7 +1467,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             float waitY = hudViewport.getWorldHeight()/2f + waitLayout.height/2f;
 
             //set outline color
-            font.setColor(Color.GOLD);
+            font.setColor(Color.GOLDENROD);
             //draw the text multiple times to create an outline effect (up, down, left, right)
             font.draw(batch, waitText, waitX + bigOutlineOffset1, waitY + bigOutlineOffset1);
             font.draw(batch, waitText, waitX + bigOutlineOffset2, waitY + bigOutlineOffset2);
@@ -1487,38 +1487,75 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             checkGamestate();
             //set text and get size to correctly draw the text in the center of the screen
             String wonText = "Winner is: ";
-            //get winner Player and their name
+            //crate new Player instance for winning Player
+            Player winningPlayer = null;
+            //get winning Player and their name from array
             if(winner!=Winner.None) {
                 switch (winner){
                     case Player1:
-                        wonText = wonText+playersData.get(0).getName();
+                        winningPlayer = playersData.get(0);
                         break;
                     case Player2:
-                        wonText = wonText+playersData.get(1).getName();
+                        winningPlayer = playersData.get(1);
                         break;
                     case Player3:
-                        wonText = wonText+playersData.get(2).getName();
+                        winningPlayer = playersData.get(2);
                         break;
                     case Player4:
-                        wonText = wonText+playersData.get(3).getName();
+                        winningPlayer = playersData.get(3);
                         break;
                 }
+                wonText = wonText+winningPlayer.getName();
             }
             else
                 wonText = "No winner.";
 
+            //todo: add outline to game over text
             //create new layout to draw winner text
             GlyphLayout wonLayout = new GlyphLayout();
             wonLayout.setText(font,wonText);
-            float waitX = hudViewport.getWorldWidth()/2f - wonLayout.width/2f;
-            float waitY = hudViewport.getWorldHeight()/2f + wonLayout.height/2f;
-            font.draw(batch, wonText, waitX,waitY+(font.getXHeight()*2));
+            float wonX = hudViewport.getWorldWidth()/2f - wonLayout.width/2f;
+            float wonY = hudViewport.getWorldHeight()/2f + wonLayout.height/2f;
+
+            //if there is a winner and the winner is current Player, set winning text to green outline, else blue
+            if(winningPlayer!=null) {
+                if (Objects.equals(winningPlayer.getName(), getPlayerById(localPlayerId).getName()))
+                    font.setColor(Color.FOREST);
+                else
+                    font.setColor(Color.BLUE);
+            }
+            else
+                font.setColor(Color.BLUE);
+
+            font.draw(batch, wonText, wonX + bigOutlineOffset1, wonY + bigOutlineOffset1+(font.getXHeight()*2));
+            font.draw(batch, wonText, wonX + bigOutlineOffset2, wonY + bigOutlineOffset2+(font.getXHeight()*2));
+            font.draw(batch, wonText, wonX - bigOutlineOffset1, wonY + bigOutlineOffset1+(font.getXHeight()*2));
+            font.draw(batch, wonText, wonX - bigOutlineOffset2, wonY + bigOutlineOffset2+(font.getXHeight()*2));
+            font.draw(batch, wonText, wonX + bigOutlineOffset1, wonY - bigOutlineOffset1+(font.getXHeight()*2));
+            font.draw(batch, wonText, wonX + bigOutlineOffset2, wonY - bigOutlineOffset2+(font.getXHeight()*2));
+            font.draw(batch, wonText, wonX - bigOutlineOffset1, wonY - bigOutlineOffset1+(font.getXHeight()*2));
+            font.draw(batch, wonText, wonX - bigOutlineOffset2, wonY - bigOutlineOffset2+(font.getXHeight()*2));
+
+            font.setColor(Color.WHITE);
+            font.draw(batch, wonText, wonX,wonY+(font.getXHeight()*2));
 
             //display score of YOUR Player under winning Player
             int playerScore = getPlayerById(localPlayerId).getScore();
             String scoreText = "Your score: "+playerScore;
             wonLayout.setText(font,scoreText);
-            font.draw(batch,scoreText,waitX,waitY);
+
+            font.setColor(Color.BLUE);
+            font.draw(batch, scoreText, wonX + bigOutlineOffset1, wonY + bigOutlineOffset1);
+            font.draw(batch, scoreText, wonX + bigOutlineOffset2, wonY + bigOutlineOffset2);
+            font.draw(batch, scoreText, wonX - bigOutlineOffset1, wonY + bigOutlineOffset1);
+            font.draw(batch, scoreText, wonX - bigOutlineOffset2, wonY + bigOutlineOffset2);
+            font.draw(batch, scoreText, wonX + bigOutlineOffset1, wonY - bigOutlineOffset1);
+            font.draw(batch, scoreText, wonX + bigOutlineOffset2, wonY - bigOutlineOffset2);
+            font.draw(batch, scoreText, wonX - bigOutlineOffset1, wonY - bigOutlineOffset1);
+            font.draw(batch, scoreText, wonX - bigOutlineOffset2, wonY - bigOutlineOffset2);
+
+            font.setColor(Color.WHITE);
+            font.draw(batch,scoreText,wonX,wonY);
         }
     }
 
@@ -1684,13 +1721,14 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             if (state == State.Running) {
                 //set selected card into discard Deck
                 hand.setCard(card, deckDiscard);
+                //TODO: error ko mas renderirane arrowje in si na lastIndex=cards.size in vrzes card na deck: ti rendera -1 card v roki in se kr kaze right arrow
+                //move hand index left (removed card)
+                handArrowLeftClicked(hand);
                 topCard = card;
                 playerTurn = getNextTurn(playerTurn);
                 playerPerformedAction = true;
                 updateGameData();   //update server data
             }
-            //move hand index left (removed card)
-            handArrowLeftClicked(hand);
         }
     }
 

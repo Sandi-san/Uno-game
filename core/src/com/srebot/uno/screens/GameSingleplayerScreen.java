@@ -690,17 +690,51 @@ public class GameSingleplayerScreen extends ScreenAdapter {
             else
                 wonText = "No winner.";
 
+            //define outline offsets and outline color for big (regular size 1f) text (double outline = cleaner look)
+            float bigOutlineOffset1 = 2.2f;  //offset for 1st outline (outer)
+            float bigOutlineOffset2 = 1.6f;  //offset for 2nd outline (inner)
+
             //create new layout to draw winner text
             GlyphLayout wonLayout = new GlyphLayout();
             wonLayout.setText(font,wonText);
             float wonX = hudViewport.getWorldWidth()/2f - wonLayout.width/2f;
             float wonY = hudViewport.getWorldHeight()/2f + wonLayout.height/2f;
+
+            //if there is a winner and the winner isn't a AI, set winning text to green outline, else blue
+            if(winner!=Winner.None && !wonText.contains("Computer"))
+                font.setColor(Color.FOREST);
+            else
+                font.setColor(Color.BLUE);
+
+            font.draw(batch, wonText, wonX + bigOutlineOffset1, wonY + bigOutlineOffset1+(font.getXHeight()*2));
+            font.draw(batch, wonText, wonX + bigOutlineOffset2, wonY + bigOutlineOffset2+(font.getXHeight()*2));
+            font.draw(batch, wonText, wonX - bigOutlineOffset1, wonY + bigOutlineOffset1+(font.getXHeight()*2));
+            font.draw(batch, wonText, wonX - bigOutlineOffset2, wonY + bigOutlineOffset2+(font.getXHeight()*2));
+            font.draw(batch, wonText, wonX + bigOutlineOffset1, wonY - bigOutlineOffset1+(font.getXHeight()*2));
+            font.draw(batch, wonText, wonX + bigOutlineOffset2, wonY - bigOutlineOffset2+(font.getXHeight()*2));
+            font.draw(batch, wonText, wonX - bigOutlineOffset1, wonY - bigOutlineOffset1+(font.getXHeight()*2));
+            font.draw(batch, wonText, wonX - bigOutlineOffset2, wonY - bigOutlineOffset2+(font.getXHeight()*2));
+
+            font.setColor(Color.WHITE);
             font.draw(batch, wonText, wonX,wonY+(font.getXHeight()*2));
 
             //display score of (main) player under winner
             int playerScore = playersData.get(0).getScore();
             String scoreText = "Your score: "+playerScore;
             wonLayout.setText(font,scoreText);
+            font.draw(batch,scoreText,wonX,wonY);
+
+            font.setColor(Color.BLUE);
+            font.draw(batch, scoreText, wonX + bigOutlineOffset1, wonY + bigOutlineOffset1);
+            font.draw(batch, scoreText, wonX + bigOutlineOffset2, wonY + bigOutlineOffset2);
+            font.draw(batch, scoreText, wonX - bigOutlineOffset1, wonY + bigOutlineOffset1);
+            font.draw(batch, scoreText, wonX - bigOutlineOffset2, wonY + bigOutlineOffset2);
+            font.draw(batch, scoreText, wonX + bigOutlineOffset1, wonY - bigOutlineOffset1);
+            font.draw(batch, scoreText, wonX + bigOutlineOffset2, wonY - bigOutlineOffset2);
+            font.draw(batch, scoreText, wonX - bigOutlineOffset1, wonY - bigOutlineOffset1);
+            font.draw(batch, scoreText, wonX - bigOutlineOffset2, wonY - bigOutlineOffset2);
+
+            font.setColor(Color.WHITE);
             font.draw(batch,scoreText,wonX,wonY);
         }
     }
