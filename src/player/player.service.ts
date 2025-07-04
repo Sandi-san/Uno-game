@@ -1,5 +1,5 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
-import { Card, Hand, Player, Prisma } from '@prisma/client'
+import { Injectable, NotFoundException } from '@nestjs/common'
+import { Card, Hand, Player } from '@prisma/client'
 import { PrismaService } from 'src/prisma/prisma.service'
 import { CreatePlayerDto } from './dto/create-player.dto';
 import { CreateCardDto } from 'src/card/dto/create-card.dto';
@@ -211,8 +211,7 @@ export class PlayerService {
     if (!player)
       throw new NotFoundException(`Player with id ${id} not found.`);
 
-    //TODO: check if score update ever occurs?
-    console.log(`Player ${id} score is ${score}`)
+    //console.log(`Player ${id} score is ${score}`)
     if (score > player.score) {
       const updatedPlayer = await this.prisma.player.update({
         where: { id },

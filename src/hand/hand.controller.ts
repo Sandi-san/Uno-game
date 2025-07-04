@@ -19,8 +19,9 @@ export class HandController {
     }
   
     @Patch(':id')
-    async updateHand(@Param('id', ParseIntPipe) id: number, @Body() data: Prisma.HandUpdateInput): Promise<Hand> {
-      return this.handService.update(id, data);
+    async updateHand(@Param('id', ParseIntPipe) playerId: number, @Body() data: CreateHandDto): Promise<Hand> {
+      console.log("HAND UPDATE:",data)
+      return this.handService.update(data, playerId);
     }
   
     @Delete(':id')

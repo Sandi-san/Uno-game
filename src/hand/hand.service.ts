@@ -7,6 +7,7 @@ import { PlayerService } from 'src/player/player.service';
 import { CreatePlayerDto } from 'src/player/dto/create-player.dto';
 import { UpdatePlayerDto } from 'src/player/dto/update-player.dto';
 import { CardService } from 'src/card/card.service';
+import { UpdateHandDto } from './dto/update-hand.dto';
 
 @Injectable()
 export class HandService {
@@ -42,10 +43,25 @@ export class HandService {
     });
   }
 
-  async update(id: number, data: Prisma.HandUpdateInput): Promise<Hand> {
+  //update on game creation
+  async update(data: CreateHandDto, playerId: number): Promise<Hand> {
     return this.prisma.hand.update({
-      where: { id },
-      data,
+      where: { playerId: playerId },
+      data: {
+        indexFirst: data.indexFirst,
+        indexLast: data.indexLast,
+        cards: {
+          deleteMany: {}, // Optionally delete old cards
+          create: data.cards
+            .filter((card: CreateCardDto | null) => card !== null)
+            .map((card: CreateCardDto) => ({
+              priority: card.priority,
+              value: card.value,
+              color: card.color,
+              texture: card.texture,
+            })),
+        },
+      },
     });
   }
 
@@ -69,7 +85,7 @@ export class HandService {
         .map(card => card.id);
 
 
-      console.log(`PLAYER HAND: ${playerDto.id} | ${playerDto.hand.cards}`)
+      //console.log(`PLAYER HAND: ${playerDto.id} | ${playerDto.hand.cards}`)
       console.log(`HAND NEW: ${newCardIds} | EXISTING: ${existingCardIds}`)
 
       // Cards removed from this hand - set handId to null

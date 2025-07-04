@@ -26,9 +26,10 @@ export class GameService {
   ) { }
 
   //TODO: transaction vse metode kjer se dogaja vec Prisma callov
+  //TODO: remove vse metode (in routes) ki jih ne uporabljas
 
   async create(data: CreateGameDto): Promise<Game> {
-    //TODO: transaction this
+    //transaction in two pieces 
     const game = await this.prisma.$transaction(async (tx) => {
       // 1. Create the Game and related decks/cards
       const game = await tx.game.create({
@@ -100,58 +101,60 @@ export class GameService {
       return updatedGame;
     })
 
-    //TODO: transaction tuki
-
-    // After creating the game, update the gameId and hand for each player
-    for (const player of data.players) {
-      if (player && player.id) {
-        // Update gameId
-        await this.prisma.player.update({
-          where: { id: player.id },
-          data: {
-            gameId: game.id,
-            joinedAt: new Date()
-          },
-        });
-
-        // If hand data is provided, handle the hand creation or update
-        if (player.hand) {
-          const existingHand = await this.prisma.hand.findUnique({
-            where: { playerId: player.id },
+    return await this.prisma.$transaction(async (prisma) => {
+      // After creating the game, update the gameId and hand for each player
+      for (const player of data.players) {
+        if (player && player.id) {
+          // Update gameId
+          await this.prisma.player.update({
+            where: { id: player.id },
+            data: {
+              gameId: game.id,
+              joinedAt: new Date()
+            },
           });
 
-          if (existingHand) {
-            // Update the existing hand
-            //TODO: klic handService update()
-            await this.prisma.hand.update({
+          // If hand data is provided, handle the hand creation or update
+          if (player.hand) {
+            const existingHand = await this.prisma.hand.findUnique({
               where: { playerId: player.id },
-              data: {
-                indexFirst: player.hand.indexFirst,
-                indexLast: player.hand.indexLast,
-                cards: {
-                  deleteMany: {}, // Optionally delete old cards
-                  create: player.hand.cards
-                    .filter((card: CreateCardDto | null) => card !== null)
-                    .map((card: CreateCardDto) => ({
-                      priority: card.priority,
-                      value: card.value,
-                      color: card.color,
-                      texture: card.texture,
-                    })),
-                },
-              },
             });
-          } else {
-            //create new hand
-            await this.handService.create(player.hand, player.id);
+
+            if (existingHand) {
+              // Update the existing hand
+              await this.handService.update(player.hand,player.id)
+              /*
+              await this.prisma.hand.update({
+                where: { playerId: player.id },
+                data: {
+                  indexFirst: player.hand.indexFirst,
+                  indexLast: player.hand.indexLast,
+                  cards: {
+                    deleteMany: {}, // Optionally delete old cards
+                    create: player.hand.cards
+                      .filter((card: CreateCardDto | null) => card !== null)
+                      .map((card: CreateCardDto) => ({
+                        priority: card.priority,
+                        value: card.value,
+                        color: card.color,
+                        texture: card.texture,
+                      })),
+                  },
+                },
+              });
+              */
+            } else {
+              //create new hand
+              await this.handService.create(player.hand, player.id);
+            }
           }
         }
       }
-    }
 
-    const newGame = await this.get(game.id);
-    console.log('GAME CREATED:', newGame);
-    return newGame;
+      const newGame = await this.get(game.id);
+      console.log('GAME CREATED:', newGame);
+      return newGame;
+    })
   }
 
 
@@ -160,23 +163,11 @@ export class GameService {
     return await this.prisma.game.create({})
   }
 
-  //TODO: can not include decks, hand
   async getAll(): Promise<Game[] | null> {
     const games = await this.prisma.game.findMany({
       include: {
-        decks: true,
+        //decks: true,
         players: true,
-        /*
-        players: {
-          include: {
-            hand: {
-              include: {
-                cards: true,
-              },
-            },
-          },
-        },
-        */
       },
       orderBy: {
         createdAt: 'desc',
@@ -215,10 +206,12 @@ export class GameService {
         */
       },
     })
-    console.log("GAME:", game)
-    console.log("TopCard:", game.topCard)
-    //console.log("GAME decks draw:", game.decks[0])
-    //console.log("GAME decks discard:", game.decks[1])
+    if (game != null) {
+      console.log("GAME:", game)
+      console.log("TopCard:", game.topCard)
+      //console.log("GAME decks draw:", game.decks[0])
+      //console.log("GAME decks discard:", game.decks[1])
+    }
     return game
   }
 
@@ -292,7 +285,6 @@ export class GameService {
     return game
   }
 
-  //TODO?: UPDATE GAME RAZEN PLAYERJEV
   async update(id: number, dto: UpdateGameDto): Promise<Game> {
     const gameToUpdate = await this.get(id);
     if (!gameToUpdate)
@@ -338,11 +330,11 @@ export class GameService {
 
         //update hands
         await this.handService.updateForGame(dto.players, gamePlayers)
-        /*
+        
         const updatedHands = await this.playerService.getForGame(id)
-        console.log("Updated hands 0: ",updatedHands.at(0).hand.indexLast)
-        console.log("Updated hands 1: ",updatedHands.at(1).hand.indexLast)
-        */
+        console.log("Updated hands 0: ",updatedHands.at(0).hand.cards)
+        console.log("Updated hands 1: ",updatedHands.at(1).hand.cards)
+        
       }
 
       //if the game is over, update all connected players' scores
@@ -360,34 +352,43 @@ export class GameService {
       if (dto.turnOrder !== undefined) updateData.turnOrder = dto.turnOrder;
       if (dto.topCard !== undefined && dto.topCard?.id) updateData.topCard = { connect: { id: dto.topCard.id } }
 
-      const game = await this.prisma.game.update({
-        where: { id },
-        data: updateData,
-        include: {
-          decks: { include: { cards: true } },
-          players: {
-            include: {
-              hand: { include: { cards: true } },
+      //Sometimes if creating a Game with only one Player and leaving right after, the Game is deleted but
+      //this method will execute as if the object still exists and throw error when trying to update
+      try {
+        const game = await this.prisma.game.update({
+          where: { id },
+          data: updateData,
+          include: {
+            decks: { include: { cards: true } },
+            players: {
+              include: {
+                hand: { include: { cards: true } },
+              },
+              orderBy: {
+                joinedAt: 'asc',
+              }
             },
-            orderBy: {
-              joinedAt: 'asc',
-            }
+            topCard: true,
           },
-          topCard: true,
-        },
-      });
+        });
 
-      /*
-      console.log("PLAYER 0: ")
-      for (const player of game.players[0].hand.cards)
-        console.log(`${player.id} ${player.color} ${player.value} ${player.texture}`)
+        /*
+        console.log("PLAYER 0: ")
+        for (const player of game.players[0].hand.cards)
+          console.log(`${player.id} ${player.color} ${player.value} ${player.texture}`)
+  
+        console.log("PLAYER 1: ")
+        for (const player of game.players[1].hand.cards)
+          console.log(`${player.id} ${player.color} ${player.value} ${player.texture}`)
+        */
 
-      console.log("PLAYER 1: ")
-      for (const player of game.players[1].hand.cards)
-        console.log(`${player.id} ${player.color} ${player.value} ${player.texture}`)
-      */
-
-      return game;
+        return game;
+      }
+      catch (error) {
+        console.error('Game update failed. Possibly because game is already deleted.');
+        //throw error; // re-throw or wrap it
+        return null;
+      }
     })
   }
 

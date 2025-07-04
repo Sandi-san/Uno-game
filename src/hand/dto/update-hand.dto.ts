@@ -3,6 +3,7 @@ import { UpdateCardDto } from 'src/card/dto/update-card.dto';
 
 export class UpdateHandDto {
   @IsNumber()
+  @IsOptional()
   id: number;
   @IsNumber()
   @IsOptional()
