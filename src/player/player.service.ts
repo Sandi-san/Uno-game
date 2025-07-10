@@ -13,6 +13,7 @@ export class PlayerService {
     private cardService: CardService,
   ) { }
 
+  /*
   //TODO: GET PLAYER: IF EXISTS, UPDATE; ELSE: CREATE
   async create(data: CreatePlayerDto): Promise<Player> {
     const player = await this.prisma.player.create({
@@ -46,6 +47,7 @@ export class PlayerService {
     console.log(player)
     return player
   }
+  */
 
   //get player and hand and cards
   async get(id: number): Promise<Player &

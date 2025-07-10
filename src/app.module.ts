@@ -7,11 +7,13 @@ import { CardModule } from './card/card.module';
 import { DeckModule } from './deck/deck.module';
 import { GameModule } from './game/game.module';
 import { ConfigModule } from '@nestjs/config';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({isGlobal:true}),
     PlayerModule,
+    AuthModule,
     HandModule,
     CardModule,
     DeckModule,

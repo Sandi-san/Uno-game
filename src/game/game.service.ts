@@ -50,15 +50,9 @@ export class GameService {
             })),
           },
           players: {
-            connectOrCreate: data.players
+            connect: data.players
               .filter(player => player !== null)
-              .map(player => ({
-                where: { id: player.id || 0 },
-                create: {
-                  name: player.name,
-                  score: player.score,
-                },
-              })),
+              .map(player => ({ id: player.id })),
           },
           maxPlayers: data.maxPlayers,
           gameState: data.gameState,
