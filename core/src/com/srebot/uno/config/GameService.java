@@ -6,6 +6,9 @@ import com.badlogic.gdx.net.HttpRequestBuilder;
 import com.badlogic.gdx.utils.GdxRuntimeException;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.srebot.uno.classes.Authorization;
 import com.srebot.uno.classes.Card;
 import com.srebot.uno.classes.Deck;
 import com.srebot.uno.classes.GameData;
@@ -43,7 +46,75 @@ public class GameService {
         gson = gsonBuilder.create();
     }
 
-    //callback methods, used to return async http functions
+    /** Callback methods, used for returning async http functions */
+    public interface AuthCallback {
+        void onSuccess(String accessToken);
+        void onFailure(Throwable t);
+    }
+
+    /** Method for setting auth request parameters as register route */
+    public void registerUser(String name, String password, AuthCallback callback) {
+        sendAuthRequest(GameConfig.SERVER_URL + GameConfig.AUTH_URL + "/register", name, password, callback);
+    }
+
+    /** Method for setting auth request parameters as login route */
+    public void loginUser(String name, String password, AuthCallback callback) {
+        sendAuthRequest(GameConfig.SERVER_URL + GameConfig.AUTH_URL + "/login", name, password, callback);
+    }
+
+    /** Method for sending auth request for registration or login */
+    private void sendAuthRequest(String url, String name, String password, AuthCallback callback) {
+        Authorization authRequest = new Authorization(name, password);
+        String jsonData = gson.toJson(authRequest);
+
+        HttpRequestBuilder requestBuilder = new HttpRequestBuilder();
+        Net.HttpRequest request = requestBuilder.newRequest()
+                .method(Net.HttpMethods.POST)
+                .url(url)
+                .header("Content-Type", "application/json")
+                .build();
+
+        request.setContent(jsonData);
+
+        Gdx.net.sendHttpRequest(request, new Net.HttpResponseListener() {
+            @Override
+            public void handleHttpResponse(Net.HttpResponse httpResponse) {
+                int statusCode = httpResponse.getStatus().getStatusCode();
+                if (statusCode == 200 || statusCode == 201) {
+                    String responseJson = httpResponse.getResultAsString();
+                    try {
+                        Authorization.AuthorizationResponse authResponse = gson.fromJson(responseJson, Authorization.AuthorizationResponse.class);
+                        Gdx.app.postRunnable(() -> callback.onSuccess(authResponse.getAccessToken()));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        Gdx.app.postRunnable(() -> callback.onFailure(e));
+                    }
+                } else {
+                    Gdx.app.log("AUTH", "Status code: " + statusCode);
+                    //Gdx.app.postRunnable(() -> callback.onFailure(new Exception("Failed with status code " + statusCode)));
+
+                    //parse message from http json result and send back to MenuScreen for display
+                    JsonObject jsonObject = JsonParser.parseString(httpResponse.getResultAsString()).getAsJsonObject();
+                    String message = String.valueOf(jsonObject.get("message"));
+                    Gdx.app.log("AUTH", "Message: " + message);
+                    Gdx.app.postRunnable(() -> callback.onFailure(new Exception(message)));
+                }
+            }
+
+            @Override
+            public void failed(Throwable t) {
+                Gdx.app.log("AUTH", "FAILED to connect");
+                Gdx.app.postRunnable(() -> callback.onFailure(t));
+            }
+
+            @Override
+            public void cancelled() {
+                Gdx.app.log("AUTH", "Request cancelled");
+                Gdx.app.postRunnable(() -> callback.onFailure(new Exception("Request cancelled")));
+            }
+        });
+    }
+
     public interface GameCreateCallback {
         void onSuccess(GameData game);
         void onFailure(Throwable t);

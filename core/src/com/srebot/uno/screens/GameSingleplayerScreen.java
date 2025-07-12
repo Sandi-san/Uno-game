@@ -89,7 +89,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
 
     private int playerTurn; //index of current turn based on Hand locations on screen
     private boolean playerPerformedAction; //check if current player has performed action
-    private boolean clockwiseOrder; //turn order of game
+    private boolean clockwiseOrder = false; //turn order of game
     private int difficultyAI;
 
     //PLAYERS
@@ -1131,7 +1131,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
     /** Return turn index of next player */
     private int getNextTurn(int index) {
         do {
-            if (clockwiseOrder) {
+            if (!clockwiseOrder) {
                 if (index < 4)
                     index += 1;
                 else

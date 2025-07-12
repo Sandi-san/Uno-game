@@ -104,7 +104,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     private int playerTurn = 0; //id of current Player within backend
     private boolean playerPerformedAction; //check if current player has performed action
     private int maxPlayers = 2; //max Players allowed to join game
-    private boolean clockwiseOrder; //turn order of game
+    private boolean clockwiseOrder = false; //turn order of game
 
     //PLAYERS
     private Player player1;
@@ -686,7 +686,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                                 Gdx.app.log("Join Game", "Game updated with player: " + player.getId());
                                 localPlayerId = player.getId(); //save local Player's id as id of joined Player
                                 setGameData(updatedGame);
-                                //todo: nekaksni error ko leavas in re-joinas game in tvoja prva poteza draw iz draw Deck -> resetira cel Hand
+                                //todo: ko player leava game in rejoina -> po prvi potezi bo player dobil iste kot newly joined player
                                 //state = State.Paused;
                                 connectionError = false;
 
@@ -745,8 +745,13 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 if(!isPlayerAlreadyInArray(fetchedPlayers[i]))
                     addPlayerToArray(fetchedPlayers[i]);
                 //get current Hand of player in updated DB and save locally (updates card ids!)
-                else
-                    playersData.get(i).setHand(fetchedPlayers[i].getHand());
+                else{
+                    //equate Player's fetched Hand to local Hand (prevents accidentally switching Hands between Players when array order changes)
+                    for(Player fetchedPlayer : fetchedPlayers){
+                        if(playersData.get(i).getId()==fetchedPlayer.getId())
+                            playersData.get(i).setHand(fetchedPlayer.getHand());
+                    }
+                }
             }
         }
         //else, players already changed within checkPlayersChanged function
@@ -1510,7 +1515,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             else
                 wonText = "No winner.";
 
-            //todo: add outline to game over text
             //create new layout to draw winner text
             GlyphLayout wonLayout = new GlyphLayout();
             wonLayout.setText(font,wonText);
@@ -1721,7 +1725,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             if (state == State.Running) {
                 //set selected card into discard Deck
                 hand.setCard(card, deckDiscard);
-                //TODO: error ko mas renderirane arrowje in si na lastIndex=cards.size in vrzes card na deck: ti rendera -1 card v roki in se kr kaze right arrow
                 //move hand index left (removed card)
                 handArrowLeftClicked(hand);
                 topCard = card;
@@ -1800,7 +1803,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         //search for the next/previous player (depending on order), skipping nulls
         int nextIndex = currentIndex;
         do {
-            nextIndex = clockwiseOrder
+            nextIndex = !clockwiseOrder
                     ? (nextIndex + 1) % size
                     : (nextIndex - 1 + size) % size;
         } while (playersData.get(nextIndex) == null);

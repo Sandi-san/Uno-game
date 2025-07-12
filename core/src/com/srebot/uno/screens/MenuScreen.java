@@ -41,6 +41,7 @@ import com.srebot.uno.config.GameConfig;
 import com.srebot.uno.config.GameManager;
 import com.srebot.uno.config.GameService;
 
+import java.util.Date;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -62,6 +63,9 @@ public class MenuScreen extends ScreenAdapter {
     private TextureAtlas gameplayAtlas;
     private Sprite background;
 
+    //for displaying expiration time of valid access_token
+    private Date tokenExpirationDate = null;
+
     public MenuScreen(Uno game) {
         //set global vars
         this.game = game;
@@ -82,6 +86,15 @@ public class MenuScreen extends ScreenAdapter {
         }
         //create batch for scalable background image
         batch = new SpriteBatch();
+    }
+
+    /** Gets access_token from local preferences and checks validity */
+    private boolean accessTokenValid(){
+        String token = manager.getAccessToken();
+        tokenExpirationDate = new Date(manager.getTokenExpiration());
+        Gdx.app.log("CHECK TOKEN", "Access token: " + token);
+        Gdx.app.log("CHECK TOKEN", "Time: " + tokenExpirationDate);
+        return token != null;
     }
 
     @Override
@@ -178,6 +191,15 @@ public class MenuScreen extends ScreenAdapter {
             }
         });
 
+        TextButton registerButton = new TextButton("Register", skin);
+        registerButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                //open register dialog
+                showAuthDialog("Register");
+            }
+        });
+
         TextButton leaderboardButton = new TextButton("Leaderboard", skin);
         leaderboardButton.addListener(new ClickListener() {
             @Override
@@ -205,11 +227,11 @@ public class MenuScreen extends ScreenAdapter {
         Table buttonTable = new Table(skin);
         buttonTable.defaults();
 
-        //buttonTable.add(titleText).padBottom(15).row();
-        buttonTable.add(playSPButton).padBottom(15).expandX().fill().row();
-        buttonTable.add(playMPButton).padBottom(15).expandX().fill().row();
-        buttonTable.add(leaderboardButton).padBottom(15).fillX().row();
-        buttonTable.add(settingsButton).padBottom(15).fillX().row();
+        buttonTable.add(playSPButton).padBottom(10).expandX().fill().row();
+        buttonTable.add(playMPButton).padBottom(10).expandX().fill().row();
+        buttonTable.add(registerButton).padBottom(10).fillX().row();
+        buttonTable.add(leaderboardButton).padBottom(10).fillX().row();
+        buttonTable.add(settingsButton).padBottom(10).fillX().row();
         buttonTable.add(quitButton).fillX();
         buttonTable.center();
 
@@ -306,6 +328,7 @@ public class MenuScreen extends ScreenAdapter {
             }
         });
 
+
         //Create button
         TextButton createGameButton = new TextButton("Create Game", skin);
         createGameButton.addListener(new ClickListener() {
@@ -362,7 +385,7 @@ public class MenuScreen extends ScreenAdapter {
 
         Table buttonTable = new Table(skin);
 
-        //add refresh button in a separate row and position it to the right
+        //add refresh button to separate row on right side
         buttonTable.add(refreshButton).expandX().right().padRight(5).row();
 
         //create new row and center the create and join buttons
@@ -371,7 +394,49 @@ public class MenuScreen extends ScreenAdapter {
         centeredButtonTable.add(joinGameButton);
 
         //add the centeredButtonTable to buttonTable and center it
-        buttonTable.add(centeredButtonTable).colspan(2).center().padBottom(10);
+        buttonTable.add(centeredButtonTable).colspan(2).center().padBottom(10).row();
+
+        //if token is already valid, display time until expiration, else render button to login
+        if(accessTokenValid()){
+            //calculate difference between expiration time and current time
+            long differenceTime = manager.getTokenExpiration() - new Date().getTime();
+            if(differenceTime<0) {
+                //if expiration is before current time, set access token to null (edge case)
+                manager.setAccessToken(null);
+            }
+            Date differenceDate = new Date(differenceTime);
+
+            String expirationText = "Token valid for: ";
+            //set text display depending on if minutes or seconds are left on expiration timer
+            if(differenceDate.getMinutes()<1)
+                expirationText = expirationText+differenceDate.getSeconds()+" seconds.";
+            else
+                expirationText = expirationText+differenceDate.getMinutes()+" minutes.";
+
+            //set expiration label and scale font to a smaller size
+            Label expirationLabel = new Label(expirationText,fontSkin);
+            expirationLabel.setFontScale(0.7f);
+            buttonTable.add(expirationLabel).left().padLeft(15);
+        }
+        else{
+            //create login button
+            TextButton loginButton = new TextButton("Login", skin);
+            loginButton.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    if (serverConnected.get()) {
+                        //open login dialog
+                        showAuthDialog("Login");
+                        //dialog.remove();
+                    } else {
+                        Gdx.app.log("CANNOT CONNECT TO SERVER", "CANNOT CREATE GAME");
+                        showMessageDialog("Cannot connect to server!");
+                    }
+                }
+            });
+            buttonTable.add(loginButton).expandX().left().padLeft(5);
+        }
+
 
         //add tables to dialog box
         //add title
@@ -388,6 +453,122 @@ public class MenuScreen extends ScreenAdapter {
         //show the dialog
         dialog.show(stage);
         dialog.setSize(GameConfig.WIDTH * 0.6f, GameConfig.HEIGHT * 0.6f);
+        dialog.setPosition((stage.getWidth() - dialog.getWidth()) / 2, (stage.getHeight() - dialog.getHeight()) / 2);
+    }
+
+    /** Displays dialog for user authentication for register/login a Player for Multiplayer Game
+     * @param state "Register" or "Login" */
+    private void showAuthDialog(String state){
+        Dialog dialog = new Dialog("", skin) {
+            @Override
+            protected void result(Object object) {
+            }
+        };
+
+        Label titleLabel = new Label("", fontSkin);
+        //set main label depending on state (register or login)
+        if(Objects.equals(state, "Register"))
+            titleLabel.setText("Login with Account");
+        else if(Objects.equals(state, "Login"))
+            titleLabel.setText("Register Account");
+        dialog.getContentTable().add(titleLabel).padTop(20).center().expand().row();
+
+        final Table dataTable = new Table(skin);
+        dataTable.defaults();
+
+        //create widgets
+        final TextField nameField = new TextField("",skin);
+        final TextField passwordField = new TextField("",skin);
+        //set password mode and character to password field, else characters will not be hidden
+        passwordField.setPasswordCharacter('*');
+        passwordField.setPasswordMode(true);
+
+        Label nameLabel = new Label("Name: ",skin);
+        Label passwordLabel = new Label("Password: ",skin);
+
+        //styling
+        float boxWidth = (float) Math.floor(GameConfig.WIDTH/5.3f);
+        dataTable.add(nameLabel).pad(10);
+        dataTable.add(nameField).pad(10).width(boxWidth).row();
+        dataTable.add(passwordLabel).pad(10);
+        dataTable.add(passwordField).pad(10).width(boxWidth).row();
+
+        dialog.getContentTable().add(dataTable).row();
+
+        TextButton confirmButton = new TextButton("Confirm", skin);
+        confirmButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                //check validity of text box values before allowing user to progress
+                if(passwordField.getText().length()<6)
+                    showMessageDialog("Password must be 6 or more characters.");
+                if(nameField.getText().length()<1)
+                    showMessageDialog("Name must not be blank.");
+                else {
+                    //call Register route
+                    if(Objects.equals(state, "Register")){
+                        service.registerUser(nameField.getText(), passwordField.getText(), new GameService.AuthCallback() {
+                            @Override
+                            public void onSuccess(String accessToken) {
+                                Gdx.app.log("REGISTER", "Access token received: " + accessToken);
+                                // Store token in memory or Preferences and proceed to next screen
+                            }
+
+                            @Override
+                            public void onFailure(Throwable t) {
+                                Gdx.app.log("REGISTER", "Register failed: " + t.getMessage());
+                                //show error in UI
+                                showMessageDialog(t.getMessage());
+                            }
+                        });
+                        dialog.remove();
+                    }
+                    //call Login route
+                    else if(Objects.equals(state, "Login")){
+                        service.loginUser(nameField.getText(), passwordField.getText(), new GameService.AuthCallback() {
+                            @Override
+                            public void onSuccess(String accessToken) {
+                                //Gdx.app.log("LOGIN", "Access token received: " + accessToken);
+                                // Store token in memory or Preferences and proceed to next screen
+                                manager.setAccessToken(accessToken);
+                                manager.setTokenExpiration();
+                                manager.savePrefs();
+                                Gdx.app.log("TOKENS", "Access token: " + manager.getAccessToken());
+                                tokenExpirationDate = new Date(manager.getTokenExpiration());
+                                Gdx.app.log("TOKENS", "Time: " + tokenExpirationDate);
+                            }
+
+                            @Override
+                            public void onFailure(Throwable t) {
+                                Gdx.app.log("LOGIN", "Login failed: " + t.getMessage());
+                                showMessageDialog(t.getMessage());
+                            }
+                        });
+                        dialog.remove();
+                    }
+                }
+            }
+        });
+
+        TextButton closeButton = new TextButton("Close", skin);
+        closeButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                dialog.remove();
+            }
+        });
+
+        Table buttonTable = new Table(skin);
+        buttonTable.add(confirmButton).center().padBottom(15);
+        buttonTable.add(closeButton).center().padBottom(15);
+        dialog.getContentTable().add(buttonTable);
+
+        NinePatch patch = new NinePatch(gameplayAtlas.findRegion(RegionNames.backgroundPane1));
+        NinePatchDrawable dialogBackground = new NinePatchDrawable(patch);
+        dialog.setBackground(dialogBackground);
+
+        dialog.show(stage);
+        dialog.setSize(GameConfig.WIDTH*0.5f, GameConfig.HEIGHT*0.4f);
         dialog.setPosition((stage.getWidth() - dialog.getWidth()) / 2, (stage.getHeight() - dialog.getHeight()) / 2);
     }
 
@@ -408,7 +589,7 @@ public class MenuScreen extends ScreenAdapter {
         Integer[] numPlayerValues = new Integer[]{2,3,4};
         Integer[] deckSizeValues = new Integer[]{52,104,208};
         String[] presetValues = new String[]{"All", "Numbers only", "No Wildcards", "No Plus Cards"};
-        String[] orderValues = new String[]{"Clockwise", "Counter Clockwise"};
+        String[] orderValues = new String[]{"Counter Clockwise", "Clockwise"};
 
         //create widgets
         //fill list and display selected element
@@ -498,7 +679,7 @@ public class MenuScreen extends ScreenAdapter {
         Integer[] numComputerValues = new Integer[]{1,2,3};
         Integer[] deckSizeValues = new Integer[]{52,104,208};
         String[] presetValues = new String[]{"All", "Numbers only", "No Wildcards", "No Plus Cards", "Custom"};
-        String[] orderValues = new String[]{"Clockwise", "Counter Clockwise"};
+        String[] orderValues = new String[]{"Counter Clockwise", "Clockwise"};
         Integer[] AIDiffValues = new Integer[]{1,2,3};
 
         final SelectBox<Integer> numComputerBox = new SelectBox<Integer>(skin);
@@ -529,7 +710,7 @@ public class MenuScreen extends ScreenAdapter {
         customRulesButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                cardRulesDialog(rulesValues);
+                showCardRulesDialog(rulesValues);
                 //dialog.remove();
             }
         });
@@ -586,7 +767,7 @@ public class MenuScreen extends ScreenAdapter {
     }
 
     /** Displays dialog for generating custom Deck with specific card types */
-    private void cardRulesDialog(Integer[] rulesValues){
+    private void showCardRulesDialog(Integer[] rulesValues){
         Dialog dialog = new Dialog("", skin) {
             @Override
             protected void result(Object object) {

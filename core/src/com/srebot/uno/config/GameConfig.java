@@ -38,6 +38,7 @@ public class GameConfig {
     public static final String SERVER_URL = "http://localhost:3000/";
     public static final String GAME_URL = "game";
     public static final String PLAYER_URL = "player";
+    public static final String AUTH_URL = "auth";
     public static final String HAND_URL = "hand";
     public static final String CARD_URL = "card";
     public static final String DECK_URL = "deck";

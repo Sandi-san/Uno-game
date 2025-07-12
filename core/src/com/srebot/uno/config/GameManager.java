@@ -8,6 +8,7 @@ import com.badlogic.gdx.utils.JsonValue;
 import com.srebot.uno.classes.Player;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -31,7 +32,8 @@ public class GameManager {
     private float musicVPref;
     private boolean playIntroPref;
 
-    private Player playersData;
+    private String access_token;
+    private long tokenExpiration;
 
     public GameManager() {
         PREFS = Gdx.app.getPreferences("GameSettings");
@@ -42,6 +44,9 @@ public class GameManager {
         soundVPref = PREFS.getFloat("soundVolume", 1f);
         musicVPref = PREFS.getFloat("musicVolume", 0.5f);
         playIntroPref = PREFS.getBoolean("introEnabled", true);
+
+        access_token = PREFS.getString("access_token",null);
+        tokenExpiration = PREFS.getLong("tokenExpiration",0);
     }
     public String getNamePref() {
         return namePref;
@@ -57,6 +62,13 @@ public class GameManager {
     }
     public float getMusicVolumePref(){return musicVPref;}
     public boolean getPlayIntroPref() {return playIntroPref;}
+    public String getAccessToken() {
+        //compare token expiration and current time, if expired, set token to invalid
+        if(getTokenExpiration() < new Date().getTime())
+            return null;
+        return access_token;
+    }
+    public long getTokenExpiration() {return tokenExpiration;}
 
     /** Set name for current Player */
     public void setNamePref(String namePref) {
@@ -86,6 +98,17 @@ public class GameManager {
         this.playIntroPref = playIntroPref;
         PREFS.putBoolean("introEnabled", playIntroPref);
     }
+
+    public void setAccessToken(String access_token){
+        this.access_token = access_token;
+        PREFS.putString("access_token", access_token);
+    }
+    public void setTokenExpiration(){
+        //create new date with current time & add 2 hours to time (expiration must be same as in backend)
+        this.tokenExpiration = new Date().getTime() + 2*3600000;
+        PREFS.putLong("tokenExpiration", tokenExpiration);
+    }
+
     public void savePrefs(){
         PREFS.flush();
     }
