@@ -94,7 +94,19 @@ public class MenuScreen extends ScreenAdapter {
         tokenExpirationDate = new Date(manager.getTokenExpiration());
         Gdx.app.log("CHECK TOKEN", "Access token: " + token);
         Gdx.app.log("CHECK TOKEN", "Time: " + tokenExpirationDate);
-        return token != null;
+        return !Objects.equals(token, "");
+    }
+
+    /** Save access_token and expiration to local preferences and set expiration Date in this class */
+    private void saveAccessToken(String access_token){
+        //when receiving access token, save it to preferences alongside expiration
+        manager.setAccessToken(access_token);
+        manager.setTokenExpiration();
+        manager.savePrefs();
+        //also set expiration Date in this class for display
+        tokenExpirationDate = new Date(manager.getTokenExpiration());
+        Gdx.app.log("TOKENS", "Access token: " + manager.getAccessToken());
+        Gdx.app.log("TOKENS", "Time: " + tokenExpirationDate);
     }
 
     @Override
@@ -196,7 +208,7 @@ public class MenuScreen extends ScreenAdapter {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 //open register dialog
-                showAuthDialog("Register");
+                showAuthDialog("Register",null);
             }
         });
 
@@ -396,55 +408,72 @@ public class MenuScreen extends ScreenAdapter {
         //add the centeredButtonTable to buttonTable and center it
         buttonTable.add(centeredButtonTable).colspan(2).center().padBottom(10).row();
 
-        //if token is already valid, display time until expiration, else render button to login
-        if(accessTokenValid()){
-            //calculate difference between expiration time and current time
-            long differenceTime = manager.getTokenExpiration() - new Date().getTime();
-            if(differenceTime<0) {
-                //if expiration is before current time, set access token to null (edge case)
-                manager.setAccessToken(null);
-            }
-            Date differenceDate = new Date(differenceTime);
-
-            String expirationText = "Token valid for: ";
-            //set text display depending on if minutes or seconds are left on expiration timer
-            if(differenceDate.getMinutes()<1)
-                expirationText = expirationText+differenceDate.getSeconds()+" seconds.";
-            else
-                expirationText = expirationText+differenceDate.getMinutes()+" minutes.";
-
-            //set expiration label and scale font to a smaller size
-            Label expirationLabel = new Label(expirationText,fontSkin);
-            expirationLabel.setFontScale(0.7f);
-            buttonTable.add(expirationLabel).left().padLeft(15);
-        }
-        else{
-            //create login button
-            TextButton loginButton = new TextButton("Login", skin);
-            loginButton.addListener(new ClickListener() {
-                @Override
-                public void clicked(InputEvent event, float x, float y) {
-                    if (serverConnected.get()) {
-                        //open login dialog
-                        showAuthDialog("Login");
-                        //dialog.remove();
-                    } else {
-                        Gdx.app.log("CANNOT CONNECT TO SERVER", "CANNOT CREATE GAME");
-                        showMessageDialog("Cannot connect to server!");
-                    }
-                }
-            });
-            buttonTable.add(loginButton).expandX().left().padLeft(5);
-        }
-
-
         //add tables to dialog box
         //add title
         dialog.getContentTable().add(titleTable).expandX().fillX().row();
         //add content (scroll pane)
         dialog.getContentTable().add(contentTable).row();
         //add buttons
-        dialog.getContentTable().add(buttonTable).expandX().fillX();
+        dialog.getContentTable().add(buttonTable).expandX().fillX().row();
+
+
+        //create new table for login
+        Table loginTable = new Table(skin);
+
+        //Function to display time until expiration if token is already valid, else render button to login
+        //set as a safe reference to allow self-reference (function calls itself inside it)
+        final Runnable[] setLoginDisplay = new Runnable[1];
+
+        //Function to display time until expiration if token is already valid, else render button to login
+        setLoginDisplay[0] = () -> {
+                loginTable.clearChildren(); //clear the table
+
+                if(accessTokenValid()) {
+                    //calculate difference between expiration time and current time
+                    long differenceTime = manager.getTokenExpiration() - new Date().getTime();
+                    if (differenceTime < 0) {
+                        //if expiration is before current time, set access token to empty value (edge case)
+                        saveAccessToken("");
+                    }
+                    Date differenceDate = new Date(differenceTime);
+
+                    String expirationText = "Token valid for: ";
+                    //set text display depending on if minutes or seconds are left on expiration timer
+                    if (differenceDate.getMinutes() < 1)
+                        expirationText = expirationText + differenceDate.getSeconds() + " seconds.";
+                    else {
+                        if (differenceDate.getHours() > 1)
+                            expirationText = expirationText + (differenceDate.getMinutes() + 60) + " minutes.";
+                        else
+                            expirationText = expirationText + differenceDate.getMinutes() + " minutes.";
+                    }
+                    //set expiration label and scale font to a smaller size
+                    Label expirationLabel = new Label(expirationText, fontSkin);
+                    expirationLabel.setFontScale(0.7f);
+                    loginTable.add(expirationLabel).center();
+                } else {
+
+                    //create login button
+                    TextButton loginButton = new TextButton("Login", skin);
+                    loginButton.addListener(new ClickListener() {
+                        @Override
+                        public void clicked(InputEvent event, float x, float y) {
+                            if (serverConnected.get()) {
+                                //open login dialog
+                                showAuthDialog("Login", setLoginDisplay[0]);
+                            } else {
+                                Gdx.app.log("CANNOT CONNECT TO SERVER", "CANNOT CREATE GAME");
+                                showMessageDialog("Cannot connect to server!");
+                            }
+                        }
+                    });
+
+                    loginTable.add(loginButton).expandX().center();
+                }
+        };
+
+        setLoginDisplay[0].run();
+        dialog.getContentTable().add(loginTable).expandX().fillX();
 
         NinePatch patch = new NinePatch(gameplayAtlas.findRegion(RegionNames.backgroundPane1));
         NinePatchDrawable dialogBackground = new NinePatchDrawable(patch);
@@ -457,8 +486,9 @@ public class MenuScreen extends ScreenAdapter {
     }
 
     /** Displays dialog for user authentication for register/login a Player for Multiplayer Game
-     * @param state "Register" or "Login" */
-    private void showAuthDialog(String state){
+     * @param state "Register" or "Login"
+     * @param onClose Runnable method which is called when the dialog is closed. Can be null */
+    private void showAuthDialog(String state, Runnable onClose){
         Dialog dialog = new Dialog("", skin) {
             @Override
             protected void result(Object object) {
@@ -467,9 +497,9 @@ public class MenuScreen extends ScreenAdapter {
 
         Label titleLabel = new Label("", fontSkin);
         //set main label depending on state (register or login)
-        if(Objects.equals(state, "Register"))
+        if(Objects.equals(state, "Login"))
             titleLabel.setText("Login with Account");
-        else if(Objects.equals(state, "Login"))
+        else if(Objects.equals(state, "Register"))
             titleLabel.setText("Register Account");
         dialog.getContentTable().add(titleLabel).padTop(20).center().expand().row();
 
@@ -500,20 +530,23 @@ public class MenuScreen extends ScreenAdapter {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 //check validity of text box values before allowing user to progress
-                if(passwordField.getText().length()<6)
+                if(passwordField.getText().length()<6) {
                     showMessageDialog("Password must be 6 or more characters.");
-                if(nameField.getText().length()<1)
+                    return;
+                }
+                if(nameField.getText().length()<1) {
                     showMessageDialog("Name must not be blank.");
+                    return;
+                }
                 else {
                     //call Register route
                     if(Objects.equals(state, "Register")){
                         service.registerUser(nameField.getText(), passwordField.getText(), new GameService.AuthCallback() {
                             @Override
                             public void onSuccess(String accessToken) {
-                                Gdx.app.log("REGISTER", "Access token received: " + accessToken);
-                                // Store token in memory or Preferences and proceed to next screen
+                                saveAccessToken(accessToken);
+                                dialog.remove();
                             }
-
                             @Override
                             public void onFailure(Throwable t) {
                                 Gdx.app.log("REGISTER", "Register failed: " + t.getMessage());
@@ -521,30 +554,23 @@ public class MenuScreen extends ScreenAdapter {
                                 showMessageDialog(t.getMessage());
                             }
                         });
-                        dialog.remove();
                     }
                     //call Login route
                     else if(Objects.equals(state, "Login")){
                         service.loginUser(nameField.getText(), passwordField.getText(), new GameService.AuthCallback() {
                             @Override
                             public void onSuccess(String accessToken) {
-                                //Gdx.app.log("LOGIN", "Access token received: " + accessToken);
-                                // Store token in memory or Preferences and proceed to next screen
-                                manager.setAccessToken(accessToken);
-                                manager.setTokenExpiration();
-                                manager.savePrefs();
-                                Gdx.app.log("TOKENS", "Access token: " + manager.getAccessToken());
-                                tokenExpirationDate = new Date(manager.getTokenExpiration());
-                                Gdx.app.log("TOKENS", "Time: " + tokenExpirationDate);
+                                saveAccessToken(accessToken);
+                                //close this dialog and run Runnable method (refreshes loginTable in showMultiplayerDialog)
+                                dialog.remove();
+                                if (onClose != null) onClose.run();
                             }
-
                             @Override
                             public void onFailure(Throwable t) {
                                 Gdx.app.log("LOGIN", "Login failed: " + t.getMessage());
                                 showMessageDialog(t.getMessage());
                             }
                         });
-                        dialog.remove();
                     }
                 }
             }

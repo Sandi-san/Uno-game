@@ -45,7 +45,7 @@ public class GameManager {
         musicVPref = PREFS.getFloat("musicVolume", 0.5f);
         playIntroPref = PREFS.getBoolean("introEnabled", true);
 
-        access_token = PREFS.getString("access_token",null);
+        access_token = PREFS.getString("access_token","");
         tokenExpiration = PREFS.getLong("tokenExpiration",0);
     }
     public String getNamePref() {
@@ -63,9 +63,11 @@ public class GameManager {
     public float getMusicVolumePref(){return musicVPref;}
     public boolean getPlayIntroPref() {return playIntroPref;}
     public String getAccessToken() {
-        //compare token expiration and current time, if expired, set token to invalid
-        if(getTokenExpiration() < new Date().getTime())
-            return null;
+        //compare token expiration and current time, if expired, set token & expiration to invalid
+        if(getTokenExpiration() < new Date().getTime()) {
+            setTokenExpiration(0);
+            return "";
+        }
         return access_token;
     }
     public long getTokenExpiration() {return tokenExpiration;}
@@ -103,9 +105,15 @@ public class GameManager {
         this.access_token = access_token;
         PREFS.putString("access_token", access_token);
     }
+    //automatic set token expiration: current time + expiration time from backend
     public void setTokenExpiration(){
         //create new date with current time & add 2 hours to time (expiration must be same as in backend)
         this.tokenExpiration = new Date().getTime() + 2*3600000;
+        PREFS.putLong("tokenExpiration", tokenExpiration);
+    }
+    //set token expiration with direct value
+    public void setTokenExpiration(long value){
+        this.tokenExpiration = value;
         PREFS.putLong("tokenExpiration", tokenExpiration);
     }
 
