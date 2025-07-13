@@ -13,6 +13,8 @@ export class PlayerController {
     return this.playerService.getPlayersScores();
   }
 
+//TODO: nekje to use jwt token: npr ustvari game, join game (room join)
+
   /*
   @Post()
   async createPlayer(@Body() data: CreatePlayerDto): Promise<Player> {

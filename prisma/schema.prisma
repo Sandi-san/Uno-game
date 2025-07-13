@@ -15,12 +15,10 @@ model Game {
   players     Player[]
   maxPlayers  Int      @default(4)
   gameState   String   @default("Paused")
-  currentTurn Int      @default(1) //currentPlayer's turn
+  currentTurn Int      @default(1) //ID of currentPlayer's turn
   turnOrder   String   @default("Clockwise")
   topCardId   Int?
   topCard     Card?    @relation(fields: [topCardId], references: [id], onDelete: SetNull)
-
-  //SOLUTION?: add discardDeckId in drawDeckId explicitno
 }
 
 model Deck {

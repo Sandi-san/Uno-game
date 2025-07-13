@@ -1,24 +1,22 @@
 import { Card, Deck, Game, Hand, Player } from '@prisma/client';
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateGameDto } from './dto/create-game.dto';
 import { DeckService } from 'src/deck/deck.service';
 import { PlayerService } from 'src/player/player.service';
-import { CreateDeckDto } from 'src/deck/dto/create-deck.dto';
-import { CreateCardDto } from 'src/card/dto/create-card.dto';
 import { HandService } from 'src/hand/hand.service';
 import { UpdateGameDto } from './dto/update-game.dto';
-import { CreatePlayerDto } from 'src/player/dto/create-player.dto';
 import { UpdatePlayerDto } from 'src/player/dto/update-player.dto';
 import { UpdateDeckDto } from 'src/deck/dto/update-deck.dto';
 import { CardService } from 'src/card/card.service';
 import { plainToInstance } from 'class-transformer';
-import { connect } from 'http2';
+import { GameGateway } from './game.gateway';
 
 @Injectable()
 export class GameService {
   constructor(
     private prisma: PrismaService,
+    private gateway: GameGateway,
     private deckService: DeckService,
     private playerService: PlayerService,
     private handService: HandService,
@@ -27,6 +25,7 @@ export class GameService {
 
   //TODO: transaction vse metode kjer se dogaja vec Prisma callov
   //TODO: remove vse metode (in routes) ki jih ne uporabljas
+  //TODO: delete player.password na VSEH returnih kjer vrnes tudi playerje
 
   async create(data: CreateGameDto): Promise<Game> {
     //transaction in two pieces 
@@ -116,7 +115,7 @@ export class GameService {
 
             if (existingHand) {
               // Update the existing hand
-              await this.handService.update(player.hand,player.id)
+              await this.handService.update(player.hand, player.id)
               /*
               await this.prisma.hand.update({
                 where: { playerId: player.id },
@@ -147,11 +146,13 @@ export class GameService {
 
       const newGame = await this.get(game.id);
       console.log('GAME CREATED:', newGame);
+
+      // Emit socket update to creator's room
+      this.gateway.emitGameStateUpdate(game.id, { type: 'gameCreated', game });
+
       return newGame;
     })
   }
-
-
 
   async createNew(): Promise<Game> {
     return await this.prisma.game.create({})
@@ -199,6 +200,9 @@ export class GameService {
         turnOrder: true,
         */
       },
+    })
+    game.players.map(async (player) => {
+      delete player.password
     })
     if (game != null) {
       console.log("GAME:", game)
@@ -324,11 +328,11 @@ export class GameService {
 
         //update hands
         await this.handService.updateForGame(dto.players, gamePlayers)
-        
+
         const updatedHands = await this.playerService.getForGame(id)
-        console.log("Updated hands 0: ",updatedHands.at(0).hand.cards)
-        console.log("Updated hands 1: ",updatedHands.at(1).hand.cards)
-        
+        console.log("Updated hands 0: ", updatedHands.at(0).hand.cards)
+        console.log("Updated hands 1: ", updatedHands.at(1).hand.cards)
+
       }
 
       //if the game is over, update all connected players' scores

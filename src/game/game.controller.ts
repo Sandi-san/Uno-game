@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Body, Param, ParseIntPipe, Patch, Put } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, ParseIntPipe, Patch, Put, UseGuards, Request } from '@nestjs/common';
 import { GameService } from './game.service';
 import { Game, Player, Prisma } from '@prisma/client';
 import { CreateGameDto } from './dto/create-game.dto';
@@ -6,11 +6,14 @@ import { UpdateGameDto } from './dto/update-game.dto';
 import { UpdatePlayerDto } from 'src/player/dto/update-player.dto';
 import { plainToInstance } from 'class-transformer';
 import { UpdatePlayerTurnDto } from 'src/player/dto/update-player-turn.dto';
+import { JwtAuthGuard } from 'src/auth/jwt';
 
 @Controller('game')
 export class GameController {
   constructor(private readonly gameService: GameService) { }
 
+  //protect route with Authorized JWT token (Logged User)
+  @UseGuards(JwtAuthGuard)
   @Post()
   async createGame(@Body() data: CreateGameDto): Promise<Game> {
     console.log("GAME CREATE:", data);
@@ -35,6 +38,7 @@ export class GameController {
     return this.gameService.getPlayers(id);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get(':id/turn')
   async getGameTurn(@Param('id', ParseIntPipe) id: number): Promise<Game> {
     //console.log("FETCH TURN OF GAME:", id);
@@ -42,6 +46,7 @@ export class GameController {
   }
 
   //Update game data
+  @UseGuards(JwtAuthGuard)
   @Put(':id')
   async updateGame(@Param('id', ParseIntPipe) id: number, @Body() data: UpdateGameDto): Promise<Game> {
     console.log("UPDATE DATA:", data)
@@ -49,12 +54,14 @@ export class GameController {
   }
 
   //Add player to game, change Player's gameId return the updated Game
+  @UseGuards(JwtAuthGuard)
   @Put(':id/players')
   async updateGamePlayer(@Param('id', ParseIntPipe) id: number, @Body() data: UpdatePlayerDto): Promise<Game> {
     console.log("UPDATE DATA:", data)
     return this.gameService.updatePlayerAdd(id, data);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Put(':gameId/player/:playerId')
   async updateGameRemovePlayer(
     @Param('gameId', ParseIntPipe) gameId: number,
@@ -66,6 +73,7 @@ export class GameController {
   }
 
   //remove player and update turn
+  @UseGuards(JwtAuthGuard)
   @Put(':gameId/player/:playerId/turn')
   async updateGameRemovePlayerTurn(
     @Param('gameId', ParseIntPipe) gameId: number,
@@ -85,6 +93,7 @@ export class GameController {
     return updatedGame
   }
 
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
   async deleteGame(@Param('id', ParseIntPipe) id: number): Promise<Game> {
     return this.gameService.delete(id);

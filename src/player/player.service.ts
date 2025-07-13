@@ -55,7 +55,7 @@ export class PlayerService {
     hand: (Hand & { cards: Card[] })
   }
     | null> {
-    return this.prisma.player.findUnique({
+    const player = await this.prisma.player.findUnique({
       where: { id },
       include: {
         hand: {
@@ -65,10 +65,15 @@ export class PlayerService {
         }
       }
     })
+    //delete variables from result before returning 
+    delete player.password
+    delete player.gameId
+    delete player.joinedAt
+    return player
   }
 
   async getForGame(gameId: number): Promise<(Player & { hand: Hand & { cards: Card[] } })[]> { //array return syntax
-    return this.prisma.player.findMany({
+    const players = await this.prisma.player.findMany({
       where: { gameId },
       include: {
         hand: {
@@ -78,6 +83,13 @@ export class PlayerService {
         }
       }
     })
+    //delete variables from result before returning 
+    players.map(async (player) => {
+      delete player.password
+      delete player.gameId
+      delete player.joinedAt
+    })
+    return players
   }
 
   //get player by name and return hand
@@ -88,6 +100,10 @@ export class PlayerService {
         hand: true
       }
     })
+    //delete variables from result before returning
+    delete player.password
+    delete player.gameId
+    delete player.joinedAt
     console.log(player)
     return player
   }
@@ -97,7 +113,13 @@ export class PlayerService {
     const players = await this.prisma.player.findMany({
       orderBy: {
         score: 'desc',
-      }
+      },
+    })
+    //delete variables from result before returning 
+    players.map(async (player) => {
+      delete player.password
+      delete player.gameId
+      delete player.joinedAt
     })
     console.log(players)
     return players
