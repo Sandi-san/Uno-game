@@ -121,13 +121,14 @@ public class GameService {
     }
 
     /** Method for creating new Game object in backend (with all connected objects) */
-    public void createGame(GameCreateCallback callback, GameData gameData) {
+    public void createGame(GameCreateCallback callback, GameData gameData, String accessToken) {
         HttpRequestBuilder requestBuilder = new HttpRequestBuilder();
         Net.HttpRequest request = requestBuilder.newRequest()
                 .method(Net.HttpMethods.POST)
                 .url(GameConfig.SERVER_URL + GameConfig.GAME_URL)
                 .header("Content-Type", "application/json")
                 .build();
+        request.setHeader("Authorization", "Bearer " + accessToken);
 
         String jsonData = gson.toJson(gameData); //serialize game data
         Gdx.app.log("CREATE GAME:",jsonData);

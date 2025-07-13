@@ -310,7 +310,7 @@ public class MenuScreen extends ScreenAdapter {
 
                             ScrollPane scrollPane = new ScrollPane(gamesList, skin);
                             scrollPane.setFadeScrollBars(false);
-                            contentTable.add(scrollPane).width(dialog.getWidth()).height(dialog.getHeight() * 0.6f); //60% of dialog height
+                            contentTable.add(scrollPane).width(dialog.getWidth()).height(dialog.getHeight() * 0.5f); //60% of dialog height
                         }
 
                         serverConnected.set(true);
@@ -406,7 +406,7 @@ public class MenuScreen extends ScreenAdapter {
         centeredButtonTable.add(joinGameButton);
 
         //add the centeredButtonTable to buttonTable and center it
-        buttonTable.add(centeredButtonTable).colspan(2).center().padBottom(10).row();
+        buttonTable.add(centeredButtonTable).colspan(2).center().padBottom(5).row();
 
         //add tables to dialog box
         //add title

@@ -142,11 +142,12 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     }
 
     /** Method for creating Player when starting Game (host) */
-    private void createPlayerFromBackend(String playerName, PlayerFetchCallback callback) {
+    private void fetchPlayerFromBackend(String playerName, PlayerFetchCallback callback) {
+        //TODO: fetch player by jwt token instead
         service.fetchPlayerByName(new GameService.PlayerFetchCallback() {
             @Override
             public void onSuccess(Player player) {
-                Gdx.app.log("createPlayerFromBackend", "Player fetched: " + player.getName());
+                Gdx.app.log("fetchPlayerFromBackend", "Player fetched: " + player.getName());
                 //Get Player and add to current (local) Game, draw Cards from draw Deck
                 Player thisPlayer = createPlayerAndDraw(player);
                 localPlayerId = player.getId();
@@ -159,32 +160,9 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             }
             @Override
             public void onFailure(Throwable t) {
-                Gdx.app.log("createPlayerFromBackend", "Failed to fetch player: " + t.getMessage());
-                //Player not found in server, so create and post new Player object
-                Player player = new Player(playerName, 0, new Hand());
-                player.getHand().pickCards(deckDraw, 5);
-                Gdx.app.log("createPlayerFromBackend", "Creating new Player instead: " + player.toString());
-
-                service.createPlayer(new GameService.PlayerCreateCallback() {
-                    @Override
-                    public void onSuccess(int playerId) {
-                        Gdx.app.log("createPlayerFromBackend SUCCESS", "Player created with ID: " + playerId);
-                        //Player created in server, save created id
-                        player.setId(playerId);
-                        localPlayerId = playerId;
-                        if(!isPlayerAlreadyInArray(player))
-                            addPlayerToArray(player);
-                        connectionError = false;
-                        callback.onPlayerFetched(player);
-                    }
-                    @Override
-                    public void onFailure(Throwable t) {
-                        connectionError = true; //change variable to indicate server error
-                        Gdx.app.log("createPlayerFromBackend ERROR", "Failed to create player: " + t.getMessage());
-                    }
-                }, player);
-
-                callback.onPlayerFetched(player);
+                connectionError = true; //change variable to indicate server error
+                Gdx.app.log("createPlayerFromBackend ERROR", "Failed to fetch player: " + t.getMessage());
+                callback.onPlayerFetched(null);
             }
         }, playerName);
     }
@@ -209,7 +187,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 connectionError = true;
                 callback.onGameCreated(null);
             }
-        }, gameData);
+        }, gameData, manager.getAccessToken());
     }
 
     /** Callback for fetching one Game */
@@ -606,8 +584,9 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         for (int i = 0; i < maxPlayers; ++i) {
             playersData.add(null);
         }
-        //Create Player (host) within server (or get existing)
-        createPlayerFromBackend(manager.getNamePref(), player -> {
+
+        //Fetch (logged) Player (host) within server
+        fetchPlayerFromBackend(manager.getNamePref(), player -> {
             if (player != null) {
                 //set playerTurn as id of player that created the game (first player)
                 int currentPlayerTurn = player.getId();
@@ -676,7 +655,8 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 state = State.Paused;
 
                 //Create the Player within server (or fetch if already exists - important for getting Player id)
-                createPlayerFromBackend(playerName, player -> {
+                //TODO: REPLACE WITH GET WITH JWT
+                fetchPlayerFromBackend(playerName, player -> {
                     state = State.Paused;
                     if (player != null) {
                         //Connect the new Player to the Game's player list and update the Game
