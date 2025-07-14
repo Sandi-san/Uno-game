@@ -38,6 +38,7 @@ import com.srebot.uno.classes.Player;
 import com.srebot.uno.config.GameConfig;
 import com.srebot.uno.config.GameManager;
 import com.srebot.uno.config.GameService;
+import com.srebot.uno.config.SocketManager;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -48,7 +49,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class GameMultiplayerScreen extends ScreenAdapter {
+public class GameMultiplayerScreen extends ScreenAdapter implements SocketManager.GameSocketListener {
     //scheduler for executing automatic database fetches
     private ScheduledExecutorService scheduler = null;
 
@@ -126,6 +127,9 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     private Player playerWaiting = null;    //Player who is currently playing their turn
     private boolean connectionError = false;    //for display if server connection error occurs
 
+    //instance of SocketManager
+    private SocketManager socketManager;
+
     /** Get playerId of current player for dispose function */
     public int getPlayerId() {
         return localPlayerId;
@@ -142,9 +146,8 @@ public class GameMultiplayerScreen extends ScreenAdapter {
     }
 
     /** Method for creating Player when starting Game (host) */
-    private void fetchPlayerFromBackend(String playerName, PlayerFetchCallback callback) {
-        //TODO: fetch player by jwt token instead
-        service.fetchPlayerByName(new GameService.PlayerFetchCallback() {
+    private void fetchPlayerFromBackend(PlayerFetchCallback callback) {
+        service.fetchAuthenticatedPlayer(new GameService.PlayerFetchCallback() {
             @Override
             public void onSuccess(Player player) {
                 Gdx.app.log("fetchPlayerFromBackend", "Player fetched: " + player.getName());
@@ -164,7 +167,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 Gdx.app.log("createPlayerFromBackend ERROR", "Failed to fetch player: " + t.getMessage());
                 callback.onPlayerFetched(null);
             }
-        }, playerName);
+        }, manager.getAccessToken());
     }
 
     /** Callback for creating one Game */
@@ -235,7 +238,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 connectionError = true;
                 callback.onFailure(t);
             }
-        }, currentGameId, gameData);
+        }, currentGameId, gameData, manager.getAccessToken());
     }
 
     /** Get current GameData variables and update Game on server */
@@ -284,7 +287,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 connectionError = true;
                 callback.onFailure(t);
             }
-        }, gameId, player);
+        }, gameId, player, manager.getAccessToken());
     }
 
     /** Method for updating Game by disconnecting a Player and fetching the result */
@@ -302,10 +305,10 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 connectionError = true;
                 callback.onFailure(t);
             }
-        }, gameId, player);
+        }, gameId, player, manager.getAccessToken());
     }
 
-    /** Method for updating Game by diconnecting a Player and changing turn and fetching the result */
+    /** Method for updating Game by disconnecting a Player and changing turn and fetching the result */
     private void updateGameRemovePlayerTurn(Player player, int gameId, int turn, GameUpdateCallback callback) {
         service.updateGameRemovePlayerTurn(new GameService.GameUpdatePlayerRemoveCallback() {
             @Override
@@ -320,7 +323,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 connectionError = true;
                 callback.onFailure(t);
             }
-        }, gameId, player, turn);
+        }, gameId, player, turn, manager.getAccessToken());
     }
 
     /** Callback for fetching multiple Players */
@@ -368,7 +371,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 connectionError = true;
                 callback.onTurnFetched(null);
             }
-        }, currentGameId);
+        }, currentGameId, manager.getAccessToken());
     }
 
 
@@ -397,6 +400,11 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 e.printStackTrace();
             }
         }
+    }
+
+    @Override
+    public void onPlayerListener() {
+        Gdx.app.log("onPlayerListener","New player joined. You can now re-fetch player list.");
     }
 
     /** Player checker scheduler: checks for newly joined players */
@@ -536,6 +544,10 @@ public class GameMultiplayerScreen extends ScreenAdapter {
 
         font = assetManager.get(AssetDescriptors.UI_FONT);
         batch = new SpriteBatch();
+
+        //initialize SocketManager
+        socketManager = new SocketManager(this);
+
         //initialize Game data
         initGame(args);
     }
@@ -586,7 +598,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         }
 
         //Fetch (logged) Player (host) within server
-        fetchPlayerFromBackend(manager.getNamePref(), player -> {
+        fetchPlayerFromBackend(player -> {
             if (player != null) {
                 //set playerTurn as id of player that created the game (first player)
                 int currentPlayerTurn = player.getId();
@@ -606,8 +618,12 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                         //game is initialized, change state to Paused
                         state = State.Paused;
                         connectionError = false;
+
+                        //connect to Game room on server
+                        socketManager.connect(fetchedGame.getId());
+
                         //run scheduler that checks for new players
-                        startScheduler();
+                        //startScheduler();
                     }
                     else {
                         connectionError = true;
@@ -644,6 +660,9 @@ public class GameMultiplayerScreen extends ScreenAdapter {
         batch = new SpriteBatch();
         playersData = new ArrayList<>();
 
+        //initialize SocketManager
+        socketManager = new SocketManager(this);
+
         //Fetch the Game from server
         fetchGameFromBackend(gameId, fetchedGame -> {
             if (fetchedGame != null) {
@@ -655,8 +674,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                 state = State.Paused;
 
                 //Create the Player within server (or fetch if already exists - important for getting Player id)
-                //TODO: REPLACE WITH GET WITH JWT
-                fetchPlayerFromBackend(playerName, player -> {
+                fetchPlayerFromBackend(player -> {
                     state = State.Paused;
                     if (player != null) {
                         //Connect the new Player to the Game's player list and update the Game
@@ -666,7 +684,6 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                                 Gdx.app.log("Join Game", "Game updated with player: " + player.getId());
                                 localPlayerId = player.getId(); //save local Player's id as id of joined Player
                                 setGameData(updatedGame);
-                                //todo: ko player leava game in rejoina -> po prvi potezi bo player dobil iste kot newly joined player
                                 //state = State.Paused;
                                 connectionError = false;
 
@@ -675,6 +692,9 @@ public class GameMultiplayerScreen extends ScreenAdapter {
                                     startScheduler();
 
                                 waitForPlayers();
+
+                                //connect to Game room on server
+                                socketManager.connect(updatedGame.getId());
                             }
                             @Override
                             public void onFailure(Throwable t) {
@@ -936,8 +956,7 @@ public class GameMultiplayerScreen extends ScreenAdapter {
             return;
         //Game initialized but contains only 1 Player, start scheduler
         else if (state == State.Paused) {
-            //Gdx.app.log("PAUSED", "Still waiting for players");
-            startScheduler();
+            //startScheduler();
         }
         //Game has 2 or more Players and isn't over, execute game logic
         else if (state != State.Over) {

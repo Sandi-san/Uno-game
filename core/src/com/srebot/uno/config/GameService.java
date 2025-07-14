@@ -175,14 +175,17 @@ public class GameService {
         void onFailure(Throwable t);
     }
 
+    //TODO: namesto setanje Player, v backendu ga avtomatsko vn dobi iz accessToken
+
     /** Update Game object by connecting Player object to it */
-    public void updateGameWithPlayer(GameUpdatePlayersCallback callback, int gameId, Player player) {
+    public void updateGameWithPlayer(GameUpdatePlayersCallback callback, int gameId, Player player, String accessToken) {
         HttpRequestBuilder requestBuilder = new HttpRequestBuilder();
         Net.HttpRequest request = requestBuilder.newRequest()
                 .method(Net.HttpMethods.PUT)
                 .url(GameConfig.SERVER_URL + GameConfig.GAME_URL + "/" + gameId+"/players")
                 .header("Content-Type", "application/json")
                 .build();
+        request.setHeader("Authorization", "Bearer " + accessToken);
 
         String jsonData = gson.toJson(player);
         Gdx.app.log("UPDATE PLAYER ON GAME:", jsonData);
@@ -233,13 +236,14 @@ public class GameService {
     }
 
     /** Update Game object by disconnecting Player object */
-    public void updateGameRemovePlayer(GameUpdatePlayerRemoveCallback callback, int gameId, Player player) {
+    public void updateGameRemovePlayer(GameUpdatePlayerRemoveCallback callback, int gameId, Player player, String accessToken) {
         HttpRequestBuilder requestBuilder = new HttpRequestBuilder();
         Net.HttpRequest request = requestBuilder.newRequest()
                 .method(Net.HttpMethods.PUT)
                 .url(GameConfig.SERVER_URL + GameConfig.GAME_URL + "/" + gameId+"/player/"+player.getId())
                 .header("Content-Type", "application/json")
                 .build();
+        request.setHeader("Authorization", "Bearer " + accessToken);
 
         String jsonData = gson.toJson(player);
         Gdx.app.log("REMOVE PLAYER FROM GAME:", jsonData);
@@ -287,13 +291,14 @@ public class GameService {
     }
 
     /** Update Game object by disconnecting Player object and updating Game's turn variable */
-    public void updateGameRemovePlayerTurn(GameUpdatePlayerRemoveCallback callback, int gameId, Player player, int currentTurn) {
+    public void updateGameRemovePlayerTurn(GameUpdatePlayerRemoveCallback callback, int gameId, Player player, int currentTurn, String accessToken) {
         HttpRequestBuilder requestBuilder = new HttpRequestBuilder();
         Net.HttpRequest request = requestBuilder.newRequest()
                 .method(Net.HttpMethods.PUT)
                 .url(GameConfig.SERVER_URL + GameConfig.GAME_URL + "/" + gameId+"/player/"+player.getId()+"/turn")
                 .header("Content-Type", "application/json")
                 .build();
+        request.setHeader("Authorization", "Bearer " + accessToken);
 
         PlayerTurn playerTurn = new PlayerTurn(player.getId(),player.getName(),player.getScore(),player.getHand(),currentTurn);
         String jsonData = gson.toJson(playerTurn);
@@ -347,13 +352,14 @@ public class GameService {
     }
 
     /** Update Game object with new data */
-    public void updateGame(GameUpdateCallback callback, int gameId, GameData gameData) {
+    public void updateGame(GameUpdateCallback callback, int gameId, GameData gameData, String accessToken) {
         HttpRequestBuilder requestBuilder = new HttpRequestBuilder();
         Net.HttpRequest request = requestBuilder.newRequest()
                 .method(Net.HttpMethods.PUT)
                 .url(GameConfig.SERVER_URL + GameConfig.GAME_URL + "/" + gameId)
                 .header("Content-Type", "application/json")
                 .build();
+        request.setHeader("Authorization", "Bearer " + accessToken);
 
         String jsonData = gson.toJson(gameData);
         Gdx.app.log("UPDATE GAME:", jsonData);
@@ -504,13 +510,14 @@ public class GameService {
     }
 
     /** Fetch turn and discard Deck from Game object */
-    public void fetchGameTurn(FetchGameTurnCallback callback, int gameId){
+    public void fetchGameTurn(FetchGameTurnCallback callback, int gameId, String accessToken){
         HttpRequestBuilder requestBuilder = new HttpRequestBuilder();
         Net.HttpRequest request = requestBuilder.newRequest()
                 .method(Net.HttpMethods.GET)
                 .url(GameConfig.SERVER_URL + GameConfig.GAME_URL + "/" +gameId+"/turn")
                 .header("Content-Type", "application/json")
                 .build();
+        request.setHeader("Authorization", "Bearer " + accessToken);
 
         Gdx.net.sendHttpRequest(request, new Net.HttpResponseListener() {
             @Override
@@ -663,13 +670,14 @@ public class GameService {
     }
 
     /** Get Player from backend with unique name */
-    public void fetchPlayerByName(PlayerFetchCallback callback, String name) {
+    public void fetchAuthenticatedPlayer(PlayerFetchCallback callback, String accessToken) {
         HttpRequestBuilder requestBuilder = new HttpRequestBuilder();
         Net.HttpRequest request = requestBuilder.newRequest()
                 .method(Net.HttpMethods.GET)
-                .url(GameConfig.SERVER_URL + GameConfig.PLAYER_URL + "/name/"+name)
+                .url(GameConfig.SERVER_URL + GameConfig.PLAYER_URL)
                 .header("Content-Type", "application/json")
                 .build();
+        request.setHeader("Authorization", "Bearer " + accessToken);
 
         Gdx.net.sendHttpRequest(request, new Net.HttpResponseListener() {
             @Override

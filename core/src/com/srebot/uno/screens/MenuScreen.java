@@ -109,6 +109,29 @@ public class MenuScreen extends ScreenAdapter {
         Gdx.app.log("TOKENS", "Time: " + tokenExpirationDate);
     }
 
+
+    /** Callback for fetching one Player */
+    public interface PlayerFetchCallback {
+        void onPlayerFetched(Player player);
+    }
+
+    /** Method for fetching Player object from server by authentication token */
+    private void fetchPlayerFromBackend(PlayerFetchCallback callback) {
+        service.fetchAuthenticatedPlayer(new GameService.PlayerFetchCallback() {
+            @Override
+            public void onSuccess(Player player) {
+                Gdx.app.log("fetchPlayerFromBackend", "Player fetched: " + player.getName());
+                //invoke the callback with the fetched Player
+                callback.onPlayerFetched(player);
+            }
+            @Override
+            public void onFailure(Throwable t) {
+                Gdx.app.log("createPlayerFromBackend ERROR", "Failed to fetch player: " + t.getMessage());
+                callback.onPlayerFetched(null);
+            }
+        }, manager.getAccessToken());
+    }
+
     @Override
     public void show(){
         viewport = new FitViewport(GameConfig.HUD_WIDTH,GameConfig.HUD_HEIGHT);
@@ -347,10 +370,15 @@ public class MenuScreen extends ScreenAdapter {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 //open new game settings dialog if server connection is successful
-                if (serverConnected.get()) {
+                if (serverConnected.get() && accessTokenValid()) {
                     showCreateGameMultiplayerDialog();
                     dialog.remove();
-                } else {
+                }
+                else if(!accessTokenValid()) {
+                    Gdx.app.log("CANNOT CREATE GAME", "MUST LOGIN FIRST");
+                    showMessageDialog("You must login first!");
+                }
+                else if(!serverConnected.get()) {
                     Gdx.app.log("CANNOT CONNECT TO SERVER", "CANNOT CREATE GAME");
                     showMessageDialog("Cannot connect to server!");
                 }
@@ -362,35 +390,50 @@ public class MenuScreen extends ScreenAdapter {
         joinGameButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                if (!gamesList.getItems().isEmpty() && serverConnected.get()) {
+                if (!gamesList.getItems().isEmpty() && serverConnected.get() && accessTokenValid()) {
                     //get selected game within the list
                     GameData selectedGame = gamesList.getSelected();
                     if (selectedGame != null) {
                         //check if player can join (maximum number of players has not been filled)
                         Player[] gamePlayers = selectedGame.getPlayers();
-                        if(gamePlayers.length>=selectedGame.getMaxPlayers()){
+                        if (gamePlayers.length >= selectedGame.getMaxPlayers()) {
                             Gdx.app.log("ERROR", "CANNOT JOIN GAME: " + selectedGame.getId()
-                            +". PLAYER SLOTS ARE FULL.");
+                                    + ". PLAYER SLOTS ARE FULL.");
                             showMessageDialog("Player slots are full.");
                             return;
                         }
-                        //check if current player has same name as player already within the game
-                        for(Player player : gamePlayers){
-                            if(Objects.equals(player.getName(), manager.getNamePref())) {
-                                Gdx.app.log("ERROR", "CANNOT JOIN GAME: " + selectedGame.getId()
-                                        + ". PLAYER WITH SAME NAME IS ALREADY PLAYING.");
-                                showMessageDialog("Player with same name is already playing.");
-                                return;
-                            }
-                        }
 
-                        //open MP game screen if successful
-                        Gdx.app.log("JOINING GAME", "JOINING GAME: " + selectedGame.getId());
-                        game.setScreen(new GameMultiplayerScreen(game,selectedGame.getId(),manager.getNamePref()));
+                        //fetch Player from server based on authentication token
+                        fetchPlayerFromBackend(fetchedPlayer -> {
+                            //check if current player has same name as player already within the game
+                            Gdx.app.log("FETCHED PLAYER", fetchedPlayer.getName());
+                            for (Player player : gamePlayers) {
+                                Gdx.app.log("GAME PLAYER", player.getName());
+                                if (Objects.equals(player.getName(), fetchedPlayer.getName())) {
+                                    Gdx.app.log("ERROR", "CANNOT JOIN GAME: " + selectedGame.getId()
+                                            + ". PLAYER WITH SAME NAME IS ALREADY PLAYING.");
+                                    showMessageDialog("Player with same name is already playing.");
+                                    return;
+                                }
+                            }
+
+                            //open MP game screen if successful
+                            Gdx.app.log("JOINING GAME", "JOINING GAME: " + selectedGame.getId());
+                            game.setScreen(new GameMultiplayerScreen(game, selectedGame.getId(), manager.getNamePref()));
+                        });
                     }
-                } else {
-                    Gdx.app.log("CANNOT JOIN GAME", "NO GAME SELECTED");
-                    showMessageDialog("No game selected.");
+                    else {
+                        Gdx.app.log("CANNOT JOIN GAME", "NO GAME SELECTED");
+                        showMessageDialog("No game selected.");
+                    }
+                }
+                else if(!accessTokenValid()) {
+                    Gdx.app.log("CANNOT CREATE GAME", "MUST LOGIN FIRST");
+                    showMessageDialog("You must login first!");
+                }
+                else if(!serverConnected.get()) {
+                    Gdx.app.log("CANNOT CONNECT TO SERVER", "CANNOT CREATE GAME");
+                    showMessageDialog("Cannot connect to server!");
                 }
             }
         });
@@ -451,8 +494,19 @@ public class MenuScreen extends ScreenAdapter {
                     Label expirationLabel = new Label(expirationText, fontSkin);
                     expirationLabel.setFontScale(0.7f);
                     loginTable.add(expirationLabel).center();
-                } else {
 
+                    //create logout button
+                    TextButton logoutButton = new TextButton("Logout", skin);
+                    logoutButton.addListener(new ClickListener() {
+                        @Override
+                        public void clicked(InputEvent event, float x, float y) {
+                            saveAccessToken("");
+                            setLoginDisplay[0].run();
+                        }
+                    });
+                    loginTable.add(logoutButton).right();
+                }
+                else {
                     //create login button
                     TextButton loginButton = new TextButton("Login", skin);
                     loginButton.addListener(new ClickListener() {
