@@ -385,8 +385,8 @@ public class GameMultiplayerScreen extends ScreenAdapter implements SocketManage
         scheduler = Executors.newScheduledThreadPool(1);
 
         //run players checker and turn checker
-        playerChecker();
-        turnChecker();
+        //playerChecker();
+        //turnChecker();
     }
 
     /** Stops scheduler for periodically fetching backend data */
@@ -402,42 +402,33 @@ public class GameMultiplayerScreen extends ScreenAdapter implements SocketManage
         }
     }
 
+    /** Player checker listener: checks for newly joined players */
     @Override
-    public void onPlayerListener() {
-        Gdx.app.log("onPlayerListener","New player joined. You can now re-fetch player list.");
-    }
+    public void onPlayerChangedListener() {
+        Gdx.app.log("onPlayerListener", "Players data changed. Re-fetching player list.");
 
-    /** Player checker scheduler: checks for newly joined players */
-    private void playerChecker() {
-        if (scheduler == null || scheduler.isShutdown()) {
-            startScheduler();
-        }
-        scheduler.scheduleAtFixedRate(() -> {
-            //game only has 1 player, so check for joining players
-            if (waitForPlayers()) {
-                //get fetched Players data from server
-                checkForNewPlayers(fetchedPlayers -> {
-                    int localPlayersSize = getPlayersSize();
-                    if (fetchedPlayers != null && scheduler!=null) {
-                        //check if local Players data is same as fetched Players data
-                        if (fetchedPlayers.length != localPlayersSize) {
-                            //new Player found, so add it to local array
-                            Gdx.app.log("playerChecker", "Found new player");
-                            connectionError = false;
-                            checkPlayersChanged(fetchedPlayers);
-                        }
-                        else {
-                            connectionError = false;
-                            Gdx.app.log("playerChecker", "No new players");
-                        }
-                    }
-                    else {
-                        connectionError = true;
-                        Gdx.app.log("playerChecker ERROR", "Checking for players: Fetched players are null");
-                    }
-                });
+        //get fetched Players data from server
+        checkForNewPlayers(fetchedPlayers -> {
+            int localPlayersSize = getPlayersSize();
+            if (fetchedPlayers != null) {
+                //check if local Players data is same as fetched Players data
+                if (fetchedPlayers.length != localPlayersSize) {
+                    //new Player found, so add it to local array
+                    Gdx.app.log("playerChecker", "Found new player");
+                    connectionError = false;
+                    checkPlayersChanged(fetchedPlayers);
+
+                    //change gameState based on Player data
+                    waitForPlayers();
+                } else {
+                    connectionError = false;
+                    Gdx.app.log("playerChecker", "No new players");
+                }
+            } else {
+                connectionError = true;
+                Gdx.app.log("playerChecker ERROR", "Checking for players: Fetched players are null");
             }
-        }, 0, 7, TimeUnit.SECONDS); // Check every 5-7 seconds (completes within 7s)
+        });
     }
 
     /** Checks Game State depending on amount of players */
@@ -456,67 +447,48 @@ public class GameMultiplayerScreen extends ScreenAdapter implements SocketManage
         return false;
     }
 
-    /** Turn checker scheduler: checks for changes within turn and discard Deck when not currently playing */
-    private void turnChecker() {
-        if (scheduler == null || scheduler.isShutdown()) {
-            startScheduler();
-        }
-        scheduler.scheduleAtFixedRate(() -> {
-            //check if checker needs to run
-            if (waitForTurn()) {
-                //get fetched turn and discard Deck from server
-                checkForTurnChange(fetchedTurnAndDeck -> {
-                    if(fetchedTurnAndDeck!=null && scheduler!=null) {
-                        int fetchedTurn = fetchedTurnAndDeck.getCurrentTurn();
-                        Card fetchedTopCard = fetchedTurnAndDeck.getTopCard();
-                        String fetchedGameState = fetchedTurnAndDeck.getGameState();
-                        //immediately change fetched states when they're Over or Paused
-                        if (Objects.equals(fetchedGameState, "Over")) {
-                            state = State.Over;
-                        }
-                        else if (Objects.equals(fetchedGameState, "Paused")) {
-                            state = State.Paused;
-                        }
-                        //get Player (from current turn - id) to use as within hud display
-                        Gdx.app.log("turnChecker", "Player: " + localPlayerId + " is waiting for turn...");
-                        playerWaiting = getPlayerById(fetchedTurn);
-                        if (playerWaiting != null)
-                            Gdx.app.log("turnChecker", "Waiting for player: " + playerWaiting.getName());
-                        else
-                            Gdx.app.log("turnChecker", "Player waiting is null: " + playerWaiting);
-
-                        Gdx.app.log("turnChecker", "State: " + fetchedGameState);
-                        //fetched turn is valid
-                        if (fetchedTurn != 0 && fetchedTopCard != null) {
-                            topCard = fetchedTopCard;
-                            //fetched turn is same as index of player: it is YOUR Player's turn
-                            if (fetchedTurn == localPlayerId || state == State.Over) {
-                                //get full data of database
-                                fetchGameFromBackend(currentGameId, fetchedGame -> {
-                                    if (fetchedGame != null) {
-                                        isWaiting = false;
-                                        Gdx.app.log("turnChecker", "Game fetched: " + fetchedGame.getId());
-                                        connectionError = false;
-                                        //update local Game data with fetched Game data
-                                        setGameData(fetchedGame);
-                                    } else {
-                                        connectionError = true;
-                                        Gdx.app.log("turnChecker ERROR", "Failed to update game with player.");
-                                    }
-                                });
-                            }
-                        }
-                        else {
-                            connectionError = true;
-                            Gdx.app.log("turnChecker ERROR", "Fetched turn or top card are null");
-                        }
-                    }
-                });
+    /** Turn checker listener: checks for changes within turn and topCard when not currently playing */
+    @Override
+    public void onTurnChangedListener(int fetchedTurn, Card fetchedTopCard, String fetchedGameState) {
+        Gdx.app.log("onTurnChanged","Turn changed: "+fetchedTurn);
+        if (waitForTurn()) {
+            //immediately change fetched states when they're Over or Paused
+            if (Objects.equals(fetchedGameState, "Over")) {
+                state = State.Over;
+            } else if (Objects.equals(fetchedGameState, "Paused")) {
+                state = State.Paused;
             }
-            isWaiting = false;
-            Gdx.app.log("turnChecker", "Player: " + localPlayerId + " is not waiting.");
-            //connectionError = false;
-        }, 0, 5, TimeUnit.SECONDS); // Check every 3-5 seconds (completes within 5s)
+
+            setWaitingPlayer(fetchedTurn);
+
+            Gdx.app.log("turnChecker", "State: " + fetchedGameState);
+            //fetched turn is valid
+            if (fetchedTurn != 0) {
+                topCard = fetchedTopCard;
+                //fetched turn is same as index of player: it is YOUR Player's turn
+                if (fetchedTurn == localPlayerId || state == State.Over) {
+                    //get full data of database
+                    fetchGameFromBackend(currentGameId, fetchedGame -> {
+                        if (fetchedGame != null) {
+                            isWaiting = false;
+                            Gdx.app.log("turnChecker", "Game fetched: " + fetchedGame.getId());
+                            connectionError = false;
+                            //update local Game data with fetched Game data
+                            setGameData(fetchedGame);
+                        } else {
+                            connectionError = true;
+                            Gdx.app.log("turnChecker ERROR", "Failed to update game with player.");
+                        }
+                    });
+                }
+            } else {
+                connectionError = true;
+                Gdx.app.log("turnChecker ERROR", "Fetched turn or top card are null");
+            }
+        }
+        isWaiting = false;
+        Gdx.app.log("turnChecker", "Player: " + localPlayerId + " is not waiting.");
+        //connectionError = false;
     }
 
     /** Checks if current turn is same as YOUR Player id */
@@ -528,6 +500,17 @@ public class GameMultiplayerScreen extends ScreenAdapter implements SocketManage
             return true;
         }
         return false;
+    }
+
+    /** Get Player object which is currently performing their turn */
+    private void setWaitingPlayer(int turn){
+        //get Player (from current turn - id) to use as within hud display
+        Gdx.app.log("turnChecker", "Player: " + localPlayerId + " is waiting for turn...");
+        playerWaiting = getPlayerById(turn);
+        if (playerWaiting != null)
+            Gdx.app.log("turnChecker", "Waiting for player: " + playerWaiting.getName());
+        else
+            Gdx.app.log("turnChecker", "Player waiting is null: " + playerWaiting);
     }
 
     /** Constructor for Creating new Game */
@@ -573,7 +556,7 @@ public class GameMultiplayerScreen extends ScreenAdapter implements SocketManage
     /** Initialize Game objects (when creating Game) */
     private void initGame(Array<String> args) {
         //args is array of strings to determine starting game variables:
-        //0 - numComputers, 1 - AIdiff, 2 - deckSize, 3 - presetBox, 4 - orderBox,
+        //0 - maxPlayers, 1 - deckSize, 2 - presetBox, 3 - orderBox
         maxPlayers = Integer.parseInt(args.get(0));
         int deckSize = Integer.parseInt(args.get(1));
         String preset = args.get(2);
@@ -621,9 +604,6 @@ public class GameMultiplayerScreen extends ScreenAdapter implements SocketManage
 
                         //connect to Game room on server
                         socketManager.connect(fetchedGame.getId());
-
-                        //run scheduler that checks for new players
-                        //startScheduler();
                     }
                     else {
                         connectionError = true;
@@ -687,14 +667,10 @@ public class GameMultiplayerScreen extends ScreenAdapter implements SocketManage
                                 //state = State.Paused;
                                 connectionError = false;
 
-                                //when fetching updated game, check if any players have to be added
-                                if (!checkPlayersChanged(updatedGame.getPlayers()))
-                                    startScheduler();
-
-                                waitForPlayers();
-
                                 //connect to Game room on server
                                 socketManager.connect(updatedGame.getId());
+
+                                waitForPlayers();
                             }
                             @Override
                             public void onFailure(Throwable t) {
@@ -1969,7 +1945,7 @@ public class GameMultiplayerScreen extends ScreenAdapter implements SocketManage
             //put Player's Cards back into the draw Deck if game isn't over
             deckDraw.setCards(currentPlayer.getHand().getCards());
         }
-        stopScheduler();
+        socketManager.disconnect();
 
         //Remove Player AND update turn of Game
         if(!isWaiting && playerTurn == localPlayerId) {

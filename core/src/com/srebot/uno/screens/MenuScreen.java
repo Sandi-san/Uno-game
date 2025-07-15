@@ -65,6 +65,8 @@ public class MenuScreen extends ScreenAdapter {
 
     //for displaying expiration time of valid access_token
     private Date tokenExpirationDate = null;
+    //for saving Player object based on access_token
+    private Player loggedPlayer = null;
 
     public MenuScreen(Uno game) {
         //set global vars
@@ -94,7 +96,11 @@ public class MenuScreen extends ScreenAdapter {
         tokenExpirationDate = new Date(manager.getTokenExpiration());
         Gdx.app.log("CHECK TOKEN", "Access token: " + token);
         Gdx.app.log("CHECK TOKEN", "Time: " + tokenExpirationDate);
-        return !Objects.equals(token, "");
+        if(!Objects.equals(token, "")){
+            //setFetchedPlayer();
+            return true;
+        }
+        return false;
     }
 
     /** Save access_token and expiration to local preferences and set expiration Date in this class */
@@ -107,8 +113,10 @@ public class MenuScreen extends ScreenAdapter {
         tokenExpirationDate = new Date(manager.getTokenExpiration());
         Gdx.app.log("TOKENS", "Access token: " + manager.getAccessToken());
         Gdx.app.log("TOKENS", "Time: " + tokenExpirationDate);
+        //update loggedPlayer object by fetching Player from server
+        if(!Objects.equals(access_token, ""))
+            setFetchedPlayer();
     }
-
 
     /** Callback for fetching one Player */
     public interface PlayerFetchCallback {
@@ -130,6 +138,16 @@ public class MenuScreen extends ScreenAdapter {
                 callback.onPlayerFetched(null);
             }
         }, manager.getAccessToken());
+    }
+
+    /** Fetch Player from server based on access_token and save into local Player object  */
+    private void setFetchedPlayer() {
+        fetchPlayerFromBackend(fetchedPlayer -> {
+            if(fetchedPlayer != null) {
+                Gdx.app.log("FETCHED PLAYER", fetchedPlayer.getName());
+                loggedPlayer = fetchedPlayer;
+            }
+        });
     }
 
     @Override
@@ -403,13 +421,13 @@ public class MenuScreen extends ScreenAdapter {
                             return;
                         }
 
-                        //fetch Player from server based on authentication token
-                        fetchPlayerFromBackend(fetchedPlayer -> {
-                            //check if current player has same name as player already within the game
-                            Gdx.app.log("FETCHED PLAYER", fetchedPlayer.getName());
+                        //check if player has been logged
+                        if(loggedPlayer!=null) {
+                            //fetch Player from server based on authentication token
                             for (Player player : gamePlayers) {
-                                Gdx.app.log("GAME PLAYER", player.getName());
-                                if (Objects.equals(player.getName(), fetchedPlayer.getName())) {
+                                //Gdx.app.log("GAME PLAYER", player.getName());
+                                //check if current player has same name as player already within the game
+                                if (Objects.equals(player.getName(), loggedPlayer.getName())) {
                                     Gdx.app.log("ERROR", "CANNOT JOIN GAME: " + selectedGame.getId()
                                             + ". PLAYER WITH SAME NAME IS ALREADY PLAYING.");
                                     showMessageDialog("Player with same name is already playing.");
@@ -420,7 +438,7 @@ public class MenuScreen extends ScreenAdapter {
                             //open MP game screen if successful
                             Gdx.app.log("JOINING GAME", "JOINING GAME: " + selectedGame.getId());
                             game.setScreen(new GameMultiplayerScreen(game, selectedGame.getId(), manager.getNamePref()));
-                        });
+                        }
                     }
                     else {
                         Gdx.app.log("CANNOT JOIN GAME", "NO GAME SELECTED");
@@ -434,6 +452,10 @@ public class MenuScreen extends ScreenAdapter {
                 else if(!serverConnected.get()) {
                     Gdx.app.log("CANNOT CONNECT TO SERVER", "CANNOT CREATE GAME");
                     showMessageDialog("Cannot connect to server!");
+                }
+                else {
+                    Gdx.app.log("CANNOT JOIN GAME", "NO GAME SELECTED");
+                    showMessageDialog("No game selected.");
                 }
             }
         });
@@ -479,32 +501,68 @@ public class MenuScreen extends ScreenAdapter {
                         saveAccessToken("");
                     }
                     Date differenceDate = new Date(differenceTime);
+                    //if loggedPlayer object has not been set (when first opening the dialog), fetch from server and save locally
+                    if (loggedPlayer == null) {
+                        fetchPlayerFromBackend(fetchedPlayer -> {
+                            //fetchedPlayer can be null if response from server is invalid
+                            if(fetchedPlayer!=null) {
+                                loggedPlayer = fetchedPlayer;
+                                String expirationText = "Logged in as \"" + loggedPlayer.getName() + "\" for: ";
+                                //set text display depending on if minutes or seconds are left on expiration timer
+                                if (differenceDate.getMinutes() < 1)
+                                    expirationText = expirationText + differenceDate.getSeconds() + " seconds.";
+                                else {
+                                    if (differenceDate.getHours() > 1)
+                                        expirationText = expirationText + (differenceDate.getMinutes() + 60) + " minutes.";
+                                    else
+                                        expirationText = expirationText + differenceDate.getMinutes() + " minutes.";
+                                }
+                                //set expiration label and scale font to a smaller size
+                                Label expirationLabel = new Label(expirationText, fontSkin);
+                                expirationLabel.setFontScale(0.7f);
+                                loginTable.add(expirationLabel).center();
 
-                    String expirationText = "Token valid for: ";
-                    //set text display depending on if minutes or seconds are left on expiration timer
-                    if (differenceDate.getMinutes() < 1)
-                        expirationText = expirationText + differenceDate.getSeconds() + " seconds.";
-                    else {
-                        if (differenceDate.getHours() > 1)
-                            expirationText = expirationText + (differenceDate.getMinutes() + 60) + " minutes.";
-                        else
-                            expirationText = expirationText + differenceDate.getMinutes() + " minutes.";
+                                //create logout button
+                                TextButton logoutButton = new TextButton("Logout", skin);
+                                logoutButton.addListener(new ClickListener() {
+                                    @Override
+                                    public void clicked(InputEvent event, float x, float y) {
+                                        saveAccessToken("");
+                                        setLoginDisplay[0].run();
+                                    }
+                                });
+                                loginTable.add(logoutButton).right();
+                            }
+                        });
                     }
-                    //set expiration label and scale font to a smaller size
-                    Label expirationLabel = new Label(expirationText, fontSkin);
-                    expirationLabel.setFontScale(0.7f);
-                    loginTable.add(expirationLabel).center();
-
-                    //create logout button
-                    TextButton logoutButton = new TextButton("Logout", skin);
-                    logoutButton.addListener(new ClickListener() {
-                        @Override
-                        public void clicked(InputEvent event, float x, float y) {
-                            saveAccessToken("");
-                            setLoginDisplay[0].run();
+                    //loggedPlayer has already been set so no need for re-fetching
+                    else {
+                        String expirationText = "Logged in as \"" + loggedPlayer.getName() + "\" for: ";
+                        //set text display depending on if minutes or seconds are left on expiration timer
+                        if (differenceDate.getMinutes() < 1)
+                            expirationText = expirationText + differenceDate.getSeconds() + " seconds.";
+                        else {
+                            if (differenceDate.getHours() > 1)
+                                expirationText = expirationText + (differenceDate.getMinutes() + 60) + " minutes.";
+                            else
+                                expirationText = expirationText + differenceDate.getMinutes() + " minutes.";
                         }
-                    });
-                    loginTable.add(logoutButton).right();
+                        //set expiration label and scale font to a smaller size
+                        Label expirationLabel = new Label(expirationText, fontSkin);
+                        expirationLabel.setFontScale(0.7f);
+                        loginTable.add(expirationLabel).center();
+
+                        //create logout button
+                        TextButton logoutButton = new TextButton("Logout", skin);
+                        logoutButton.addListener(new ClickListener() {
+                            @Override
+                            public void clicked(InputEvent event, float x, float y) {
+                                saveAccessToken("");
+                                setLoginDisplay[0].run();
+                            }
+                        });
+                        loginTable.add(logoutButton).right();
+                    }
                 }
                 else {
                     //create login button

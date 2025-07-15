@@ -234,7 +234,8 @@ public class Card {
     }
 
     /** Return values of Card as string (debug only) */
-    public String asString() {
+    @Override
+    public String toString() {
         String priority = String.valueOf(this.getPriority());
         String value = String.valueOf(this.getValue());
         String color = this.getColor();
