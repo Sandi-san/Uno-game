@@ -1,19 +1,15 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { PlayerService } from './player.service';
 import { Player, Prisma } from '@prisma/client';
 import { CreatePlayerDto } from './dto/create-player.dto';
 import { UpdatePlayerDto } from './dto/update-player.dto';
+import { JwtAuthGuard } from 'src/auth/jwt';
 
 @Controller('player')
 export class PlayerController {
   constructor(private readonly playerService: PlayerService) { }
 
-  @Get('scores')
-  async getPlayersScores(): Promise<Player[]> {
-    return this.playerService.getPlayersScores();
-  }
-
-//TODO: nekje to use jwt token: npr ustvari game, join game (room join)
+  //TODO: nekje to use jwt token: npr ustvari game, join game (room join)
 
   /*
   @Post()
@@ -23,15 +19,30 @@ export class PlayerController {
   }
   */
 
-  @Get(':id')
-  async getPlayer(@Param('id', ParseIntPipe) id: number): Promise<Player> {
-    return this.playerService.get(id);
+  //NOTE: routes with parameters should always be above base routes
+  @Get('scores')
+  async getPlayersScores(): Promise<Player[]> {
+    return this.playerService.getPlayersScores();
   }
 
   @Get('name/:name')
   async getPlayerByName(@Param('name') name: string): Promise<Player> {
     console.log("PLAYER FETCH:", name)
     return this.playerService.getByName(name);
+  }
+
+  @Get(':id')
+  async getPlayer(@Param('id', ParseIntPipe) id: number): Promise<Player> {
+    return this.playerService.get(id);
+  }
+
+  /** Get Player by authentication token */
+  @UseGuards(JwtAuthGuard)
+  @Get('')
+  async get(@Req() req): Promise<Player> {
+    const user = req.user
+    delete user.password
+    return user
   }
 
   /*

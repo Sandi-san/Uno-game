@@ -148,7 +148,7 @@ export class GameService {
       console.log('GAME CREATED:', newGame);
 
       // Emit socket update to creator's room
-      this.gateway.emitGameStateUpdate(game.id, { type: 'gameCreated', game });
+      //this.gateway.emitPlayerUpdate(newGame.id, { type: 'gameCreated', newGame });
 
       return newGame;
     })
@@ -380,6 +380,13 @@ export class GameService {
           console.log(`${player.id} ${player.color} ${player.value} ${player.texture}`)
         */
 
+        this.gateway.emitTurnUpdate(game.id, {
+          type: 'turnChanged',
+          currentTurn: game.currentTurn,
+          topCard: game.topCard,
+          gameState: game.gameState,
+        });
+
         return game;
       }
       catch (error) {
@@ -420,29 +427,37 @@ export class GameService {
         //get updated game
         const updatedGamePlayers = await this.getPlayers(id)
 
-        //one player remains, change state to Paused
+        //new player added, change state to Running
         if (updatedGamePlayers.length >= 2) {
           console.log("2 OR MORE PLAYERS, CHANGE GAMESTATE")
           //use class-transformer to pass dto with only gameState variable
           const stateDto = plainToInstance(UpdateGameDto, {
             gameState: "Running",
           });
-          return await this.update(id, stateDto)
+          const updatedGame = await this.update(id, stateDto)
+
+          this.gateway.emitPlayerUpdate(updatedGame.id, { type: 'playerJoined', game: updatedGame });
+
+          return updatedGame
         }
       }
 
-      return await this.get(id)
+      const updatedGame = await this.get(id)
+
+      this.gateway.emitPlayerUpdate(updatedGame.id, { type: 'playerJoined', game: updatedGame });
+
+      return updatedGame
     })
   }
 
   //REMOVE PLAYER FROM GAME
   async updatePlayerRemove(gameId: number, playerId: number, dto: UpdatePlayerDto): Promise<Game | null> {
+    //get ids of objects connected to game
+    const game = await this.getIds(gameId)
+    if (!game) throw new NotFoundException(`Game with id ${gameId} is invalid!`);
+
     //run update as transaction
     await this.prisma.$transaction(async (prisma) => {
-      //get ids of objects connected to game
-      const game = await this.getIds(gameId)
-      if (!game) throw new NotFoundException(`Game with id ${gameId} is invalid!`);
-
       //get player from game to delete
       const player = game.players.find(p => p.id === playerId);
       if (!player) throw new NotFoundException(`Player with id ${playerId} not found in game with id ${gameId}`);
@@ -489,13 +504,18 @@ export class GameService {
     const returnedPlayers = await this.getPlayers(gameId)
 
     //one player remains, change state to Paused
-    if (returnedPlayers.length == 1) {
+    if (returnedPlayers.length == 1 && game.gameState != "Over") {
       console.log("ONLY 1 PLAYER LEFT, CHANGE GAMESTATE")
       //use class-transformer to pass dto with only gameState variable
       const stateDto = plainToInstance(UpdateGameDto, {
         gameState: "Paused",
       });
-      return await this.update(gameId, stateDto)
+
+      const updatedGame = await this.update(gameId, stateDto)
+
+      this.gateway.emitPlayerUpdate(updatedGame.id, { type: 'playerJoined', game: updatedGame });
+
+      return updatedGame
     }
 
     //check if game has no more active players and is over
@@ -506,7 +526,11 @@ export class GameService {
       return null
     }
 
-    return await this.get(gameId)
+    const updatedGame = await this.get(gameId)
+
+    this.gateway.emitPlayerUpdate(updatedGame.id, { type: 'playerJoined', game: updatedGame });
+
+    return updatedGame
   }
 
   async delete(id: number): Promise<Game> {

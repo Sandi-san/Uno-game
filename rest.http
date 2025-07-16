@@ -2,7 +2,7 @@
 
 ### TOKEN (TEST ONLY)
 #### Use actual returned authentication token
-@token = Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjE1LCJlbWFpbCI6Imp1cmVAZ21haWwuY29tIiwiaWF0IjoxNzE2MzAwODA3LCJleHAiOjE3MTYzMDE3MDd9.jeuN6O24E7qbhoswuBNBvCvTCfl2DxyWb4QLYgwOSZk
+@token = Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQ0LCJ1c2VybmFtZSI6Ik5pY2siLCJpYXQiOjE3NTI0ODQwMjcsImV4cCI6MTc1MjQ5MTIyN30.7axtMFhfRsIM99q4SnATdEcqKrwcHM1KnpHKvIQVpj4
 
 ### Register a new user
 POST http://localhost:3000/auth/register HTTP/1.1
@@ -22,9 +22,19 @@ Content-Type: application/json
   "password": "nick123"
 }
 
-## GET PLAYER
+
+### Get Player by token
+GET http://localhost:3000/player HTTP/1.1
+Content-Type: application/json
+Authorization: {{token}}
+
+## GET PLAYER by name
 ### POST /auth/register
 GET http://localhost:3000/player/name/Nick2 HTTP/1.1
+Content-Type: application/json
+
+### Get Player scores
+GET http://localhost:3000/player/scores HTTP/1.1
 Content-Type: application/json
 
 ### GET GAMES
