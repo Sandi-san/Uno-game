@@ -38,7 +38,7 @@ public class SocketManager {
             });
 
             // Listen for playerJoined updates
-            socket.on("playerJoined", args -> {
+            socket.on("playerChanged", args -> {
                 JSONObject data = (JSONObject) args[0];
                 Gdx.app.log("SocketManager","Player joined: " + data);
 
@@ -86,6 +86,7 @@ public class SocketManager {
 
     public void disconnect() {
         if (socket != null) {
+            Gdx.app.log("SocketManager","WebSocket disconnected and closed.");
             socket.disconnect();
             socket.close();
         }

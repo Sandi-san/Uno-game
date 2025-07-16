@@ -402,6 +402,8 @@ public class GameMultiplayerScreen extends ScreenAdapter implements SocketManage
         }
     }
 
+    //TODO: nekaksen error kjer se Joined Player 2x updatea Hand (in verjetno cel Game) on join
+
     /** Player checker listener: checks for newly joined players */
     @Override
     public void onPlayerChangedListener() {
@@ -420,7 +422,8 @@ public class GameMultiplayerScreen extends ScreenAdapter implements SocketManage
 
                     //change gameState based on Player data
                     waitForPlayers();
-                } else {
+                }
+                else {
                     connectionError = false;
                     Gdx.app.log("playerChecker", "No new players");
                 }
@@ -670,6 +673,8 @@ public class GameMultiplayerScreen extends ScreenAdapter implements SocketManage
                                 //connect to Game room on server
                                 socketManager.connect(updatedGame.getId());
 
+                                setWaitingPlayer(updatedGame.getCurrentTurn());
+
                                 waitForPlayers();
                             }
                             @Override
@@ -741,41 +746,44 @@ public class GameMultiplayerScreen extends ScreenAdapter implements SocketManage
     /** Checks if any changes occurred between local Players array and fetched Players */
     private boolean checkPlayersChanged(Player[] fetchedPlayers) {
         boolean changed = false;
-        //playerData is uninitialized (no non-null elements)
-        if (getPlayersSize() == 0)
-            return false;
+        //if game is over, don't update Players (causes null exception on drawing game end hud)
+        if(state!=State.Over) {
+            //playerData is uninitialized (no non-null elements)
+            if (getPlayersSize() == 0)
+                return false;
 
-        //Create a set of IDs from fetchedPlayers for quick lookup
-        Set<Integer> fetchedPlayerIds = new HashSet<>();
-        for (Player fetchedPlayer : fetchedPlayers) {
-            fetchedPlayerIds.add(fetchedPlayer.getId());
-        }
-
-        //Remove players from playersData if they are not in fetchedPlayers
-        for (int i = 0; i < playersData.size(); i++) {
-            Player localPlayer = playersData.get(i);
-            if (localPlayer != null && !fetchedPlayerIds.contains(localPlayer.getId())) {
-                playersData.set(i, null); //remove the player by setting the slot to null
-                removePlayerBasedIndex(i);
-                changed = true;
+            //Create a set of IDs from fetchedPlayers for quick lookup
+            Set<Integer> fetchedPlayerIds = new HashSet<>();
+            for (Player fetchedPlayer : fetchedPlayers) {
+                fetchedPlayerIds.add(fetchedPlayer.getId());
             }
-        }
 
-        //Add new players from fetchedPlayers to the first available null slot in playersData
-        for (Player fetchedPlayer : fetchedPlayers) {
-            boolean playerExists = false;
-            for (Player localPlayer : playersData) {
-                if (localPlayer != null && localPlayer.getId() == fetchedPlayer.getId()) {
-                    playerExists = true;
-                    break;
+            //Remove players from playersData if they are not in fetchedPlayers
+            for (int i = 0; i < playersData.size(); i++) {
+                Player localPlayer = playersData.get(i);
+                if (localPlayer != null && !fetchedPlayerIds.contains(localPlayer.getId())) {
+                    playersData.set(i, null); //remove the player by setting the slot to null
+                    removePlayerBasedIndex(i);
+                    changed = true;
                 }
             }
 
-            //if player does not exist in playersData, add them to the first null slot
-            if (!playerExists) {
-                fetchedPlayer = createPlayerAndDraw(fetchedPlayer);
-                addPlayerToArray(fetchedPlayer);
-                changed = true;
+            //Add new players from fetchedPlayers to the first available null slot in playersData
+            for (Player fetchedPlayer : fetchedPlayers) {
+                boolean playerExists = false;
+                for (Player localPlayer : playersData) {
+                    if (localPlayer != null && localPlayer.getId() == fetchedPlayer.getId()) {
+                        playerExists = true;
+                        break;
+                    }
+                }
+
+                //if player does not exist in playersData, add them to the first null slot
+                if (!playerExists) {
+                    fetchedPlayer = createPlayerAndDraw(fetchedPlayer);
+                    addPlayerToArray(fetchedPlayer);
+                    changed = true;
+                }
             }
         }
         return changed;

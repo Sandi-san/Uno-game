@@ -96,11 +96,7 @@ public class MenuScreen extends ScreenAdapter {
         tokenExpirationDate = new Date(manager.getTokenExpiration());
         Gdx.app.log("CHECK TOKEN", "Access token: " + token);
         Gdx.app.log("CHECK TOKEN", "Time: " + tokenExpirationDate);
-        if(!Objects.equals(token, "")){
-            //setFetchedPlayer();
-            return true;
-        }
-        return false;
+        return !Objects.equals(token, "");
     }
 
     /** Save access_token and expiration to local preferences and set expiration Date in this class */
@@ -528,6 +524,7 @@ public class MenuScreen extends ScreenAdapter {
                                     @Override
                                     public void clicked(InputEvent event, float x, float y) {
                                         saveAccessToken("");
+                                        loggedPlayer=null;
                                         setLoginDisplay[0].run();
                                     }
                                 });
