@@ -206,7 +206,7 @@ export class GameService {
     })
     if (game != null) {
       console.log("GAME:", game)
-      console.log("TopCard:", game.topCard)
+      //console.log("TopCard:", game.topCard)
       //console.log("GAME decks draw:", game.decks[0])
       //console.log("GAME decks discard:", game.decks[1])
     }
@@ -431,13 +431,28 @@ export class GameService {
         if (updatedGamePlayers.length >= 2) {
           console.log("2 OR MORE PLAYERS, CHANGE GAMESTATE")
           //use class-transformer to pass dto with only gameState variable
-          const stateDto = plainToInstance(UpdateGameDto, {
-            gameState: "Running",
-          });
-          const updatedGame = await this.update(id, stateDto)
+          // const stateDto = plainToInstance(UpdateGameDto, {
+          //   gameState: "Running",
+          // });
+          const updatedGame = await prisma.game.update({
+            where: { id },
+            data: { gameState: "Running" }, include: {
+              decks: { include: { cards: true } },
+              players: {
+                include: {
+                  hand: { include: { cards: true } },
+                },
+                orderBy: {
+                  joinedAt: 'asc',
+                }
+              },
+              topCard: true,
+            },
+          })
 
           this.gateway.emitPlayerUpdate(updatedGame.id, { type: 'playerJoined', game: updatedGame });
 
+          console.log("Game Player Add:", updatedGame)
           return updatedGame
         }
       }
@@ -507,13 +522,29 @@ export class GameService {
     if (returnedPlayers.length == 1 && game.gameState != "Over") {
       console.log("ONLY 1 PLAYER LEFT, CHANGE GAMESTATE")
       //use class-transformer to pass dto with only gameState variable
-      const stateDto = plainToInstance(UpdateGameDto, {
-        gameState: "Paused",
-      });
+      // const stateDto = plainToInstance(UpdateGameDto, {
+      //   gameState: "Paused",
+      // });
+      const updatedGame = await this.prisma.game.update({
+        where: { id: gameId },
+        data: { gameState: "Paused" },
+        include: {
+          decks: { include: { cards: true } },
+          players: {
+            include: {
+              hand: { include: { cards: true } },
+            },
+            orderBy: {
+              joinedAt: 'asc',
+            }
+          },
+          topCard: true,
+        },
+      })
 
-      const updatedGame = await this.update(gameId, stateDto)
 
       this.gateway.emitPlayerUpdate(updatedGame.id, { type: 'playerJoined', game: updatedGame });
+      console.log("Game Player Remove:", updatedGame)
 
       return updatedGame
     }

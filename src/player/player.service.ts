@@ -181,11 +181,19 @@ export class PlayerService {
     const handData = dto.hand ? {
       indexFirst: dto.hand?.indexFirst ?? 0, // Default to 0 if not provided
       indexLast: dto.hand?.indexLast ?? -1,  // Default to -1 if not provided
-      cards: {
-        connect: dto.hand?.cards
-          ?.filter(card => card && card.id !== undefined)
-          .map(card => ({ id: card.id })) || [], // Handle case where cards might be undefined
-      },
+      cards: player.hand
+        ? {
+          //if hand in Player exists - use 'set' to replace all
+          set: dto.hand.cards
+            ?.filter(card => card && card.id !== undefined)
+            .map(card => ({ id: card.id })) || [], // Handle case where cards might be undefined
+        }
+        : {
+          //if hand in Player doesn't exist - use 'connect' to attach cards (create can't use set)
+          connect: dto.hand.cards
+            ?.filter(card => card && card.id !== undefined)
+            .map(card => ({ id: card.id })) || [],
+        },
     } : null
 
     const updateData: any = {}
