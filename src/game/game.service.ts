@@ -11,6 +11,7 @@ import { UpdateDeckDto } from 'src/deck/dto/update-deck.dto';
 import { CardService } from 'src/card/card.service';
 import { plainToInstance } from 'class-transformer';
 import { GameGateway } from './game.gateway';
+import { UpdatePlayerTurnDto } from 'src/player/dto/update-player-turn.dto';
 
 @Injectable()
 export class GameService {
@@ -172,7 +173,11 @@ export class GameService {
     return games
   }
 
-  async get(id: number): Promise<Game | null> {
+  async get(id: number): Promise<Game & {
+    decks: (Deck & { cards: Card[] })[],
+    players: (Player & { hand: Hand & { cards: Card[] } })[],
+    topCard: (Card)
+  } | null> {
     const game = await this.prisma.game.findUnique({
       where: { id },
       include: {
@@ -209,6 +214,8 @@ export class GameService {
       //console.log("TopCard:", game.topCard)
       //console.log("GAME decks draw:", game.decks[0])
       //console.log("GAME decks discard:", game.decks[1])
+      //for (const player of game.players)
+      //  console.log("Hands:", player.hand.cards)
     }
     return game
   }
@@ -284,6 +291,7 @@ export class GameService {
   }
 
   async update(id: number, dto: UpdateGameDto): Promise<Game> {
+    console.log("update begin")
     const gameToUpdate = await this.get(id);
     if (!gameToUpdate)
       throw new NotFoundException(`Game with id ${id} not found!`)
@@ -457,6 +465,7 @@ export class GameService {
         }
       }
 
+      console.log("UpdatePlayerAdd")
       const updatedGame = await this.get(id)
 
       this.gateway.emitPlayerUpdate(updatedGame.id, { type: 'playerJoined', game: updatedGame });
@@ -466,7 +475,7 @@ export class GameService {
   }
 
   //REMOVE PLAYER FROM GAME
-  async updatePlayerRemove(gameId: number, playerId: number, dto: UpdatePlayerDto): Promise<Game | null> {
+  async updatePlayerRemove(gameId: number, playerId: number, dto: UpdatePlayerDto | UpdatePlayerTurnDto): Promise<Game | null> {
     //get ids of objects connected to game
     const game = await this.getIds(gameId)
     if (!game) throw new NotFoundException(`Game with id ${gameId} is invalid!`);
@@ -503,6 +512,14 @@ export class GameService {
           players: true
         }
       })
+
+      //If currentTurn is provided in dto: currentTurn of Game is updated as well
+      if ('currentTurn' in dto && typeof dto.currentTurn === 'number') {
+        await prisma.game.update({
+          where: { id: gameId },
+          data: { currentTurn: dto.currentTurn },
+        });
+      }
 
       //update player (remove joinedAt, gameId and Hand)
       const updatedPlayerDto = {
@@ -557,11 +574,22 @@ export class GameService {
       return null
     }
 
+    console.log("UpdatePlayerRemove")
     const updatedGame = await this.get(gameId)
 
     this.gateway.emitPlayerUpdate(updatedGame.id, { type: 'playerJoined', game: updatedGame });
 
     return updatedGame
+  }
+
+  async triggerTurnChange(gameId: number): Promise<void> {
+    const game = await this.get(gameId)
+    this.gateway.emitTurnUpdate(game.id, {
+      type: 'turnChanged',
+      currentTurn: game.currentTurn,
+      topCard: game.topCard,
+      gameState: game.gameState,
+    });
   }
 
   async delete(id: number): Promise<Game> {

@@ -79,18 +79,10 @@ export class GameController {
     @Param('gameId', ParseIntPipe) gameId: number,
     @Param('playerId', ParseIntPipe) playerId: number,
     @Body() data: UpdatePlayerTurnDto): Promise<Game> {
-    console.log("REMOVE PLAYER DATA:", data)
+    console.log("REMOVE PLAYER & CHANGE TURN DATA:", data)
     console.log("PlayerId:", playerId)
     console.log("GameId:", gameId)
-    const updatedGame = this.gameService.updatePlayerRemove(gameId, playerId, data);
-    if (updatedGame != null) {
-      const updateDto = plainToInstance(UpdateGameDto, {
-        currentTurn: data.currentTurn
-      });
-      console.log("updateDto:", updateDto.currentTurn)
-      return this.gameService.update(gameId, updateDto)
-    }
-    return updatedGame
+    return await this.gameService.updatePlayerRemove(gameId, playerId, data)
   }
 
   @UseGuards(JwtAuthGuard)
