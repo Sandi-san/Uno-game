@@ -41,17 +41,13 @@ import com.srebot.uno.config.GameService;
 import com.srebot.uno.config.SocketManager;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 public class GameMultiplayerScreen extends ScreenAdapter implements SocketManager.GameSocketListener {
-    //scheduler for executing automatic database fetches
-    private ScheduledExecutorService scheduler = null;
 
     //possible game states
     public enum State {
@@ -203,7 +199,7 @@ public class GameMultiplayerScreen extends ScreenAdapter implements SocketManage
         service.fetchGame(gameId, new GameService.FetchGameCallback() {
             @Override
             public void onSuccess(GameData game) {
-                Gdx.app.log("fetchGameFromBackend SUCCESS", "Player added to backend");
+                Gdx.app.log("fetchGameFromBackend SUCCESS", "Fetched game: "+game.getId());
                 connectionError = false;
                 //get array of players from current Game from DB
                 callback.onGameFetched(game);
@@ -355,54 +351,24 @@ public class GameMultiplayerScreen extends ScreenAdapter implements SocketManage
         void onTurnFetched(GameData fetchedGame);
     }
 
-    /** Method for fetching turn and discard Deck of Game from server */
-    private void checkForTurnChange(TurnFetchCallback callback) {
+    /** Method for fetching turn of Game from server */
+    private void fetchTurn(TurnFetchCallback callback) {
         service.fetchGameTurn(new GameService.FetchGameTurnCallback() {
             @Override
             public void onSuccess(GameData fetchedGame) {
-                Gdx.app.log("checkForTurnChange SUCCESS", "Fetched turn: " + fetchedGame.getCurrentTurn());
+                Gdx.app.log("fetchTurn SUCCESS", "Fetched turn: " + fetchedGame.getCurrentTurn());
                 connectionError = false;
                 //get array of players from current Game from DB
                 callback.onTurnFetched(fetchedGame);
             }
             @Override
             public void onFailure(Throwable t) {
-                Gdx.app.log("checkForTurnChange ERROR", "FAILED: " + t);
+                Gdx.app.log("fetchTurn ERROR", "FAILED: " + t);
                 connectionError = true;
                 callback.onTurnFetched(null);
             }
         }, currentGameId, manager.getAccessToken());
     }
-
-
-    /** Starts scheduler for periodically fetching backend data */
-    private void startScheduler() {
-        //if scheduler is already running, return
-        if (scheduler != null && !scheduler.isShutdown()) {
-            return;
-        }
-        //create a new scheduler
-        scheduler = Executors.newScheduledThreadPool(1);
-
-        //run players checker and turn checker
-        //playerChecker();
-        //turnChecker();
-    }
-
-    /** Stops scheduler for periodically fetching backend data */
-    public void stopScheduler() {
-        if (scheduler != null && !scheduler.isShutdown()) {
-            scheduler.shutdown();
-            try {
-                //optionally wait for the scheduler to shut down completely
-                scheduler.awaitTermination(5, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    //TODO: nekaksen error kjer se Joined Player 2x updatea Hand (in verjetno cel Game) on join
 
     /** Player checker listener: checks for newly joined players */
     @Override
@@ -416,9 +382,22 @@ public class GameMultiplayerScreen extends ScreenAdapter implements SocketManage
                 //check if local Players data is same as fetched Players data
                 if (fetchedPlayers.length != localPlayersSize) {
                     //new Player found, so add it to local array
-                    Gdx.app.log("playerChecker", "Found new player");
+                    Gdx.app.log("playerChecker", "Changing players");
                     connectionError = false;
-                    checkPlayersChanged(fetchedPlayers);
+                    boolean changed = checkPlayersChanged(fetchedPlayers);
+                    if(changed)
+                        Gdx.app.log("playerChecker", "Players have been changed");
+
+                    //re-fetch turn when Player connects
+                    //(under rare circumstances, when Player leaves and turn is updated, the listener for turnChange isn't triggered
+                    //and the remaining Player doesn't have the turn changed to theirs)
+                    fetchTurn(fetchedTurnData -> {
+                        int fetchedTurn = fetchedTurnData.getCurrentTurn();
+                        if(fetchedTurn!=playerTurn) {
+                            playerTurn = fetchedTurn;
+                            setWaitingPlayer(fetchedTurn);
+                        }
+                    });
 
                     //change gameState based on Player data
                     waitForPlayers();
@@ -729,8 +708,11 @@ public class GameMultiplayerScreen extends ScreenAdapter implements SocketManage
                 else{
                     //equate Player's fetched Hand to local Hand (prevents accidentally switching Hands between Players when array order changes)
                     for(Player fetchedPlayer : fetchedPlayers){
-                        if(playersData.get(i).getId()==fetchedPlayer.getId())
-                            playersData.get(i).setHand(fetchedPlayer.getHand());
+                        Player checkedPlayer = playersData.get(i);
+                        if(checkedPlayer!=null) {
+                            if (checkedPlayer.getId() == fetchedPlayer.getId())
+                                checkedPlayer.setHand(fetchedPlayer.getHand());
+                        }
                     }
                 }
             }
@@ -764,6 +746,7 @@ public class GameMultiplayerScreen extends ScreenAdapter implements SocketManage
                 if (localPlayer != null && !fetchedPlayerIds.contains(localPlayer.getId())) {
                     playersData.set(i, null); //remove the player by setting the slot to null
                     removePlayerBasedIndex(i);
+                    Gdx.app.log("checkPlayersChanged","Removed Player from index: "+i);
                     changed = true;
                 }
             }
@@ -938,22 +921,14 @@ public class GameMultiplayerScreen extends ScreenAdapter implements SocketManage
         //Game not yet finished creating in database
         if (state == State.Initializing)
             return;
-        //Game initialized but contains only 1 Player, start scheduler
-        else if (state == State.Paused) {
-            //startScheduler();
-        }
         //Game has 2 or more Players and isn't over, execute game logic
         else if (state != State.Over) {
             checkGamestate();
             //handle input only if it is current Player's turn
             if (!waitForTurn()) {
-                //current Player's turn, stop scheduler fetching and enable user input
-                stopScheduler();
+                //current Player's turn, enable Card choosing
                 handleInput();
                 //todo: handle input tudi ko ni tvoj turn, razn setanje/pickanje card iz deck
-            } else {
-                //not current Player's turn, start scheduler
-                startScheduler();
             }
         }
 
@@ -972,9 +947,8 @@ public class GameMultiplayerScreen extends ScreenAdapter implements SocketManage
         drawHud();
         batch.end();
 
-        //Game is over, stop scheduler, music and draw over stage
+        //Game is over, stop music and draw over stage
         if (state == State.Over) {
-            stopScheduler();
             if (manager.getMusicPref())
                 game.stopMusic();
             stage.act(delta);
@@ -1550,7 +1524,6 @@ public class GameMultiplayerScreen extends ScreenAdapter implements SocketManage
     private void checkGamestate() {
         //if draw Deck is empty, end game and no winner
         if (deckDraw.isEmpty()) {
-            stopScheduler();
             state = State.Over;
             winner = Winner.None;
         }
@@ -1583,7 +1556,6 @@ public class GameMultiplayerScreen extends ScreenAdapter implements SocketManage
         }
         //if game is over, calculate players' points
         if (state == State.Over) {
-            stopScheduler();
             calcPoints();
         }
     }
@@ -1940,6 +1912,7 @@ public class GameMultiplayerScreen extends ScreenAdapter implements SocketManage
 
     @Override
     public void dispose() {
+        socketManager.disconnect();
         stage.dispose();
         batch.dispose();
     }
@@ -1953,7 +1926,6 @@ public class GameMultiplayerScreen extends ScreenAdapter implements SocketManage
             //put Player's Cards back into the draw Deck if game isn't over
             deckDraw.setCards(currentPlayer.getHand().getCards());
         }
-        socketManager.disconnect();
 
         //Remove Player AND update turn of Game
         if(!isWaiting && playerTurn == localPlayerId) {
@@ -1962,8 +1934,8 @@ public class GameMultiplayerScreen extends ScreenAdapter implements SocketManage
             updateGameRemovePlayerTurn(currentPlayer, gameId, playerTurn, new GameUpdateCallback() {
                 @Override
                 public void onGameUpdated(GameData updatedGame) {
-                    Gdx.app.log("playerLeaveGame SUCCESS", "Removed player with id: " + playerId + " & updated turn to: "+ updatedGame.getCurrentTurn() +" from Game with id: " + updatedGame.getId());
                     //connectionError = false;
+                    Gdx.app.log("playerLeaveGame SUCCESS", "Removed player with id: " + playerId + " & updated turn to: "+ updatedGame.getCurrentTurn() +" from Game with id: " + updatedGame.getId());
                 }
                 @Override
                 public void onFailure(Throwable t) {

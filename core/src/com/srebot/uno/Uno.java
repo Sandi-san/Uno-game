@@ -46,8 +46,7 @@ public class Uno extends Game {
                 if(screen instanceof GameMultiplayerScreen) {
                     Gdx.app.log("DISPOSE", "Calling from GameMultiplayerScreen");
                     GameMultiplayerScreen mpScreen = (GameMultiplayerScreen) screen;
-                    //close scheduler
-                    mpScreen.stopScheduler();
+
                     //get id of player and game and call remove player from game method
                     int playerId = mpScreen.getPlayerId();
                     int gameId = mpScreen.getGameId();
