@@ -1,10 +1,9 @@
-import { Controller, Get, Post, Delete, Body, Param, ParseIntPipe, Patch, Put, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, ParseIntPipe, Put, UseGuards } from '@nestjs/common';
 import { GameService } from './game.service';
 import { Game, Player, Prisma } from '@prisma/client';
 import { CreateGameDto } from './dto/create-game.dto';
 import { UpdateGameDto } from './dto/update-game.dto';
 import { UpdatePlayerDto } from 'src/player/dto/update-player.dto';
-import { plainToInstance } from 'class-transformer';
 import { UpdatePlayerTurnDto } from 'src/player/dto/update-player-turn.dto';
 import { JwtAuthGuard } from 'src/auth/jwt';
 
@@ -65,7 +64,8 @@ export class GameController {
   @Put(':gameId/player/:playerId')
   async updateGameRemovePlayer(
     @Param('gameId', ParseIntPipe) gameId: number,
-    @Param('playerId', ParseIntPipe) playerId: number, @Body() data: UpdatePlayerDto): Promise<Game> {
+    @Param('playerId', ParseIntPipe) playerId: number,
+    @Body() data: UpdatePlayerDto): Promise<Game> {
     console.log("REMOVE PLAYER DATA:", data)
     //console.log("PlayerId:", playerId)
     //console.log("GameId:", gameId)
@@ -88,9 +88,11 @@ export class GameController {
     return updatedGame
   }
 
+  /*
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
   async deleteGame(@Param('id', ParseIntPipe) id: number): Promise<Game> {
     return this.gameService.delete(id);
   }
+  */
 }

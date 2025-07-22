@@ -7,10 +7,7 @@ class ExecutionSequencer extends TestSequencer {
             'app.e2e-spec.ts',
             'auth.e2e-spec.ts',
             'player.e2e-spec.ts',
-            /*'game.e2e-spec.ts',
-            'deck.e2e-spec.ts',
-            'hand.e2e-spec.ts',
-            'card.e2e-spec.ts',*/
+            'game.e2e-spec.ts',
         ];
 
         // Ensure consistent sorting regardless of platform

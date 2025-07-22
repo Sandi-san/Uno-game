@@ -291,7 +291,6 @@ export class GameService {
   }
 
   async update(id: number, dto: UpdateGameDto): Promise<Game> {
-    console.log("update begin")
     const gameToUpdate = await this.get(id);
     if (!gameToUpdate)
       throw new NotFoundException(`Game with id ${id} not found!`)
@@ -338,8 +337,8 @@ export class GameService {
         await this.handService.updateForGame(dto.players, gamePlayers)
 
         const updatedHands = await this.playerService.getForGame(id)
-        console.log("Updated hands 0: ", updatedHands.at(0).hand.cards)
-        console.log("Updated hands 1: ", updatedHands.at(1).hand.cards)
+        //console.log("Updated hands 0: ", updatedHands.at(0).hand.cards)
+        //console.log("Updated hands 1: ", updatedHands.at(1).hand.cards)
 
       }
 

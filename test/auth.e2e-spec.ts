@@ -47,7 +47,7 @@ describe('AuthController (e2e)', () => {
     const existingUser = await prisma.player.findUnique({
       where: { name: player.name },
     });
-    
+
     expect(existingUser).not.toBeNull();
 
     //call route with user and expect 400 because user email already exists

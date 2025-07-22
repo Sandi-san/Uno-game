@@ -121,7 +121,7 @@ export class PlayerService {
       delete player.gameId
       delete player.joinedAt
     })
-    console.log(players)
+    //console.log(players)
     return players
   }
 

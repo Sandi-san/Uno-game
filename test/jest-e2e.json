@@ -15,5 +15,5 @@
     }
   },
   "setupFiles": ["<rootDir>/setup.env.ts"],
-  "testSequencer": "<rootDir>/jest.sequencer.ts"
+  "testSequencer": "<rootDir>/jest.sequencer.js"
 }
