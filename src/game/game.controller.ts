@@ -67,8 +67,8 @@ export class GameController {
     @Param('gameId', ParseIntPipe) gameId: number,
     @Param('playerId', ParseIntPipe) playerId: number, @Body() data: UpdatePlayerDto): Promise<Game> {
     console.log("REMOVE PLAYER DATA:", data)
-    console.log("PlayerId:", playerId)
-    console.log("GameId:", gameId)
+    //console.log("PlayerId:", playerId)
+    //console.log("GameId:", gameId)
     return this.gameService.updatePlayerRemove(gameId, playerId, data);
   }
 
@@ -80,9 +80,12 @@ export class GameController {
     @Param('playerId', ParseIntPipe) playerId: number,
     @Body() data: UpdatePlayerTurnDto): Promise<Game> {
     console.log("REMOVE PLAYER & CHANGE TURN DATA:", data)
-    console.log("PlayerId:", playerId)
-    console.log("GameId:", gameId)
-    return await this.gameService.updatePlayerRemove(gameId, playerId, data)
+    //console.log("PlayerId:", playerId)
+    //console.log("GameId:", gameId)
+    const updatedGame = await this.gameService.updatePlayerRemove(gameId, playerId, data);
+    //if currentTurn has been updated as well, trigger turnUpdate on gateway listeners (app calls listener method) 
+    await this.gameService.triggerTurnChange(updatedGame.id);
+    return updatedGame
   }
 
   @UseGuards(JwtAuthGuard)
