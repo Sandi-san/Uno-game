@@ -146,7 +146,6 @@ public class GameMultiplayerScreen extends ScreenAdapter implements SocketManage
         service.fetchAuthenticatedPlayer(new GameService.PlayerFetchCallback() {
             @Override
             public void onSuccess(Player player) {
-                Gdx.app.log("fetchPlayerFromBackend", "Player fetched: " + player.getName());
                 //Get Player and add to current (local) Game, draw Cards from draw Deck
                 Player thisPlayer = createPlayerAndDraw(player);
                 localPlayerId = player.getId();
@@ -160,7 +159,6 @@ public class GameMultiplayerScreen extends ScreenAdapter implements SocketManage
             @Override
             public void onFailure(Throwable t) {
                 connectionError = true; //change variable to indicate server error
-                Gdx.app.log("createPlayerFromBackend ERROR", "Failed to fetch player: " + t.getMessage());
                 callback.onPlayerFetched(null);
             }
         }, manager.getAccessToken());
@@ -607,7 +605,7 @@ public class GameMultiplayerScreen extends ScreenAdapter implements SocketManage
     }
 
     /** Constructor for Joining existing Game */
-    public GameMultiplayerScreen(Uno game, int gameId, String playerName) {
+    public GameMultiplayerScreen(Uno game, int gameId) {
         this.game = game;
         assetManager = game.getAssetManager();
         manager = game.getManager();
@@ -1031,7 +1029,6 @@ public class GameMultiplayerScreen extends ScreenAdapter implements SocketManage
             deckDraw.setPositionAndBounds(drawX, drawY, sizeX, sizeY);
             Card.render(batch, drawDeckRegion, deckDraw.getPosition().x, deckDraw.getPosition().y, sizeX, sizeY);
         }
-        //TODO: when Paused: also draw cards but not decks
         if (state != State.Paused && state != State.Initializing) {
             //Draw Player Hands for each current Player
             int currentPlayerIndex = getIndexOfCurrentPlayer();

@@ -433,7 +433,7 @@ public class MenuScreen extends ScreenAdapter {
 
                             //open MP game screen if successful
                             Gdx.app.log("JOINING GAME", "JOINING GAME: " + selectedGame.getId());
-                            game.setScreen(new GameMultiplayerScreen(game, selectedGame.getId(), manager.getNamePref()));
+                            game.setScreen(new GameMultiplayerScreen(game, selectedGame.getId()));
                         }
                     }
                     else {

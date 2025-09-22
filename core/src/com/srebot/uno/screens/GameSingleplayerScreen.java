@@ -120,7 +120,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
         initGame(args);
     }
 
-    /** Load music and sounds */
+    /** Load music and sounds **/
     private void setMusicAndSounds() {
         //music on?
         if (manager.getMusicPref()) {
@@ -607,7 +607,7 @@ public class GameSingleplayerScreen extends ScreenAdapter {
     /** Draw Hud text elements */
     private void drawHud(){
         //Draw info of players (name and number of cards)
-        if(state == State.Running || state == State.Over) {
+        if(state == State.Running || state == State.Over || state == State.Choosing) {
             //set the font to a smaller scale for the player's text
             font.getData().setScale(0.8f);  //scale down to 80% of the original size
 
@@ -931,7 +931,9 @@ public class GameSingleplayerScreen extends ScreenAdapter {
             case "R":
                 //change turn order and iterate turn (same player if only 2 players)
                 clockwiseOrder = !clockwiseOrder;
-                playerTurn = getNextTurn(playerTurn);
+                //if only 2 players, get next turn (same player plays twice)
+                if(getPlayersSize()==2)
+                    playerTurn = getNextTurn(playerTurn);
                 break;
             //Plus 2
             case "P2":
