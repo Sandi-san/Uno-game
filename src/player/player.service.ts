@@ -1,8 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { Card, Hand, Player } from '@prisma/client'
 import { PrismaService } from 'src/prisma/prisma.service'
-import { CreatePlayerDto } from './dto/create-player.dto';
-import { CreateCardDto } from 'src/card/dto/create-card.dto';
 import { UpdatePlayerDto } from './dto/update-player.dto';
 import { CardService } from 'src/card/card.service';
 
@@ -14,7 +12,7 @@ export class PlayerService {
   ) { }
 
   /*
-  //TODO: GET PLAYER: IF EXISTS, UPDATE; ELSE: CREATE
+  //GET PLAYER: IF EXISTS, UPDATE; ELSE: CREATE
   async create(data: CreatePlayerDto): Promise<Player> {
     const player = await this.prisma.player.create({
       data: {
@@ -136,7 +134,7 @@ export class PlayerService {
               id: player.id,
             },
             data: {
-              gameId, //change gameId
+              gameId,
               /*
               name
               score: player.score,
@@ -164,9 +162,10 @@ export class PlayerService {
         })
     )
     console.log("UPDATED PLAYERS")
-    for (const player in updatedPlayers) {
+    updatedPlayers.map(async (player) => {
+      delete player.password
       console.log(player)
-    }
+    })
     return updatedPlayers;
   }
 
@@ -233,7 +232,7 @@ export class PlayerService {
         }
       }
     })
-
+    delete updatedPlayer.password
     console.log("UPDATED PLAYER", updatedPlayer)
     return updatedPlayer;
   }
@@ -249,9 +248,11 @@ export class PlayerService {
         where: { id },
         data: { score }
       })
+      delete updatedPlayer.password
       console.log(`Player ${id} changed score to ${score}`)
       return updatedPlayer
     }
+    delete player.password
     return player
   }
 

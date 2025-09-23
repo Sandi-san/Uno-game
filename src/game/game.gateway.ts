@@ -11,7 +11,7 @@ import { Server, Socket } from 'socket.io';
 //TODO: set origin to App only?
 @WebSocketGateway({
     cors: {
-        origin: '*',
+        origin: 'http://localhost:3000',
     },
 })
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -37,7 +37,8 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     /** Method that gets called by handleJoinGame and calls playerChanged on app */
     emitPlayerUpdate(gameId: number, data: any) {
-        this.server.to(`game-${gameId}`).emit('playerChanged', data);
+        const roomName = `game-${gameId}`;
+        this.server.to(roomName).emit('playerChanged', data);
     }
 
     emitTurnUpdate(gameId: number, data: any) {

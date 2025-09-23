@@ -26,7 +26,6 @@ export class GameService {
 
   //TODO: transaction vse metode kjer se dogaja vec Prisma callov
   //TODO: remove vse metode (in routes) ki jih ne uporabljas
-  //TODO: delete player.password na VSEH returnih kjer vrnes tudi playerje
 
   async create(data: CreateGameDto): Promise<Game> {
     //transaction in two pieces 
@@ -92,6 +91,10 @@ export class GameService {
         },
       });
 
+      updatedGame.players.map(async (player) => {
+        delete player.password
+      })
+
       return updatedGame;
     })
 
@@ -146,6 +149,10 @@ export class GameService {
       }
 
       const newGame = await this.get(game.id);
+      newGame.players.map(async (player) => {
+        delete player.password
+      })
+
       console.log('GAME CREATED:', newGame);
 
       // Emit socket update to creator's room
@@ -168,6 +175,11 @@ export class GameService {
       orderBy: {
         createdAt: 'desc',
       }
+    })
+    games.map(async (game) => {
+      game.players.map(async (player) => {
+        delete player.password
+      })
     })
     console.log(games)
     return games
@@ -210,6 +222,9 @@ export class GameService {
       delete player.password
     })
     if (game != null) {
+      game.players.map(async (player) => {
+        delete player.password
+      })
       console.log("GAME:", game)
       //console.log("TopCard:", game.topCard)
       //console.log("GAME decks draw:", game.decks[0])
@@ -241,8 +256,11 @@ export class GameService {
 
     const players = game.players
     console.log("PLAYERS: ")
-    for (const player of players)
+    
+    players.map(async (player) => {
+      delete player.password
       console.log(`id: ${player.id} name: ${player.name}`)
+    })
     return players
   }
 
@@ -285,6 +303,9 @@ export class GameService {
           },
         },
       },
+    })
+    game.players.map(async (player) => {
+      delete player.password
     })
     //console.log(game)
     return game
@@ -387,6 +408,10 @@ export class GameService {
           console.log(`${player.id} ${player.color} ${player.value} ${player.texture}`)
         */
 
+        game.players.map(async (player) => {
+          delete player.password
+        })
+
         this.gateway.emitTurnUpdate(game.id, {
           type: 'turnChanged',
           currentTurn: game.currentTurn,
@@ -457,6 +482,10 @@ export class GameService {
             },
           })
 
+          updatedGame.players.map(async (player) => {
+            delete player.password
+          })
+
           this.gateway.emitPlayerUpdate(updatedGame.id, { type: 'playerJoined', game: updatedGame });
 
           console.log("Game Player Add:", updatedGame)
@@ -466,6 +495,10 @@ export class GameService {
 
       console.log("UpdatePlayerAdd")
       const updatedGame = await this.get(id)
+
+      updatedGame.players.map(async (player) => {
+        delete player.password
+      })
 
       this.gateway.emitPlayerUpdate(updatedGame.id, { type: 'playerJoined', game: updatedGame });
 
@@ -558,6 +591,9 @@ export class GameService {
         },
       })
 
+      updatedGame.players.map(async (player) => {
+        delete player.password
+      })
 
       this.gateway.emitPlayerUpdate(updatedGame.id, { type: 'playerJoined', game: updatedGame });
       console.log("Game Player Remove:", updatedGame)
@@ -575,6 +611,10 @@ export class GameService {
 
     console.log("UpdatePlayerRemove")
     const updatedGame = await this.get(gameId)
+
+    updatedGame.players.map(async (player) => {
+      delete player.password
+    })
 
     this.gateway.emitPlayerUpdate(updatedGame.id, { type: 'playerJoined', game: updatedGame });
 

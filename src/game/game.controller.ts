@@ -83,8 +83,10 @@ export class GameController {
     //console.log("PlayerId:", playerId)
     //console.log("GameId:", gameId)
     const updatedGame = await this.gameService.updatePlayerRemove(gameId, playerId, data);
-    //if currentTurn has been updated as well, trigger turnUpdate on gateway listeners (app calls listener method) 
-    await this.gameService.triggerTurnChange(updatedGame.id);
+    if(updatedGame!=null){
+      //if currentTurn has been updated as well, trigger turnUpdate on gateway listeners (app calls listener method) 
+      await this.gameService.triggerTurnChange(updatedGame.id);
+    }
     return updatedGame
   }
 

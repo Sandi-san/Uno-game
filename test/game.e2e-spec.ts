@@ -337,7 +337,7 @@ describe('GameController (e2e)', () => {
     const response = await request(app.getHttpServer())
       .put('/game/1/player/1')
       .send(player1Data)
-      .set('Authorization', `Bearer ${access_token2}`)
+      .set('Authorization', `Bearer ${access_token1}`)
       .expect(200);
 
     //console.log("GAME: ", response.body)
